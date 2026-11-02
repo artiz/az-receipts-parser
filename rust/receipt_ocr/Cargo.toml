@@ -1,0 +1,42 @@
+[package]
+name = "receipt_ocr"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.92"
+description = "Receipt OCR for az-receipts-parser: docling.rs text detection + recognition behind a tiny C ABI (dart:ffi) and a host CLI."
+license = "MIT"
+publish = false
+
+[lib]
+name = "receipt_ocr"
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[[bin]]
+name = "receipt-ocr"
+path = "src/bin/receipt_ocr_cli.rs"
+
+[features]
+default = ["ort-load-dynamic"]
+# ONNX Runtime is opened at run time (dlopen). On Android the library comes from
+# the `com.microsoft.onnxruntime:onnxruntime-android` AAR bundled by Gradle; on a
+# host it is any libonnxruntime >= 1.17 (ORT_DYLIB_PATH or --ort-lib).
+# This avoids pyke's prebuilt download (cdn.pyke.io) entirely.
+ort-load-dynamic = ["docling-pdf/ort-load-dynamic"]
+
+[dependencies]
+# docling.rs, pinned to a commit: the OCR model/pipeline contract (model file
+# names, DetBox/RecognizedLine shapes) is what the golden fixtures in
+# samples/ were produced with. Bump deliberately and re-run the Dart tests.
+docling-pdf = { git = "https://github.com/docling-project/docling.rs", rev = "6428c8b0b6ae60bf264aca2b62b6087ca1a99738", default-features = false, features = ["ml"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "bmp", "tiff"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Pure-Rust QR decoder: Austrian RKSV receipts carry a signed QR with date,
+# totals per VAT rate and the register id, which beats OCR for those fields.
+rqrr = "0.11"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
+panic = "unwind"

@@ -1,0 +1,96 @@
+/// Seed keyword rules for item-level categorisation (German + English).
+/// Keywords are matched as substrings of the normalised item name (umlauts
+/// folded, lower-case). Longer matches win over shorter ones.
+library;
+
+const Map<String, List<String>> seedKeywordRules = {
+  'groceries': [
+    'milch', 'milk', 'butter', 'kaese', 'cheese', 'joghurt', 'yogurt', 'brot', 'bread', 'semmel', 'gebaeck',
+    'eier', 'eggs', 'obst', 'gemuese', 'apfel', 'banane', 'tomate', 'gurke', 'paprika', 'zwiebel', 'kartoffel',
+    'salat', 'fleisch', 'huhn', 'haehnchen', 'chicken', 'rind', 'schwein', 'wurst', 'schinken', 'speck',
+    'fisch', 'lachs', 'thunfisch', 'reis', 'nudeln', 'pasta', 'spaghetti', 'mehl', 'zucker', 'salz', 'oel',
+    'essig', 'ketchup', 'senf', 'mayonnaise', 'schokolade', 'schoko', 'chocolate', 'keks', 'cookie', 'biscuit',
+    'speculoos', 'chips', 'nuesse', 'nuts', 'erdnuesse', 'mandeln', 'rosinen', 'muesli', 'cornflakes', 'honig',
+    'marmelade', 'kaffee', 'coffee', 'tee', 'tea', 'kakao', 'saft', 'juice', 'wasser', 'water', 'mineral', 'cola',
+    'limonade', 'bier', 'beer', 'wein', 'wine', 'sekt', 'prosecco', 'vodka', 'whisky', 'gin', 'eis', 'pizza',
+    'tiefkuehl', 'frozen', 'konserve', 'dose', 'suppe', 'soup', 'sauce', 'pesto', 'tofu', 'hummus', 'oliven',
+    'feta', 'mozzarella', 'gouda', 'emmentaler', 'parmesan', 'quark', 'sahne', 'rahm', 'obers', 'topfen',
+    'kipferl', 'kornspitz', 'croissant', 'kuchen', 'torte', 'cake', 'bonbon', 'gummi', 'haribo', 'snack',
+    'cracker', 'knaeckebrot', 'toast', 'wrap', 'tortilla', 'burger', 'wurstel', 'leberkaese', 'bio ',
+  ],
+  'drugstore': [
+    'shampoo', 'duschgel', 'shower', 'seife', 'soap', 'deo', 'deodorant', 'deospray', 'deo spray', 'deoroller', 'deo roller', 'antitranspirant', 'zahnpasta', 'toothpaste', 'zahnbuerste',
+    'toothbrush', 'mundspuelung', 'creme', 'cream', 'lotion', 'bodylotion', 'balea', 'alverde', 'nivea', 'dove',
+    'rasier', 'razor', 'klingen', 'wattepads', 'wattestaebchen', 'taschentuecher', 'tissues', 'binden', 'tampon',
+    'windeln', 'diapers', 'pampers', 'feuchttuecher', 'wipes', 'sonnencreme', 'sunscreen', 'parfum', 'perfume',
+    'make-up', 'makeup', 'mascara', 'lippenstift', 'nagellack', 'haarspray', 'haargel', 'conditioner', 'spuelung',
+    'gesichtswasser', 'reinigungsm', 'reinigungsmilch', 'cremeseife', 'pflegeoel', 'oelseife', 'handcreme',
+    'fusscreme', 'peeling', 'maske', 'mask', 'serum', 'kosmetik', 'cosmetic', 'hygiene', 'haarfarbe',
+  ],
+  'household': [
+    'waschmittel', 'detergent', 'spuelmittel', 'geschirrspuel', 'putz', 'reiniger', 'cleaner', 'allzweck',
+    'schwamm', 'sponge', 'lappen', 'muellbeutel', 'muellsack', 'trash bag', 'kueche', 'kitchen', 'toilettenpapier',
+    'klopapier', 'kuechenrolle', 'alufolie', 'frischhaltefolie', 'kerze', 'kerzen', 'candle', 'teelicht',
+    'batterie', 'battery', 'gluehbirne', 'lampe', 'lamp', 'led', 'glas', 'glass', 'teller', 'plate', 'tasse',
+    'cup', 'besteck', 'messer', 'knife', 'pfanne', 'pan', 'topf', 'pot', 'schuessel', 'bowl', 'box', 'dose',
+    'korb', 'basket', 'handtuch', 'towel', 'bettwaesche', 'kissen', 'pillow', 'decke', 'blanket', 'vorhang',
+    'deko', 'dekoration', 'decoration', 'partydekoration', 'luftballon', 'balloon', 'geschenkpapier', 'wrapping',
+    'vase', 'bilderrahmen', 'frame', 'kleiderbuegel', 'hanger', 'waeschekorb', 'buegel', 'staubsauger', 'besen',
+    'mop', 'eimer', 'bucket', 'organizer', 'aufbewahrung', 'storage', 'weihnacht', 'christmas', 'winter',
+  ],
+  'clothing': [
+    'socken', 'socks', 'strumpf', 'strumpfhose', 'tights', 'hose', 'jeans', 'pants', 'trousers', 'shirt',
+    't-shirt', 'tshirt', 'hemd', 'bluse', 'blouse', 'kleid', 'dress', 'rock', 'skirt', 'jacke', 'jacket',
+    'mantel', 'coat', 'pullover', 'sweater', 'hoodie', 'kapuzen', 'shorts', 'unterhose', 'boxer', 'slip',
+    'unterwaesche', 'underwear', 'bh', 'bra', 'schuhe', 'shoes', 'sneaker', 'stiefel', 'boots', 'sandalen',
+    'muetze', 'beanie', 'hat', 'schal', 'scarf', 'handschuhe', 'gloves', 'guertel', 'belt', 'tasche', 'bag',
+    'rucksack', 'backpack', 'pyjama', 'schlafanzug', 'badehose', 'bikini', 'body', 'strampler', 'leggings',
+  ],
+  'toys': [
+    'spielzeug', 'toy', 'kuscheltier', 'plush', 'pluesch', 'teddy', 'puppe', 'doll', 'lego', 'playmobil',
+    'puzzle', 'spiel ', 'game', 'brettspiel', 'karten', 'malbuch', 'stifte', 'buntstifte', 'crayons', 'knete',
+    'bausteine', 'blocks', 'auto ', 'car ', 'ball', 'seifenblasen', 'bubbles', 'rassel', 'schnuller', 'pacifier',
+    'babynahrung', 'babybrei', 'milupa', 'hipp',
+  ],
+  'electronics': [
+    'kabel', 'cable', 'usb', 'ladegeraet', 'charger', 'netzteil', 'adapter', 'kopfhoerer', 'headphones',
+    'earbuds', 'lautsprecher', 'speaker', 'handy', 'phone', 'smartphone', 'huelle', 'case', 'displayschutz',
+    'screen protector', 'powerbank', 'speicherkarte', 'sd card', 'festplatte', 'ssd', 'maus', 'mouse', 'tastatur',
+    'keyboard', 'monitor', 'drucker', 'printer', 'toner', 'tinte', 'ink', 'fernseher', 'tv', 'laptop', 'notebook',
+    'tablet', 'konsole', 'controller', 'kamera', 'camera', 'akku', 'hdmi', 'router', 'wlan',
+  ],
+  'books': [
+    'buch', 'book', 'zeitschrift', 'magazin', 'magazine', 'zeitung', 'newspaper', 'heft', 'notizbuch', 'notebook ',
+    'kalender', 'calendar', 'kugelschreiber', 'pen', 'bleistift', 'pencil', 'marker', 'textmarker', 'papier', 'paper',
+    'block', 'ordner', 'folder', 'mappe', 'kleber', 'glue', 'schere', 'scissors', 'tacker', 'locher', 'umschlag',
+    'envelope', 'briefmarke', 'stamp', 'karte ', 'glueckwunsch', 'greeting',
+  ],
+  'pharmacy': [
+    'tablette', 'tablet ', 'pille', 'kapsel', 'capsule', 'tropfen', 'drops', 'sirup', 'syrup', 'salbe', 'ointment',
+    'gel ', 'pflaster', 'plaster', 'bandage', 'verband', 'vitamin', 'magnesium', 'zink', 'ibuprofen', 'aspirin',
+    'paracetamol', 'nasenspray', 'hustensaft', 'lutschtabletten', 'thermometer', 'test', 'maske ffp', 'desinfektion',
+    'disinfect', 'rezept', 'prescription', 'medikament', 'medicine', 'arznei',
+  ],
+  'pets': [
+    'katzenfutter', 'cat food', 'hundefutter', 'dog food', 'katzenstreu', 'litter', 'leckerli', 'treats', 'whiskas',
+    'felix', 'pedigree', 'royal canin', 'futter', 'napf', 'leine', 'leash', 'halsband', 'collar', 'kratzbaum',
+  ],
+  'diy': [
+    'schraube', 'screw', 'duebel', 'nagel', 'nail', 'bohrer', 'drill', 'farbe', 'paint', 'lack', 'pinsel', 'brush',
+    'rolle', 'silikon', 'kleber', 'tape', 'klebeband', 'holz', 'wood', 'brett', 'board', 'werkzeug', 'tool',
+    'hammer', 'zange', 'schraubenzieher', 'screwdriver', 'saege', 'saw', 'erde', 'soil', 'blumen', 'flower',
+    'pflanze', 'plant', 'duenger', 'fertilizer', 'samen', 'seeds', 'topf ', 'rasen', 'lawn',
+  ],
+  'restaurant': [
+    'menu', 'menue', 'cappuccino', 'latte', 'espresso', 'macchiato', 'melange', 'verlaengerter', 'kaffee gross',
+    'tagesteller', 'schnitzel', 'pommes', 'fries', 'cheeseburger', 'big mac', 'mcmenu', 'nuggets', 'wrap ',
+    'pizza margherita', 'pasta ', 'salat ', 'suppe ', 'dessert', 'kuchen ', 'apfelstrudel', 'sachertorte',
+    'spritzer', 'aperol', 'cocktail', 'longdrink', 'krug', 'seidel', 'pfiff', 'achtel', 'viertel', 'soda', 'tip',
+    'trinkgeld', 'service', 'cover',
+  ],
+  'fuel': ['diesel', 'benzin', 'super 95', 'super 98', 'e10', 'e5', 'adblue', 'liter', 'ltr', 'tankfuellung', 'fuel', 'petrol', 'gasoline'],
+  'transport': ['ticket', 'fahrkarte', 'fahrschein', 'tageskarte', 'wochenkarte', 'monatskarte', 'jahreskarte', 'parken', 'parking', 'parkschein', 'maut', 'toll', 'vignette', 'taxi', 'uber', 'bolt'],
+  'sports': ['fitness', 'gym', 'yoga', 'matte', 'hantel', 'dumbbell', 'laufschuh', 'running', 'fahrrad', 'bike', 'helm', 'helmet', 'schwimm', 'swim', 'ski', 'wander', 'hiking', 'trikot', 'jersey', 'sport'],
+  'entertainment': ['kino', 'cinema', 'film', 'movie', 'konzert', 'concert', 'theater', 'museum', 'eintritt', 'admission', 'streaming', 'netflix', 'spotify', 'abo', 'subscription', 'lotto', 'lottery'],
+  'health': ['brille', 'glasses', 'kontaktlinsen', 'lenses', 'massage', 'physio', 'arzt', 'doctor', 'zahnarzt', 'dentist', 'optik'],
+};

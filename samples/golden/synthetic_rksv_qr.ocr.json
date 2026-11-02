@@ -1,0 +1,75 @@
+{
+  "width": 800,
+  "height": 1000,
+  "source_width": 800,
+  "source_height": 1000,
+  "scale": 1.0,
+  "exif_orientation": 1,
+  "lines": [
+    {
+      "text": "TEST KASSE GmbH",
+      "confidence": 0.9980104,
+      "det_score": 0.7743729,
+      "x0": 59.0,
+      "y0": 58.0,
+      "x1": 150.0,
+      "y1": 73.0
+    },
+    {
+      "text": "Datum: 02.11.2026 15:46:06",
+      "confidence": 0.9890013,
+      "det_score": 0.75191855,
+      "x0": 57.0,
+      "y0": 88.0,
+      "x1": 192.0,
+      "y1": 103.0
+    },
+    {
+      "text": "Kerze",
+      "confidence": 0.9995783,
+      "det_score": 0.6663191,
+      "x0": 56.0,
+      "y0": 117.0,
+      "x1": 91.0,
+      "y1": 135.0
+    },
+    {
+      "text": "1,55",
+      "confidence": 0.99991345,
+      "det_score": 0.7006963,
+      "x0": 128.0,
+      "y0": 116.0,
+      "x1": 156.0,
+      "y1": 135.0
+    },
+    {
+      "text": "SUMME",
+      "confidence": 0.99968994,
+      "det_score": 0.7361173,
+      "x0": 57.0,
+      "y0": 148.0,
+      "x1": 101.0,
+      "y1": 164.0
+    },
+    {
+      "text": "1,55",
+      "confidence": 0.99977165,
+      "det_score": 0.66691554,
+      "x0": 138.0,
+      "y0": 146.0,
+      "x1": 165.0,
+      "y1": 165.0
+    }
+  ],
+  "qr_codes": [
+    {
+      "text": "_R1-AT1_DEMO-KASSE-1_000123_2026-11-02T15:46:06_1,55_0,00_0,00_0,00_0,00_YWJjZGVmZ2hpams=_AT1-1234567_bWFsbGVy_c2lnbmF0dXJlRGVtbw==",
+      "x0": 224.0,
+      "y0": 323.0,
+      "x1": 524.0,
+      "y1": 624.0
+    }
+  ],
+  "elapsed_ms": 688,
+  "engine": "docling.rs@6428c8b0b6ae receipt_ocr 0.1.0"
+}
