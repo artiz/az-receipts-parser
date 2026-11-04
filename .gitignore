@@ -33,3 +33,19 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# Rust
+rust/**/target/
+
+# Flutter / Dart
+app/.dart_tool/
+app/build/
+app/.flutter-plugins-dependencies
+app/.metadata.bak
+app/android/app/src/main/jniLibs/
+app/assets/models/*.onnx
+app/assets/models/*.txt
+app/.models/
+
+# Downloaded models / runtimes
+.models/

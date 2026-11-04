@@ -1,0 +1,8 @@
+# Keep shell scripts LF and batch files CRLF regardless of core.autocrlf.
+*.sh   text eol=lf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+# Binary fixtures
+*.webp binary
+*.png  binary
+*.onnx binary
