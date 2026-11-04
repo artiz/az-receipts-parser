@@ -29,7 +29,7 @@ pushd "%TARGET%" || exit /b 1
 curl.exe -fsSL -o SHA256SUMS "%BASE%/SHA256SUMS" || (echo failed to download SHA256SUMS & popd & exit /b 1)
 
 for %%F in (%FILES%) do (
-  call :expected "%%F"
+  call :expected "%%F" || (popd & exit /b 1)
   if exist "%%F" (
     call :verify "%%F" !EXPECTED!
     if !ERRORLEVEL! EQU 0 (
@@ -50,8 +50,12 @@ exit /b 0
 
 :expected
 rem Looks up the sha256 for a file name in SHA256SUMS ("<hash>  <name>").
+rem Read line by line (hash, name split on whitespace); findstr's "$" anchor is
+rem unreliable on LF-only files, which is what the release serves.
 set "EXPECTED="
-for /f "tokens=1,2" %%a in ('findstr /r /c:"  %~1$" SHA256SUMS') do if /i "%%b"=="%~1" set "EXPECTED=%%a"
+for /f "usebackq tokens=1,2" %%a in ("SHA256SUMS") do (
+  if /i "%%b"=="%~1" set "EXPECTED=%%a"
+)
 if "!EXPECTED!"=="" (echo %~1 is not listed in SHA256SUMS & exit /b 1)
 exit /b 0
 
