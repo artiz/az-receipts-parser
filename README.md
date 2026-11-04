@@ -58,6 +58,68 @@ The Gradle build refuses to package the app when `libreceipt_ocr.so` is missing,
 and the app refuses to start the engine when the model assets are missing, so a
 half-built APK fails loudly instead of silently returning empty scans.
 
+### Windows
+
+Every script has a `.bat` twin: `scripts\download_models.bat`,
+`scripts\build_android_rust.bat`, and `scripts\build_android.bat`, which chains
+all steps (models → Rust `.so` → `flutter build apk`).
+
+Install once:
+
+1. **Git for Windows** and **Visual Studio Build Tools** with the
+   *Desktop development with C++* workload (the MSVC linker is needed for host
+   Rust binaries such as `cargo-ndk` and the CLI).
+2. **Rust**: run `rustup-init.exe` from <https://rustup.rs>, then
+   `cargo install cargo-ndk`.
+3. **Flutter SDK** 3.47 stable: unzip to e.g. `C:\src\flutter` and add
+   `C:\src\flutter\bin` to `PATH`.
+4. **Android Studio**: in *SDK Manager → SDK Tools* tick *Android SDK
+   Platform-Tools*, *Android SDK Command-line Tools* and *NDK (Side by side)*.
+   Then run `flutter doctor --android-licenses` and `flutter doctor` until the
+   Android toolchain row is green.
+5. On the phone enable *Developer options → USB debugging* and connect it;
+   `adb devices` must list it.
+
+The build script finds the NDK on its own under `%ANDROID_HOME%\ndk` or
+`%LOCALAPPDATA%\Android\Sdk\ndk`; set `ANDROID_NDK_HOME` to override. Build and
+run from a *Developer Command Prompt* (or any terminal with Flutter and Cargo on
+`PATH`), in the repository root:
+
+```bat
+scripts\build_android.bat --run
+```
+
+That downloads the models, cross-compiles the Rust crate for `arm64-v8a`, runs
+`flutter pub get` and launches a debug build on the connected device with hot
+reload. Other modes:
+
+```bat
+scripts\build_android.bat
+```
+
+builds `app\build\app\outputs\flutter-apk\app-release.apk`;
+`scripts\build_android.bat --install` builds and installs that APK on the
+connected phone; `--debug` builds a debug APK only. The individual steps can be
+run on their own (`scripts\download_models.bat [dir]`,
+`scripts\build_android_rust.bat [--debug] [--abi arm64-v8a,x86_64]`), e.g. after a
+Rust change only the second one plus `flutter run` is needed. `--abi x86_64`
+adds the ABI for the Android emulator (the emulator's own ONNX Runtime comes
+from the same AAR).
+
+Host CLI on Windows:
+
+```bat
+cd rust\receipt_ocr && cargo build --release
+```
+
+```bat
+rust\receipt_ocr\target\release\receipt-ocr.exe --models app\assets\models --ort-lib C:\path\to\onnxruntime.dll --pretty samples\receipts\tedi_wien.webp
+```
+
+`onnxruntime.dll` (≥ 1.17) comes from the `onnxruntime` PyPI wheel
+(`onnxruntime\capi\onnxruntime.dll`) or from
+`onnxruntime-win-x64-<version>.zip` on the ONNX Runtime GitHub releases page.
+
 ### Host CLI (for fixtures and debugging)
 
 ```bash
