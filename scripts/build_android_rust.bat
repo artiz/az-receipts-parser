@@ -25,15 +25,38 @@ echo unknown option %~1 & exit /b 2
 
 rem --- locate the NDK -----------------------------------------------------------
 if not "%ANDROID_NDK_HOME%"=="" goto :ndk_ok
-if "%ANDROID_HOME%"=="" if exist "%LOCALAPPDATA%\Android\Sdk" set "ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk"
-if exist "%ANDROID_HOME%\ndk" (
-  for /f "delims=" %%d in ('dir /b /ad /o-n "%ANDROID_HOME%\ndk"') do (
-    if "!ANDROID_NDK_HOME!"=="" set "ANDROID_NDK_HOME=%ANDROID_HOME%\ndk\%%d"
+if not "%ANDROID_NDK_ROOT%"=="" (set "ANDROID_NDK_HOME=%ANDROID_NDK_ROOT%" & goto :ndk_ok)
+
+rem SDK root: ANDROID_HOME, ANDROID_SDK_ROOT, Flutter's local.properties, the Android Studio default.
+set "SDK=%ANDROID_HOME%"
+if "%SDK%"=="" set "SDK=%ANDROID_SDK_ROOT%"
+if "%SDK%"=="" if exist "%ROOT%\app\android\local.properties" (
+  for /f "usebackq tokens=1,* delims==" %%k in ("%ROOT%\app\android\local.properties") do (
+    if "%%k"=="sdk.dir" set "SDK=%%l"
   )
 )
-if "%ANDROID_NDK_HOME%"=="" (
-  echo ANDROID_NDK_HOME is not set and no NDK was found under %%ANDROID_HOME%%\ndk.
-  echo Install "NDK (Side by side)" in Android Studio ^> SDK Manager ^> SDK Tools.
+rem local.properties escapes ":" and "\" as "\:" and "\\".
+if not "%SDK%"=="" set "SDK=!SDK:\:=:!"
+if not "%SDK%"=="" set "SDK=!SDK:\\=\!"
+if "%SDK%"=="" if exist "%LOCALAPPDATA%\Android\Sdk" set "SDK=%LOCALAPPDATA%\Android\Sdk"
+
+if not "%SDK%"=="" if exist "%SDK%\ndk" (
+  for /f "delims=" %%d in ('dir /b /ad /o-n "%SDK%\ndk"') do (
+    if "!ANDROID_NDK_HOME!"=="" if exist "%SDK%\ndk\%%d\toolchains" set "ANDROID_NDK_HOME=%SDK%\ndk\%%d"
+  )
+)
+if not "%SDK%"=="" if "!ANDROID_NDK_HOME!"=="" if exist "%SDK%\ndk-bundle\toolchains" set "ANDROID_NDK_HOME=%SDK%\ndk-bundle"
+
+if "!ANDROID_NDK_HOME!"=="" (
+  echo No Android NDK found.
+  if "%SDK%"=="" (
+    echo   Android SDK not located: set ANDROID_HOME to the SDK root ^(Android Studio: File ^> Settings ^> Languages ^& Frameworks ^> Android SDK^).
+  ) else (
+    echo   SDK root: %SDK%  ^(no %SDK%\ndk\^<version^>\toolchains^)
+  )
+  echo   Install the NDK in Android Studio ^> SDK Manager ^> SDK Tools ^> "NDK (Side by side)",
+  echo   or from a terminal:  sdkmanager "ndk;27.2.12479018"
+  echo   Then re-run, or set ANDROID_NDK_HOME=^<sdk^>\ndk\^<version^> explicitly.
   exit /b 1
 )
 :ndk_ok
