@@ -27,22 +27,28 @@ Future<BudgetEntry?> showEntrySheet(BuildContext context, {required BudgetServic
   // Refresh in the background while the user fills the form, so the
   // duplicate check on save sees what was added on the laptop meanwhile.
   unawaited(budget.sync());
+  // The sheet's own MediaQuery has no bottom padding; take the system
+  // navigation bar height from the page that opened it.
+  final navBar = MediaQuery.of(context).viewPadding.bottom;
   return showModalBottomSheet<BudgetEntry>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
     builder: (_) => Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: EntryForm(budget: budget, draft: draft ?? EntryDraft(), title: title),
+      child: EntryForm(budget: budget, draft: draft ?? EntryDraft(), title: title, bottomPadding: navBar),
     ),
   );
 }
 
 class EntryForm extends StatefulWidget {
-  const EntryForm({super.key, required this.budget, required this.draft, this.title});
+  const EntryForm({super.key, required this.budget, required this.draft, this.title, this.bottomPadding = 0});
   final BudgetService budget;
   final EntryDraft draft;
   final String? title;
+
+  /// Extra space under the save button (system navigation bar).
+  final double bottomPadding;
 
   @override
   State<EntryForm> createState() => _EntryFormState();
@@ -137,7 +143,7 @@ class _EntryFormState extends State<EntryForm> {
         : budget.suggestions.descriptions(_category!, prefix: _description.text.trim(), limit: 8);
     final top = _category == null ? const [] : budget.suggestions.descriptions(_category!, limit: 3);
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      padding: EdgeInsets.fromLTRB(16, 12, 16, 16 + widget.bottomPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,

@@ -46,11 +46,13 @@ class _ImportReviewPageState extends State<ImportReviewPage> {
     final p = widget.result.proposals[i];
     final names = budget.categories.map((c) => c.name).toList();
     final ordered = [p.entry.category, ...p.alternatives, ...names.where((n) => n != p.entry.category && !p.alternatives.contains(n))];
+    final navBar = MediaQuery.of(context).viewPadding.bottom;
     final picked = await showModalBottomSheet<String>(
       context: context,
       useSafeArea: true,
       builder: (ctx) => ListView(
         shrinkWrap: true,
+        padding: EdgeInsets.only(bottom: navBar),
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),

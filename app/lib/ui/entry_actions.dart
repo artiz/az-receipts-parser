@@ -22,6 +22,7 @@ Future<bool> saveNewEntry(BuildContext context, BudgetService budget, BudgetEntr
   try {
     await budget.sync();
   } catch (_) {}
+  if (!context.mounted) return false;
   final similar = budget.findSimilar(entry);
   if (similar != null) {
     final choice = await showDialog<String>(
