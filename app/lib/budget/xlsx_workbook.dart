@@ -171,11 +171,18 @@ class XlsxSheet {
     }
   }
 
+  Map<int, XmlElement>? _rowIndex;
+
   XmlElement? _findRow(int rowIndex) {
-    for (final row in _sheetData.findElements('row')) {
-      if (row.getAttribute('r') == '$rowIndex') return row;
+    var index = _rowIndex;
+    if (index == null) {
+      index = _rowIndex = {};
+      for (final row in _sheetData.findElements('row')) {
+        final r = int.tryParse(row.getAttribute('r') ?? '');
+        if (r != null) index[r] = row;
+      }
     }
-    return null;
+    return index[rowIndex];
   }
 
   /// Highest row index that has a non-empty cell in [column].
@@ -253,6 +260,7 @@ class XlsxSheet {
     } else {
       sheetData.children.insert(sheetData.children.indexOf(before), row);
     }
+    _rowIndex?[rowIndex] = row;
     return row;
   }
 

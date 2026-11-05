@@ -40,13 +40,20 @@ void main() {
 
   test('file rows and queued entries can be deleted', () async {
     final e = service.entries.first;
+    final second = service.entries[1];
     await service.deleteEntry(e);
     expect(service.entries.length, 35);
-    expect(service.entries.any((x) => x.row == 2), isFalse);
-    // The blank row is left alone; new bookings still go after the last one.
+    // The rows below moved up: the former second entry is now in row 2.
+    final nowFirst = service.entries.first;
+    expect(nowFirst.row, 2);
+    expect(nowFirst.description, second.description);
+    expect(nowFirst.amount, second.amount);
+    expect(nowFirst.date, second.date);
+    expect(service.entries.last.row, 36);
+    expect(service.file!.workbook.requireSheet(sheetEntries).readRow(37)['A']?.isEmpty ?? true, isTrue);
     await service.addEntry(BudgetEntry(date: DateTime(2026, 4, 1), category: 'Kinder', description: 'Marina', amount: 5));
     await service.sync();
-    expect(service.entries.last.row, 38);
+    expect(service.entries.last.row, 37);
     folder.offline = true;
     await service.addEntry(BudgetEntry(date: DateTime(2026, 4, 2), category: 'Kinder', description: 'Platon', amount: 5));
     final queued = service.entries.last;

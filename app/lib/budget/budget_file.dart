@@ -332,6 +332,19 @@ class BudgetFile {
     }
   }
 
+  /// Remove an entry row: every later entry moves up one slot (blank rows
+  /// in between are compacted away) and the last used row is cleared. The
+  /// pre-formatted rows, their styles and month formulas stay where they are.
+  void deleteEntryRow(int row) {
+    final later = [for (final e in entries) if (e.row != null && e.row! > row) e]..sort((a, b) => a.row!.compareTo(b.row!));
+    var target = row;
+    for (final e in later) {
+      updateEntry(target, e);
+      target = e.row!;
+    }
+    clearEntryRow(target);
+  }
+
   /// Overwrite an existing entry row in place.
   void updateEntry(int row, BudgetEntry e) {
     final sheet = workbook.requireSheet(sheetEntries);
