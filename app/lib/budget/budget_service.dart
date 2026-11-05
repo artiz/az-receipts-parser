@@ -22,6 +22,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../storage/app_settings.dart';
+import '../theme.dart' show LimitLevel;
 import '../storage/folder_access.dart';
 import 'budget_file.dart';
 import 'entry_suggest.dart';
@@ -106,6 +107,39 @@ class BudgetService extends ChangeNotifier {
     }
     out.sort();
     return out;
+  }
+
+  /// Expenses (expense categories only) booked in [month] of the loaded year.
+  double monthExpenses(int month) {
+    final f = file;
+    if (f == null) return 0;
+    var sum = 0.0;
+    for (final e in entries) {
+      if (e.month != month) continue;
+      if (f.category(e.category)?.isExpense ?? false) sum += e.amount;
+    }
+    return sum;
+  }
+
+  /// Traffic light for [expenses] against Monatslimit 1 and 2.
+  LimitLevel limitLevel(double expenses) {
+    final l2 = monthLimit2;
+    final l1 = monthLimit1;
+    if (l2 != null && l2 > 0 && expenses >= l2) return LimitLevel.over;
+    if (l1 != null && l1 > 0 && expenses >= l1) return LimitLevel.warn;
+    return LimitLevel.ok;
+  }
+
+  /// The calendar month's level (only meaningful when the loaded year is the
+  /// calendar year).
+  LimitLevel get currentMonthLevel => year == currentYear ? limitLevel(monthExpenses(_clock().month)) : LimitLevel.ok;
+
+  /// Set Monatslimit 1 and 2 in `Einstellungen`.
+  Future<void> setMonthLimits(double limit1, double limit2) async {
+    await _withFile(year ?? currentYear, (f) {
+      f.setSetting('Monatslimit 1', limit1);
+      f.setSetting('Monatslimit 2', limit2);
+    });
   }
 
   /// True when the calendar year has no file yet (and one could be created

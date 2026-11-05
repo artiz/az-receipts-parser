@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../app.dart';
 import '../l10n/app_localizations.dart';
+import '../theme.dart';
 import 'entries_page.dart';
 import 'entry_actions.dart';
 import 'entry_sheet.dart';
+import 'widgets.dart';
 import 'overview_page.dart';
 import 'scan_flow.dart';
 import 'settings_page.dart';
@@ -52,6 +54,20 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
               actions: [
+                ListenableBuilder(
+                  listenable: scope.budget,
+                  builder: (context, _) {
+                    final b = scope.budget;
+                    if (b.file == null || b.year != b.currentYear) return const SizedBox.shrink();
+                    final expenses = b.monthExpenses(DateTime.now().month);
+                    final level = b.limitLevel(expenses);
+                    return IconButton(
+                      tooltip: '${l.expenses}: ${euro(expenses)}',
+                      icon: Icon(limitIcon(level), color: limitColor(context, level)),
+                      onPressed: () => setState(() => _index = 1),
+                    );
+                  },
+                ),
                 IconButton(tooltip: l.scanReceipt, icon: const Icon(Icons.photo_camera_outlined), onPressed: () => scanReceipt(context)),
                 IconButton(tooltip: l.importScreenshot, icon: const Icon(Icons.image_outlined), onPressed: () => importScreenshot(context)),
                 IconButton(tooltip: l.importStatement, icon: const Icon(Icons.picture_as_pdf_outlined), onPressed: () => importStatement(context)),

@@ -372,4 +372,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String importPart(int done, int total) {
     return 'Part $done of $total';
   }
+
+  @override
+  String get limitsTitle => 'Month limits';
+
+  @override
+  String get monthLimit1 => 'Monatslimit 1';
+
+  @override
+  String get monthLimit2 => 'Monatslimit 2';
+
+  @override
+  String get monthLimit1Hint => 'Expenses from here: amber + notification';
+
+  @override
+  String get monthLimit2Hint => 'Expenses from here: red + notification';
+
+  @override
+  String get limitsTap => 'Tap to set the limits';
+
+  @override
+  String get limitsSaved => 'Limits saved to the file';
+
+  @override
+  String get limitsInvalid => 'Enter two amounts, limit 2 not below limit 1.';
+
+  @override
+  String planTitle(String category, String month) {
+    return 'Plan $category, $month';
+  }
+
+  @override
+  String get planSaved => 'Plan saved to the file';
 }

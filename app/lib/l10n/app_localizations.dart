@@ -705,6 +705,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Part {done} of {total}'**
   String importPart(int done, int total);
+
+  /// No description provided for @limitsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Month limits'**
+  String get limitsTitle;
+
+  /// No description provided for @monthLimit1.
+  ///
+  /// In en, this message translates to:
+  /// **'Monatslimit 1'**
+  String get monthLimit1;
+
+  /// No description provided for @monthLimit2.
+  ///
+  /// In en, this message translates to:
+  /// **'Monatslimit 2'**
+  String get monthLimit2;
+
+  /// No description provided for @monthLimit1Hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses from here: amber + notification'**
+  String get monthLimit1Hint;
+
+  /// No description provided for @monthLimit2Hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses from here: red + notification'**
+  String get monthLimit2Hint;
+
+  /// No description provided for @limitsTap.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to set the limits'**
+  String get limitsTap;
+
+  /// No description provided for @limitsSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Limits saved to the file'**
+  String get limitsSaved;
+
+  /// No description provided for @limitsInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter two amounts, limit 2 not below limit 1.'**
+  String get limitsInvalid;
+
+  /// No description provided for @planTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan {category}, {month}'**
+  String planTitle(String category, String month);
+
+  /// No description provided for @planSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan saved to the file'**
+  String get planSaved;
 }
 
 class _AppLocalizationsDelegate

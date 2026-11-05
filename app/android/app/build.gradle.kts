@@ -69,6 +69,8 @@ dependencies {
     // ONNX Runtime for Android (CPU + NNAPI). Loaded at run time by the Rust
     // side (ort `load-dynamic`); the version must be >= 1.17 (ORT API 17).
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.31.1")
+    // NotificationCompat for the limit alerts (MainActivity.showNotification).
+    implementation("androidx.core:core-ktx:1.15.0")
 }
 
 // Fail early when the native OCR library is missing from jniLibs.

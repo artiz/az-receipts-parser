@@ -28,7 +28,33 @@ class AzColors {
 
   static const green = Color(0xFF4E7A5A);
   static const greenBright = Color(0xFF6FCF97);
+
+  // Month-limit traffic light, tuned to the two themes.
+  static const okDark = Color(0xFF5CCB8A);
+  static const warnDark = Color(0xFFF0B23F);
+  static const overDark = Color(0xFFFF4D6D);
+  static const okLight = Color(0xFF2F8F5B);
+  static const warnLight = Color(0xFFC48A14);
+  static const overLight = Color(0xFFD6105E);
 }
+
+/// Where the month's expenses stand against Monatslimit 1 and 2.
+enum LimitLevel { ok, warn, over }
+
+Color limitColor(BuildContext context, LimitLevel level) {
+  final dark = Theme.of(context).brightness == Brightness.dark;
+  return switch (level) {
+    LimitLevel.ok => dark ? AzColors.okDark : AzColors.okLight,
+    LimitLevel.warn => dark ? AzColors.warnDark : AzColors.warnLight,
+    LimitLevel.over => dark ? AzColors.overDark : AzColors.overLight,
+  };
+}
+
+IconData limitIcon(LimitLevel level) => switch (level) {
+      LimitLevel.ok => Icons.check_circle_outline,
+      LimitLevel.warn => Icons.warning_amber_rounded,
+      LimitLevel.over => Icons.error_outline,
+    };
 
 ThemeData azTheme(Brightness brightness) {
   final dark = brightness == Brightness.dark;

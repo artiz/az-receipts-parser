@@ -95,9 +95,15 @@ the bookings in the file.
    model is unsure about show its question and alternative categories, tap the
    category to decide. Cash withdrawals and transfers between own accounts are
    skipped. Nothing is written before *Add n*.
-6. **Overview**: income, expenses (coloured by `Monatslimit 1/2`), saldo,
-   per-category actual vs plan, and the input rows of `Übersicht` (Kontostand,
-   Sparkonto, Kreditkarte offen) editable per month.
+6. **Overview**: income, expenses with a traffic light against
+   `Monatslimit 1/2` (green, amber from limit 1, red from limit 2; the same
+   icon sits in the top bar of the home screen), saldo, per-category actual
+   vs plan with a pencil to edit the month's plan, and the input rows of
+   `Übersicht` (Kontostand, Sparkonto, Kreditkarte offen) editable per month;
+   those accept a small formula (`=500+232,23`) that is kept in the cell.
+   Tapping the expenses card edits the two month limits (written to
+   `Einstellungen`). The first time the calendar month's expenses reach
+   limit 1, and again at limit 2, the app posts a system notification.
 7. **Settings → OpenAI**: API key (stored in Android's encrypted storage) and
    model (default `gpt-4.1-mini`). Only the statement/screenshot import uses it.
    **Settings → Language** overrides the system language (German, English,

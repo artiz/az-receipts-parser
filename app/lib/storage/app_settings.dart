@@ -21,6 +21,7 @@ class AppSettings extends ChangeNotifier {
   static const _kApiKey = 'openai_api_key';
   static const _kLastSync = 'last_sync';
   static const _kLocale = 'locale';
+  static const _kNotified = 'limit_notified_';
 
   String? _apiKey;
 
@@ -87,6 +88,11 @@ class AppSettings extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  /// Highest limit level already notified for a month (0 none, 1 warn, 2 over).
+  int notifiedLevel(int year, int month) => _prefs.getInt('$_kNotified$year-$month') ?? 0;
+
+  Future<void> setNotifiedLevel(int year, int month, int level) => _prefs.setInt('$_kNotified$year-$month', level);
 
   DateTime? get lastSync {
     final v = _prefs.getString(_kLastSync);

@@ -100,5 +100,15 @@
   "language": "Язык",
   "languageSystem": "Системный",
   "formulaHint": "Можно сумму: 5+6,50 или =500+232,23",
-  "importPart": "Часть {done} из {total}"
+  "importPart": "Часть {done} из {total}",
+  "limitsTitle": "Месячные лимиты",
+  "monthLimit1": "Monatslimit 1",
+  "monthLimit2": "Monatslimit 2",
+  "monthLimit1Hint": "Расходы от этой суммы: жёлтый + уведомление",
+  "monthLimit2Hint": "Расходы от этой суммы: красный + уведомление",
+  "limitsTap": "Нажми, чтобы задать лимиты",
+  "limitsSaved": "Лимиты сохранены в файл",
+  "limitsInvalid": "Введи две суммы, лимит 2 не меньше лимита 1.",
+  "planTitle": "План {category}, {month}",
+  "planSaved": "План сохранён в файл"
 }

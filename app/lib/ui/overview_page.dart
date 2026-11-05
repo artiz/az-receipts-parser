@@ -47,11 +47,7 @@ class _OverviewPageState extends State<OverviewPage> {
         final limit1 = budget.monthLimit1;
         final limit2 = budget.monthLimit2;
         final scheme = Theme.of(context).colorScheme;
-        final overLimit = limit2 != null && stats.expenses > limit2
-            ? 2
-            : limit1 != null && stats.expenses > limit1
-                ? 1
-                : 0;
+        final level = budget.limitLevel(stats.expenses);
         return Scaffold(
           appBar: AppBar(
             title: Text(l.tabOverview),
@@ -77,8 +73,10 @@ class _OverviewPageState extends State<OverviewPage> {
                     child: _StatCard(
                       label: l.expenses,
                       value: euro(stats.expenses),
-                      color: overLimit == 2 ? AzColors.pinkInk : overLimit == 1 ? scheme.primary : scheme.onSurface,
-                      hint: limit1 == null ? null : l.limitHint(euroShort(limit1), euroShort(limit2 ?? limit1)),
+                      color: limitColor(context, level),
+                      icon: limitIcon(level),
+                      hint: limit1 == null ? l.limitsTap : l.limitHint(euroShort(limit1), euroShort(limit2 ?? limit1)),
+                      onTap: () => _editLimits(context, budget),
                     ),
                   ),
                 ],
@@ -100,6 +98,9 @@ class _OverviewPageState extends State<OverviewPage> {
                           name: c.name,
                           actual: stats.byCategory[c.name] ?? 0,
                           plan: file.overview.plan[c.name]?.$2[month - 1],
+                          onEditPlan: file.overview.plan.containsKey(c.name)
+                              ? () => _editPlan(context, budget, c.name, month, file.overview.plan[c.name]!.$2[month - 1], monthName(year, month, locale))
+                              : null,
                         ),
                     const Divider(),
                     _CategoryRow(name: l.total, actual: stats.expenses, plan: stats.planTotal(file, month), bold: true),
@@ -163,39 +164,124 @@ class _MonthStats {
 }
 
 class _StatCard extends StatelessWidget {
-  const _StatCard({required this.label, required this.value, required this.color, this.hint, this.big = false});
+  const _StatCard({required this.label, required this.value, required this.color, this.hint, this.big = false, this.icon, this.onTap});
   final String label;
   final String value;
   final Color color;
   final String? hint;
   final bool big;
+  final IconData? icon;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Card(
-      child: Padding(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
+            Row(
+              children: [
+                Expanded(child: Text(label, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w500))),
+                if (icon != null) Icon(icon, size: 18, color: color),
+                if (onTap != null) ...[
+                  const SizedBox(width: 6),
+                  Icon(Icons.edit_outlined, size: 16, color: scheme.onSurfaceVariant),
+                ],
+              ],
+            ),
             const SizedBox(height: 4),
             Text(value, style: TextStyle(fontSize: big ? 28 : 20, fontWeight: FontWeight.w700, color: color, fontFeatures: const [FontFeature.tabularFigures()])),
             if (hint != null) Text(hint!, style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
           ],
+        ),
         ),
       ),
     );
   }
 }
 
+Future<void> _editPlan(BuildContext context, BudgetService budget, String category, int month, double? current, String monthLabel) async {
+  final l = AppLocalizations.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+  final c = TextEditingController(text: current == null ? '' : euroShortPlain(current));
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(l.planTitle(category, monthLabel)),
+      content: TextField(
+        controller: c,
+        autofocus: true,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        decoration: InputDecoration(suffixText: '€', helperText: l.formulaHint),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
+        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l.save)),
+      ],
+    ),
+  );
+  if (ok != true) return;
+  final v = parseAmount(c.text);
+  if (v == null || v < 0) return;
+  try {
+    await budget.setPlan(category, month, v);
+    messenger.showSnackBar(SnackBar(content: Text(l.planSaved)));
+  } catch (e) {
+    messenger.showSnackBar(SnackBar(content: Text(l.importFailed(e.toString()))));
+  }
+}
+
+Future<void> _editLimits(BuildContext context, BudgetService budget) async {
+  final l = AppLocalizations.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+  final c1 = TextEditingController(text: budget.monthLimit1 == null ? '' : euroShortPlain(budget.monthLimit1!));
+  final c2 = TextEditingController(text: budget.monthLimit2 == null ? '' : euroShortPlain(budget.monthLimit2!));
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(l.limitsTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(controller: c1, autofocus: true, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: l.monthLimit1, suffixText: '€', helperText: l.monthLimit1Hint)),
+          const SizedBox(height: 10),
+          TextField(controller: c2, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: l.monthLimit2, suffixText: '€', helperText: l.monthLimit2Hint)),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
+        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l.save)),
+      ],
+    ),
+  );
+  if (ok != true) return;
+  final v1 = parseAmount(c1.text);
+  final v2 = parseAmount(c2.text);
+  if (v1 == null || v2 == null || v1 <= 0 || v2 < v1) {
+    messenger.showSnackBar(SnackBar(content: Text(l.limitsInvalid)));
+    return;
+  }
+  try {
+    await budget.setMonthLimits(v1, v2);
+    messenger.showSnackBar(SnackBar(content: Text(l.limitsSaved)));
+  } catch (e) {
+    messenger.showSnackBar(SnackBar(content: Text(l.importFailed(e.toString()))));
+  }
+}
+
 class _CategoryRow extends StatelessWidget {
-  const _CategoryRow({required this.name, required this.actual, required this.plan, this.bold = false});
+  const _CategoryRow({required this.name, required this.actual, required this.plan, this.bold = false, this.onEditPlan});
   final String name;
   final double actual;
   final double? plan;
   final bool bold;
+  final VoidCallback? onEditPlan;
 
   @override
   Widget build(BuildContext context) {
@@ -216,6 +302,15 @@ class _CategoryRow extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text('/ ${euroShort(plan!)}', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
               ],
+              if (onEditPlan != null)
+                InkWell(
+                  onTap: onEditPlan,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8, top: 2, bottom: 2),
+                    child: Icon(Icons.edit_outlined, size: 16, color: scheme.onSurfaceVariant),
+                  ),
+                ),
             ],
           ),
           if (ratio != null)

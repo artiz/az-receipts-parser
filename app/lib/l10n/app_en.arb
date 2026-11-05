@@ -283,5 +283,25 @@
         "type": "int"
       }
     }
+  },
+  "limitsTitle": "Month limits",
+  "monthLimit1": "Monatslimit 1",
+  "monthLimit2": "Monatslimit 2",
+  "monthLimit1Hint": "Expenses from here: amber + notification",
+  "monthLimit2Hint": "Expenses from here: red + notification",
+  "limitsTap": "Tap to set the limits",
+  "limitsSaved": "Limits saved to the file",
+  "limitsInvalid": "Enter two amounts, limit 2 not below limit 1.",
+  "planTitle": "Plan {category}, {month}",
+  "planSaved": "Plan saved to the file",
+  "@planTitle": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
   }
 }

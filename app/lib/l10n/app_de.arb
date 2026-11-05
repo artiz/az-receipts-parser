@@ -100,5 +100,15 @@
   "language": "Sprache",
   "languageSystem": "System",
   "formulaHint": "Summen gehen auch: 5+6,50 oder =500+232,23",
-  "importPart": "Teil {done} von {total}"
+  "importPart": "Teil {done} von {total}",
+  "limitsTitle": "Monatslimits",
+  "monthLimit1": "Monatslimit 1",
+  "monthLimit2": "Monatslimit 2",
+  "monthLimit1Hint": "Ausgaben ab hier: gelb + Benachrichtigung",
+  "monthLimit2Hint": "Ausgaben ab hier: rot + Benachrichtigung",
+  "limitsTap": "Tippen, um die Limits zu setzen",
+  "limitsSaved": "Limits in der Datei gespeichert",
+  "limitsInvalid": "Zwei Beträge eingeben, Limit 2 nicht unter Limit 1.",
+  "planTitle": "Plan {category}, {month}",
+  "planSaved": "Plan in der Datei gespeichert"
 }

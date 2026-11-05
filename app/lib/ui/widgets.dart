@@ -26,6 +26,9 @@ String euroShort(double amount) {
   return amount < 0 ? '-$s' : s;
 }
 
+/// "3000" / "3000,5" for edit fields.
+String euroShortPlain(double v) => v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2).replaceAll('.', ',');
+
 String dateDm(DateTime d) => DateFormat('dd.MM.').format(d);
 String dateDmy(DateTime d) => DateFormat('dd.MM.yyyy').format(d);
 String monthName(int year, int month, Locale locale) => DateFormat.yMMMM(locale.toString()).format(DateTime(year, month));

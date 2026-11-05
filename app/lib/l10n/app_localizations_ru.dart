@@ -371,4 +371,36 @@ class AppLocalizationsRu extends AppLocalizations {
   String importPart(int done, int total) {
     return 'Часть $done из $total';
   }
+
+  @override
+  String get limitsTitle => 'Месячные лимиты';
+
+  @override
+  String get monthLimit1 => 'Monatslimit 1';
+
+  @override
+  String get monthLimit2 => 'Monatslimit 2';
+
+  @override
+  String get monthLimit1Hint => 'Расходы от этой суммы: жёлтый + уведомление';
+
+  @override
+  String get monthLimit2Hint => 'Расходы от этой суммы: красный + уведомление';
+
+  @override
+  String get limitsTap => 'Нажми, чтобы задать лимиты';
+
+  @override
+  String get limitsSaved => 'Лимиты сохранены в файл';
+
+  @override
+  String get limitsInvalid => 'Введи две суммы, лимит 2 не меньше лимита 1.';
+
+  @override
+  String planTitle(String category, String month) {
+    return 'План $category, $month';
+  }
+
+  @override
+  String get planSaved => 'План сохранён в файл';
 }
