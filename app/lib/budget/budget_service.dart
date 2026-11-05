@@ -114,12 +114,14 @@ class BudgetService extends ChangeNotifier {
 
   int get currentYear => _clock().year;
 
-  /// An existing entry that looks like [entry] (same amount, date within
-  /// [days]): what a scanned receipt of an already typed purchase produces.
+  /// An existing entry that looks like [entry] (same category and amount,
+  /// date within [days]): what a scanned receipt of an already typed
+  /// purchase produces.
   BudgetEntry? findSimilar(BudgetEntry entry, {int days = 3}) {
     BudgetEntry? best;
     var bestDays = days + 1;
     for (final e in entries) {
+      if (e.category != entry.category) continue;
       if ((e.amount - entry.amount).abs() > 0.011) continue;
       final d = e.date.difference(entry.date).inDays.abs();
       if (d <= days && d < bestDays) {

@@ -58,6 +58,7 @@ void main() {
     expect(similar, isNotNull);
     expect(similar!.description, 'Elka');
     expect(service.findSimilar(scanned.copyWith(amount: 91)), isNull);
+    expect(service.findSimilar(scanned.copyWith(category: 'Kinder')), isNull);
     await service.appendNote(similar, 'Tanne 90,00; OBI');
     expect(service.entries.firstWhere((x) => x.description == 'Elka').note, 'Tanne 90,00; OBI');
   });

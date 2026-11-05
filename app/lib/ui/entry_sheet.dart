@@ -34,8 +34,11 @@ Future<BudgetEntry?> showEntrySheet(BuildContext context, {required BudgetServic
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (_) => Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+    // The keyboard inset must come from the sheet's own context: the opener's
+    // MediaQuery does not drive a rebuild of the sheet when the keyboard opens.
+    builder: (ctx) => AnimatedPadding(
+      duration: const Duration(milliseconds: 150),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
       child: EntryForm(budget: budget, draft: draft ?? EntryDraft(), title: title, bottomPadding: navBar),
     ),
   );
