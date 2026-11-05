@@ -4,6 +4,7 @@
 /// * statement PDF → text layer → LLM → review list.
 library;
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -24,6 +25,7 @@ import 'entry_sheet.dart';
 import 'import_review_page.dart';
 
 Future<void> scanReceipt(BuildContext context) async {
+  unawaited(AppScope.of(context).budget.sync());
   final shot = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 92);
   if (shot == null || !context.mounted) return;
   await _receiptFromPhoto(context, shot.path);

@@ -3,6 +3,8 @@
 /// confirmation of a scanned receipt.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -22,6 +24,9 @@ class EntryDraft {
 
 /// Shows the form; returns the entry when saved, null when dismissed.
 Future<BudgetEntry?> showEntrySheet(BuildContext context, {required BudgetService budget, EntryDraft? draft, String? title}) {
+  // Refresh in the background while the user fills the form, so the
+  // duplicate check on save sees what was added on the laptop meanwhile.
+  unawaited(budget.sync());
   return showModalBottomSheet<BudgetEntry>(
     context: context,
     isScrollControlled: true,

@@ -17,6 +17,11 @@ import 'widgets.dart';
 Future<bool> saveNewEntry(BuildContext context, BudgetService budget, BudgetEntry entry) async {
   final l = AppLocalizations.of(context);
   final messenger = ScaffoldMessenger.of(context);
+  // The booking may have been typed on the laptop since the last sync:
+  // re-read the file before looking for it (a no-op when offline).
+  try {
+    await budget.sync();
+  } catch (_) {}
   final similar = budget.findSimilar(entry);
   if (similar != null) {
     final choice = await showDialog<String>(
