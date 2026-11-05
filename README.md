@@ -90,11 +90,15 @@ the bookings in the file.
 4. **Picture button**: a banking-app screenshot from the gallery → OCR →
    OpenAI → review list.
 5. **PDF button**: a bank statement → docling.rs text layer (rebuilt as rows:
-   text, value date, amount) → OpenAI → review list. Rows whose amount and date
-   match an existing booking are marked *already booked* and unticked; rows the
-   model is unsure about show its question and alternative categories, tap the
-   category to decide. Cash withdrawals and transfers between own accounts are
-   skipped. Nothing is written before *Add n*.
+   text, value date, amount) → the rows are read deterministically: date and
+   amount exactly as printed, merchant from the row or its detail line,
+   card bills as Kreditkarte transfers, cash withdrawals and own transfers
+   skipped. The category comes from the file's own history for that merchant;
+   only merchants the file has never seen go to OpenAI, in one small request
+   for their category. Without an API key those rows are simply flagged for
+   you to pick. Rows whose amount and date match an existing booking are
+   marked *already booked* and unticked. Nothing is written before *Add n*.
+   Free text (screenshots) still goes to the model as a whole.
 6. **Overview**: income, expenses with a traffic light against
    `Monatslimit 1/2` (green, amber from limit 1, red from limit 2; the same
    icon sits in the top bar of the home screen), saldo, per-category actual

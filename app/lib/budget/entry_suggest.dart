@@ -116,16 +116,33 @@ class EntrySuggestions {
   String? categoryFor(String description) {
     final needle = _norm(description);
     if (needle.length < 3) return null;
+    final needleTokens = _keyTokens(needle);
     final score = <String, double>{};
     for (final e in _entries) {
       final d = _norm(e.description);
-      if (d == needle || d.contains(needle) || needle.contains(d) && d.length >= 4) {
-        score[e.category] = (score[e.category] ?? 0) + _weight(e);
+      var hit = d == needle || d.contains(needle) || needle.contains(d) && d.length >= 4;
+      if (!hit && needleTokens.isNotEmpty) {
+        // "Santander Consumer Bank GmbH" ↔ "Küche Santander": a shared
+        // distinctive word is enough.
+        hit = _keyTokens(d).any(needleTokens.contains);
       }
+      if (hit) score[e.category] = (score[e.category] ?? 0) + _weight(e);
     }
     if (score.isEmpty) return null;
     return score.entries.sorted((a, b) => b.value.compareTo(a.value)).first.key;
   }
+
+  static const _generic = {
+    'gmbh', 'gesmbh', 'bank', 'wien', 'austria', 'consumer', 'service', 'services', 'shop', 'store', 'markt', 'online', 'payment', 'payments',
+    'europe', 'limited', 'international', 'deutschland', 'germany', 'kate', 'artem', 'platon', 'marina', 'rechnung', 'zahlung', 'kauf',
+  };
+
+  /// Distinctive words (4+ letters, not generic company fluff) of a
+  /// normalised description.
+  static Set<String> _keyTokens(String normalized) => {
+        for (final t in normalized.split(RegExp(r'[^a-z]+')))
+          if (t.length >= 4 && !_generic.contains(t)) t,
+      };
 
   /// Usual amount for a (category, description), null when unknown.
   double? usualAmount(String category, String description) {

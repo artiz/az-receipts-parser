@@ -9,6 +9,7 @@ library;
 import '../budget/budget_file.dart';
 import '../budget/entry_suggest.dart';
 import 'openai_client.dart';
+import 'statement_rows.dart';
 
 /// A row proposed by the model, before review.
 class ProposedEntry {
@@ -55,11 +56,16 @@ class StatementImportResult {
 }
 
 class StatementImporter {
-  StatementImporter({required this.client, required this.categories, required this.existing, DateTime? now})
+  StatementImporter({required this.client, required this.categories, required this.existing, DateTime? now, this.ownNames = const []})
       : _now = now ?? DateTime.now(),
         _suggest = EntrySuggestions(existing, now: now);
 
-  final OpenAiClient client;
+  /// Null when no API key is set: rows are still read, unknown categories
+  /// are left for the review screen.
+  final OpenAiClient? client;
+
+  /// Account owners (transfers between them are skipped).
+  final List<String> ownNames;
   final List<BudgetCategory> categories;
 
   /// Entries already in the file (plus pending), for examples and dedupe.
@@ -139,10 +145,18 @@ class StatementImporter {
         'required': ['rows', 'notes'],
       };
 
-  /// Run the model on extracted text and post-process the rows.
+  /// Statement text → proposals. A statement with recognisable rows is read
+  /// deterministically (dates and amounts exact), the model only names the
+  /// categories the file's history cannot; free text (screenshots) goes to
+  /// the model as a whole.
   Future<StatementImportResult> import(String text, {required String sourceDescription, void Function(int done, int total)? onProgress}) async {
     var body = text.trim();
     if (body.isEmpty) throw OpenAiException('no text to import');
+    if (StatementRows.looksLikeStatement(body)) {
+      return _importRows(body, sourceDescription: sourceDescription, onProgress: onProgress);
+    }
+    final c = client;
+    if (c == null) throw OpenAiException('no API key: free text needs the model');
     if (body.length > maxChars) body = body.substring(0, maxChars);
     final chunks = splitChunks(body, chunkChars);
     final system = systemPrompt();
@@ -151,7 +165,7 @@ class StatementImporter {
     for (var i = 0; i < chunks.length; i++) {
       onProgress?.call(i, chunks.length);
       final part = chunks.length == 1 ? '' : ' (part ${i + 1} of ${chunks.length}; the other parts are handled separately, do not comment on missing context)';
-      final json = await client.completeJson(
+      final json = await c.completeJson(
         system: system,
         user: 'Today is ${_now.toIso8601String().substring(0, 10)}. Source: $sourceDescription$part.\n\n${chunks[i]}',
         schema: schema(),
@@ -163,6 +177,108 @@ class StatementImporter {
     }
     onProgress?.call(chunks.length, chunks.length);
     return parseResponse({'rows': rows, 'notes': notes.join(' ')}, sourceDescription: sourceDescription);
+  }
+
+  Future<StatementImportResult> _importRows(String body, {required String sourceDescription, void Function(int done, int total)? onProgress}) async {
+    final bookings = StatementRows.parse(body);
+    final classifier = StatementRowClassifier(categories: categories, existing: existing, ownNames: ownNames);
+    final unknown = <int>[];
+    final proposals = classifier.propose(bookings, unknown: unknown);
+    var notes = '${bookings.length} rows';
+    final c = client;
+    if (c != null && unknown.isNotEmpty) {
+      onProgress?.call(0, 1);
+      try {
+        final guessed = await categorize([for (final i in unknown) proposals[i]]);
+        for (final i in unknown) {
+          final g = guessed[proposals[i].sourceLine + proposals[i].entry.description];
+          if (g == null) continue;
+          final p = proposals[i];
+          final cat = categories.where((x) => x.name == g.$1).firstOrNull;
+          if (cat == null) continue;
+          final abs = p.entry.amount.abs();
+          proposals[i] = ProposedEntry(
+            entry: p.entry.copyWith(category: cat.name, amount: cat.isIncome ? -abs : abs),
+            confidence: g.$2,
+            alternatives: g.$3,
+            question: g.$2 < 0.6 ? 'Kategorie?' : null,
+            skipReason: p.skipReason,
+            sourceLine: p.sourceLine,
+          );
+        }
+        notes = '$notes, ${unknown.length} categories from the model';
+      } on OpenAiException catch (e) {
+        notes = '$notes, model unavailable (${e.message}); ${unknown.length} rows need a category';
+      }
+      onProgress?.call(1, 1);
+    } else if (unknown.isNotEmpty) {
+      notes = '$notes, ${unknown.length} rows need a category';
+    }
+    markDuplicates(proposals, existing);
+    return StatementImportResult(proposals: proposals, sourceDescription: sourceDescription, notes: notes);
+  }
+
+  static Map<String, dynamic> categorySchema() => {
+        'type': 'object',
+        'additionalProperties': false,
+        'properties': {
+          'rows': {
+            'type': 'array',
+            'items': {
+              'type': 'object',
+              'additionalProperties': false,
+              'properties': {
+                'id': {'type': 'integer'},
+                'category': {'type': 'string'},
+                'confidence': {'type': 'number'},
+                'alternatives': {
+                  'type': 'array',
+                  'items': {'type': 'string'},
+                },
+              },
+              'required': ['id', 'category', 'confidence', 'alternatives'],
+            },
+          },
+        },
+        'required': ['rows'],
+      };
+
+  /// Ask the model only for categories of the given proposals. Returns
+  /// (category, confidence, alternatives) keyed by sourceLine+description.
+  Future<Map<String, (String, double, List<String>)>> categorize(List<ProposedEntry> rows) async {
+    final c = client;
+    if (c == null || rows.isEmpty) return const {};
+    final names = categories.map((x) => x.name).toList();
+    final buf = StringBuffer();
+    buf.writeln('Assign each booking to exactly one of these categories (names verbatim):');
+    for (final cat in categories) {
+      final examples = _suggest.descriptions(cat.name, limit: 6).map((d) => d.description).join(', ');
+      buf.writeln('- ${cat.name}${cat.hint.isEmpty ? '' : ' — ${cat.hint}'}${examples.isEmpty ? '' : ' — e.g. $examples'}');
+    }
+    buf.writeln();
+    buf.writeln('Bookings (id: merchant/purpose | amount | raw statement line):');
+    for (var i = 0; i < rows.length; i++) {
+      final p = rows[i];
+      buf.writeln('$i: ${p.entry.description} | ${p.entry.amount.abs().toStringAsFixed(2)} | ${p.sourceLine}');
+    }
+    final json = await c.completeJson(
+      system: 'You categorise household bookings from an Austrian bank statement. Reply with the category name exactly as given, a confidence 0..1, and up to two alternative categories when unsure.',
+      user: buf.toString(),
+      schema: categorySchema(),
+      schemaName: 'categories',
+    );
+    final out = <String, (String, double, List<String>)>{};
+    for (final r in (json['rows'] as List<dynamic>? ?? const [])) {
+      final m = r as Map<String, dynamic>;
+      final id = (m['id'] as num?)?.toInt();
+      if (id == null || id < 0 || id >= rows.length) continue;
+      final cat = m['category'] as String?;
+      if (cat == null || !names.contains(cat)) continue;
+      final alts = [for (final a in (m['alternatives'] as List<dynamic>? ?? const [])) if (a is String && names.contains(a) && a != cat) a];
+      final p = rows[id];
+      out[p.sourceLine + p.entry.description] = (cat, ((m['confidence'] as num?) ?? 0.5).toDouble().clamp(0, 1).toDouble(), alts);
+    }
+    return out;
   }
 
   /// Split at line ends into pieces of at most [size] chars (a single

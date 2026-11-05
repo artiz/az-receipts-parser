@@ -17,6 +17,7 @@ import '../budget/receipt_to_entry.dart';
 import '../import/openai_client.dart';
 import '../import/pdf_text.dart';
 import '../import/statement_import.dart';
+import '../import/statement_rows.dart';
 import '../l10n/app_localizations.dart';
 import '../ocr/receipt_ocr_ffi.dart';
 import '../parser/receipt_parser.dart';
@@ -83,13 +84,16 @@ Future<void> _importText(BuildContext context, String text, {required String sou
   final scope = AppScope.of(context);
   final l = AppLocalizations.of(context);
   final key = scope.settings.openAiApiKey;
-  if (key == null || key.isEmpty) {
+  final budget = scope.budget;
+  final hasKey = key != null && key.isNotEmpty;
+  if (!hasKey && !StatementRows.looksLikeStatement(text)) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.openAiKeyMissing)));
     return;
   }
-  final budget = scope.budget;
+  // Rows of a statement are read without the model; it only names the
+  // categories the file cannot, so the import works without a key too.
   final importer = StatementImporter(
-    client: OpenAiClient(apiKey: key, model: scope.settings.openAiModel),
+    client: hasKey ? OpenAiClient(apiKey: key, model: scope.settings.openAiModel) : null,
     categories: budget.categories,
     existing: budget.entries,
   );
