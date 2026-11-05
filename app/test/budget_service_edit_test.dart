@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:az_budget/budget/budget_file.dart';
 import 'package:az_budget/budget/budget_service.dart';
 import 'package:az_budget/storage/app_settings.dart';
+import 'package:az_budget/theme.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -76,6 +77,24 @@ void main() {
     expect(service.strandedPending, isEmpty);
     expect(service.pending, isEmpty);
     expect(service.entries.length, 37);
+  });
+
+  test('another year is readable for the overview without switching', () async {
+    final s2 = BudgetService(folder: folder, settings: settings, queueDir: tmp, clock: () => DateTime(2027, 1, 2));
+    await s2.sync();
+    folder.createdName = 'Budget 2027.xlsx';
+    await s2.createYearFile(2027);
+    expect(s2.year, 2027);
+    final old = await s2.fileForYear(2026);
+    expect(old, isNotNull);
+    expect(s2.entriesForYear(2026, old!).length, 36);
+    expect(s2.year, 2027);
+    expect(await s2.fileForYear(2020), isNull);
+    expect(BudgetService.limitLevelOf(old, 3500), LimitLevel.warn);
+    // Edits can target the other year.
+    await s2.setPlan('Wohnen', 2, 777, year: 2026);
+    expect((await s2.fileForYear(2026))!.overview.plan['Wohnen']!.$2[1], 777);
+    expect(s2.year, 2027);
   });
 
   test('a new year file is created from the latest one', () async {

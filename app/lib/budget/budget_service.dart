@@ -67,6 +67,9 @@ class BudgetService extends ChangeNotifier {
   /// Entries waiting for the file, newest last.
   List<BudgetEntry> pending = [];
 
+  /// Other years' files read for the overview, dropped on every sync.
+  final Map<int, BudgetFile> _otherYears = {};
+
   Future<void>? _running;
   bool _syncAgain = false;
 
@@ -135,8 +138,8 @@ class BudgetService extends ChangeNotifier {
   LimitLevel get currentMonthLevel => year == currentYear ? limitLevel(monthExpenses(_clock().month)) : LimitLevel.ok;
 
   /// Set Monatslimit 1 and 2 in `Einstellungen`.
-  Future<void> setMonthLimits(double limit1, double limit2) async {
-    await _withFile(year ?? currentYear, (f) {
+  Future<void> setMonthLimits(double limit1, double limit2, {int? year}) async {
+    await _withFile(year ?? this.year ?? currentYear, (f) {
       f.setSetting('Monatslimit 1', limit1);
       f.setSetting('Monatslimit 2', limit2);
     });
@@ -271,12 +274,12 @@ class BudgetService extends ChangeNotifier {
 
   /// Change an input cell of `Übersicht` (Kontostand, Sparkonto, Kreditkarte
   /// offen) in the loaded year file. Written through immediately.
-  Future<void> setOverviewInput(String labelPrefix, int month, double? value, {String? formula}) async {
-    await _withFile(year ?? currentYear, (f) => f.setOverviewInput(labelPrefix, month, value, formula: formula));
+  Future<void> setOverviewInput(String labelPrefix, int month, double? value, {String? formula, int? year}) async {
+    await _withFile(year ?? this.year ?? currentYear, (f) => f.setOverviewInput(labelPrefix, month, value, formula: formula));
   }
 
-  Future<void> setPlan(String category, int month, double value) async {
-    await _withFile(year ?? currentYear, (f) => f.setPlan(category, month, value));
+  Future<void> setPlan(String category, int month, double value, {int? year}) async {
+    await _withFile(year ?? this.year ?? currentYear, (f) => f.setPlan(category, month, value));
   }
 
   Future<void> setBudgetSetting(String label, double value, {String note = ''}) async {
@@ -345,6 +348,7 @@ class BudgetService extends ChangeNotifier {
     }
     state = SyncState.syncing;
     lastError = null;
+    _otherYears.clear();
     notifyListeners();
     try {
       final files = await folder.listFiles(uri);
@@ -398,6 +402,38 @@ class BudgetService extends ChangeNotifier {
       state = file == null ? SyncState.error : SyncState.offline;
     }
     notifyListeners();
+  }
+
+  /// The file of any year in the folder, for looking at past months without
+  /// switching the home screen. The loaded year comes from memory.
+  Future<BudgetFile?> fileForYear(int y) async {
+    if (y == year && file != null) return file;
+    final cached = _otherYears[y];
+    if (cached != null) return cached;
+    final ref = _refForYear(y);
+    if (ref == null) return null;
+    final bytes = await folder.readFile(ref.entry.uri);
+    return _otherYears[y] = BudgetFile.open(bytes, yearHint: ref.year);
+  }
+
+  /// File entries plus queued ones for [y], oldest first.
+  List<BudgetEntry> entriesForYear(int y, BudgetFile f) {
+    final out = <BudgetEntry>[...f.entries, ...pending.where((e) => e.date.year == y)];
+    out.sort((a, b) {
+      final c = a.date.compareTo(b.date);
+      if (c != 0) return c;
+      return (a.row ?? 1 << 30).compareTo(b.row ?? 1 << 30);
+    });
+    return out;
+  }
+
+  /// Traffic light against the limits of [f] (another year's file).
+  static LimitLevel limitLevelOf(BudgetFile f, double expenses) {
+    final l2 = f.setting('Monatslimit 2');
+    final l1 = f.setting('Monatslimit 1');
+    if (l2 != null && l2 > 0 && expenses >= l2) return LimitLevel.over;
+    if (l1 != null && l1 > 0 && expenses >= l1) return LimitLevel.warn;
+    return LimitLevel.ok;
   }
 
   /// Switch the displayed year (the file must exist in the folder); the

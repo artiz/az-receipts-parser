@@ -23,115 +23,149 @@ class OverviewPage extends StatefulWidget {
 }
 
 class _OverviewPageState extends State<OverviewPage> {
+  int? _year;
   int? _month;
   final Set<String> _expanded = {};
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final locale = Localizations.localeOf(context);
     final budget = widget.budget;
     return ListenableBuilder(
       listenable: budget,
       builder: (context, _) {
-        final file = budget.file;
-        if (file == null) {
+        if (budget.file == null) {
           return Scaffold(appBar: AppBar(title: Text(l.tabOverview)), body: EmptyHint(icon: Icons.insights_outlined, text: l.noFileLoaded));
         }
-        final year = budget.year ?? DateTime.now().year;
-        final now = DateTime.now();
-        final months = budget.entries.map((e) => e.month).toSet().toList();
-        // The calendar month is always offered (a new month starts empty).
-        if (now.year == year && !months.contains(now.month)) months.add(now.month);
-        if (months.isEmpty) months.add(1);
-        months.sort();
-        final month = _month ?? (now.year == year ? now.month : months.last);
-        final entries = budget.entries.where((e) => e.month == month).toList();
-        final stats = _MonthStats.from(entries, file);
-        final limit1 = budget.monthLimit1;
-        final limit2 = budget.monthLimit2;
-        final scheme = Theme.of(context).colorScheme;
-        final level = budget.limitLevel(stats.expenses);
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(l.tabOverview),
-            actions: [
-              DropdownButtonHideUnderline(
-                child: DropdownButton<int>(
-                  value: month,
-                  items: [for (final m in months) DropdownMenuItem(value: m, child: Text(monthName(year, m, locale)))],
-                  onChanged: (m) => setState(() => _month = m),
-                ),
-              ),
-              const SizedBox(width: 8),
-            ],
-          ),
-          body: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-            children: [
-              Row(
-                children: [
-                  Expanded(child: _StatCard(label: l.income, value: euro(stats.income), color: scheme.tertiary)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _StatCard(
-                      label: l.expenses,
-                      value: euro(stats.expenses),
-                      color: limitColor(context, level),
-                      icon: limitIcon(level),
-                      hint: limit1 == null ? l.limitsTap : l.limitHint(euroShort(limit1), euroShort(limit2 ?? limit1)),
-                      onTap: () => _editLimits(context, budget),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              _StatCard(
-                label: l.saldo,
-                value: euro(stats.saldo, showPlus: true),
-                color: stats.saldo >= 0 ? scheme.tertiary : scheme.primary,
-                big: true,
-              ),
-              SectionTitle(l.byCategory),
-              Card(
-                child: Column(
-                  children: [
-                    for (final c in file.expenseCategories)
-                      if ((stats.byCategory[c.name] ?? 0) != 0 || (file.overview.plan[c.name]?.$2[month - 1] ?? 0) != 0)
-                        _CategoryRow(
-                          name: c.name,
-                          actual: stats.byCategory[c.name] ?? 0,
-                          plan: file.overview.plan[c.name]?.$2[month - 1],
-                          expanded: _expanded.contains(c.name),
-                          onTap: () => setState(() => _expanded.contains(c.name) ? _expanded.remove(c.name) : _expanded.add(c.name)),
-                          onEditPlan: file.overview.plan.containsKey(c.name)
-                              ? () => _editPlan(context, budget, c.name, month, file.overview.plan[c.name]!.$2[month - 1], monthName(year, month, locale))
-                              : null,
-                          breakdown: _expanded.contains(c.name) ? _CategoryBreakdown(entries: entries.where((e) => e.category == c.name).toList()) : null,
-                        ),
-                    const Divider(),
-                    _CategoryRow(name: l.total, actual: stats.expenses, plan: stats.planTotal(file, month), bold: true),
-                  ],
-                ),
-              ),
-              SectionTitle(l.accountInputs),
-              Card(
-                child: Column(
-                  children: [
-                    for (final e in file.overview.rows.entries)
-                      _InputRow(
-                        label: e.key,
-                        value: e.value.$2[month - 1],
-                        formula: file.overview.formulas[e.key]?[month - 1],
-                        onChanged: (v, f) => budget.setOverviewInput(e.key, month, v, formula: f),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+        final year = _year ?? budget.year ?? DateTime.now().year;
+        if (year == budget.year) return _build(context, year, budget.file!);
+        // Another year: read its file on demand (cached until the next sync).
+        return FutureBuilder<BudgetFile?>(
+          future: budget.fileForYear(year),
+          builder: (context, snap) {
+            if (snap.connectionState != ConnectionState.done) {
+              return Scaffold(appBar: AppBar(title: Text(l.tabOverview)), body: const Center(child: CircularProgressIndicator()));
+            }
+            final f = snap.data;
+            if (f == null) {
+              return Scaffold(appBar: AppBar(title: Text(l.tabOverview)), body: EmptyHint(icon: Icons.insights_outlined, text: snap.error?.toString() ?? l.noFileLoaded));
+            }
+            return _build(context, year, f);
+          },
         );
       },
+    );
+  }
+
+  Widget _build(BuildContext context, int year, BudgetFile file) {
+    final l = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context);
+    final budget = widget.budget;
+    final now = DateTime.now();
+    final all = budget.entriesForYear(year, file);
+    final months = all.map((e) => e.month).toSet().toList();
+    // The calendar month is always offered (a new month starts empty).
+    if (now.year == year && !months.contains(now.month)) months.add(now.month);
+    if (months.isEmpty) months.add(1);
+    months.sort();
+    final month = _month != null && months.contains(_month) ? _month! : (now.year == year ? now.month : months.last);
+    final entries = all.where((e) => e.month == month).toList();
+    final stats = _MonthStats.from(entries, file);
+    final limit1 = file.setting('Monatslimit 1');
+    final limit2 = file.setting('Monatslimit 2');
+    final scheme = Theme.of(context).colorScheme;
+    final level = BudgetService.limitLevelOf(file, stats.expenses);
+    final years = budget.yearFiles.map((f) => f.year).toList();
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l.tabOverview),
+        actions: [
+          if (years.length > 1)
+            DropdownButtonHideUnderline(
+              child: DropdownButton<int>(
+                value: years.contains(year) ? year : null,
+                items: [for (final y in years) DropdownMenuItem(value: y, child: Text('$y'))],
+                onChanged: (y) => setState(() {
+                  _year = y;
+                  _month = null;
+                  _expanded.clear();
+                }),
+              ),
+            ),
+          DropdownButtonHideUnderline(
+            child: DropdownButton<int>(
+              value: month,
+              items: [for (final m in months) DropdownMenuItem(value: m, child: Text(monthName(year, m, locale)))],
+              onChanged: (m) => setState(() => _month = m),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+        children: [
+          Row(
+            children: [
+              Expanded(child: _StatCard(label: l.income, value: euro(stats.income), color: scheme.tertiary)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _StatCard(
+                  label: l.expenses,
+                  value: euro(stats.expenses),
+                  color: limitColor(context, level),
+                  icon: limitIcon(level),
+                  hint: limit1 == null ? l.limitsTap : l.limitHint(euroShort(limit1), euroShort(limit2 ?? limit1)),
+                  onTap: () => _editLimits(context, budget, year, limit1, limit2),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _StatCard(
+            label: l.saldo,
+            value: euro(stats.saldo, showPlus: true),
+            color: stats.saldo >= 0 ? scheme.tertiary : scheme.primary,
+            big: true,
+          ),
+          SectionTitle(l.byCategory),
+          Card(
+            child: Column(
+              children: [
+                for (final c in file.expenseCategories)
+                  if ((stats.byCategory[c.name] ?? 0) != 0 || (file.overview.plan[c.name]?.$2[month - 1] ?? 0) != 0)
+                    _CategoryRow(
+                      name: c.name,
+                      actual: stats.byCategory[c.name] ?? 0,
+                      plan: file.overview.plan[c.name]?.$2[month - 1],
+                      expanded: _expanded.contains(c.name),
+                      onTap: () => setState(() => _expanded.contains(c.name) ? _expanded.remove(c.name) : _expanded.add(c.name)),
+                      onEditPlan: file.overview.plan.containsKey(c.name)
+                          ? () => _editPlan(context, budget, year, c.name, month, file.overview.plan[c.name]!.$2[month - 1], monthName(year, month, locale))
+                          : null,
+                      breakdown: _expanded.contains(c.name) ? _CategoryBreakdown(entries: entries.where((e) => e.category == c.name).toList()) : null,
+                    ),
+                const Divider(),
+                _CategoryRow(name: l.total, actual: stats.expenses, plan: stats.planTotal(file, month), bold: true),
+              ],
+            ),
+          ),
+          SectionTitle(l.accountInputs),
+          Card(
+            child: Column(
+              children: [
+                for (final e in file.overview.rows.entries)
+                  _InputRow(
+                    label: e.key,
+                    value: e.value.$2[month - 1],
+                    formula: file.overview.formulas[e.key]?[month - 1],
+                    onChanged: (v, f) => budget.setOverviewInput(e.key, month, v, formula: f, year: year),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -213,7 +247,7 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-Future<void> _editPlan(BuildContext context, BudgetService budget, String category, int month, double? current, String monthLabel) async {
+Future<void> _editPlan(BuildContext context, BudgetService budget, int year, String category, int month, double? current, String monthLabel) async {
   final l = AppLocalizations.of(context);
   final messenger = ScaffoldMessenger.of(context);
   final c = TextEditingController(text: current == null ? '' : euroShortPlain(current));
@@ -237,18 +271,18 @@ Future<void> _editPlan(BuildContext context, BudgetService budget, String catego
   final v = parseAmount(c.text);
   if (v == null || v < 0) return;
   try {
-    await budget.setPlan(category, month, v);
+    await budget.setPlan(category, month, v, year: year);
     messenger.showSnackBar(SnackBar(content: Text(l.planSaved)));
   } catch (e) {
     messenger.showSnackBar(SnackBar(content: Text(l.importFailed(e.toString()))));
   }
 }
 
-Future<void> _editLimits(BuildContext context, BudgetService budget) async {
+Future<void> _editLimits(BuildContext context, BudgetService budget, int year, double? limit1, double? limit2) async {
   final l = AppLocalizations.of(context);
   final messenger = ScaffoldMessenger.of(context);
-  final c1 = TextEditingController(text: budget.monthLimit1 == null ? '' : euroShortPlain(budget.monthLimit1!));
-  final c2 = TextEditingController(text: budget.monthLimit2 == null ? '' : euroShortPlain(budget.monthLimit2!));
+  final c1 = TextEditingController(text: limit1 == null ? '' : euroShortPlain(limit1));
+  final c2 = TextEditingController(text: limit2 == null ? '' : euroShortPlain(limit2));
   final ok = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
@@ -275,7 +309,7 @@ Future<void> _editLimits(BuildContext context, BudgetService budget) async {
     return;
   }
   try {
-    await budget.setMonthLimits(v1, v2);
+    await budget.setMonthLimits(v1, v2, year: year);
     messenger.showSnackBar(SnackBar(content: Text(l.limitsSaved)));
   } catch (e) {
     messenger.showSnackBar(SnackBar(content: Text(l.importFailed(e.toString()))));
