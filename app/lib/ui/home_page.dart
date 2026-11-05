@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import '../app.dart';
 import '../l10n/app_localizations.dart';
 import 'entries_page.dart';
+import 'entry_actions.dart';
 import 'entry_sheet.dart';
 import 'overview_page.dart';
 import 'scan_flow.dart';
 import 'settings_page.dart';
-import 'widgets.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,12 +20,10 @@ class _HomePageState extends State<HomePage> {
   int _index = 0;
 
   Future<void> _newEntry() async {
-    final l = AppLocalizations.of(context);
     final budget = AppScope.of(context).budget;
     final entry = await showEntrySheet(context, budget: budget);
-    if (entry == null) return;
-    await budget.addEntry(entry);
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.entrySaved(euro(entry.amount)))));
+    if (entry == null || !mounted) return;
+    await saveNewEntry(context, budget, entry);
   }
 
   @override

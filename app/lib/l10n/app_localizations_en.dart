@@ -296,4 +296,72 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get receiptConfirm => 'Receipt';
+
+  @override
+  String get entryExistsTitle => 'Already booked?';
+
+  @override
+  String entryExistsBody(String entry, String amount) {
+    return '$entry with $amount is already in the file. Add the receipt details to its note?';
+  }
+
+  @override
+  String get addAnyway => 'Add anyway';
+
+  @override
+  String get mergeNote => 'Add to note';
+
+  @override
+  String get noteMerged => 'Note updated';
+
+  @override
+  String get entryUpdated => 'Entry updated';
+
+  @override
+  String addToEntry(String entry, String amount) {
+    return 'Add to $entry ($amount)';
+  }
+
+  @override
+  String get addToEntryShort => 'Add amount';
+
+  @override
+  String get addAmount => 'Amount';
+
+  @override
+  String get addDetail => 'What (goes into the note)';
+
+  @override
+  String searchHint(int count) {
+    return 'Search $count entries';
+  }
+
+  @override
+  String strandedPending(int count, int year) {
+    return '$count queued entries dated $year have no file for that year.';
+  }
+
+  @override
+  String get fixDate => 'Fix date';
+
+  @override
+  String yearFileMissing(int year) {
+    return 'No file for $year yet.';
+  }
+
+  @override
+  String createYearFile(int year) {
+    return 'Create Budget $year.xlsx';
+  }
+
+  @override
+  String yearFileCreated(int year) {
+    return 'Budget $year.xlsx created from the previous year';
+  }
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get languageSystem => 'System';
 }

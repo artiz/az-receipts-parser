@@ -35,9 +35,12 @@ class _OverviewPageState extends State<OverviewPage> {
         }
         final year = budget.year ?? DateTime.now().year;
         final now = DateTime.now();
-        final months = budget.entries.map((e) => e.month).toSet().toList()..sort();
-        if (months.isEmpty) months.add(now.year == year ? now.month : 1);
-        final month = _month ?? (months.contains(now.month) && now.year == year ? now.month : months.last);
+        final months = budget.entries.map((e) => e.month).toSet().toList();
+        // The calendar month is always offered (a new month starts empty).
+        if (now.year == year && !months.contains(now.month)) months.add(now.month);
+        if (months.isEmpty) months.add(1);
+        months.sort();
+        final month = _month ?? (now.year == year ? now.month : months.last);
         final entries = budget.entries.where((e) => e.month == month).toList();
         final stats = _MonthStats.from(entries, file);
         final limit1 = budget.monthLimit1;

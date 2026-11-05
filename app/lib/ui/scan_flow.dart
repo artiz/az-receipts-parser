@@ -19,9 +19,9 @@ import '../import/statement_import.dart';
 import '../l10n/app_localizations.dart';
 import '../ocr/receipt_ocr_ffi.dart';
 import '../parser/receipt_parser.dart';
+import 'entry_actions.dart';
 import 'entry_sheet.dart';
 import 'import_review_page.dart';
-import 'widgets.dart';
 
 Future<void> scanReceipt(BuildContext context) async {
   final shot = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 92);
@@ -107,9 +107,8 @@ Future<void> _receiptFromPhoto(BuildContext context, String sourcePath) async {
   });
   if (draft == null || !context.mounted) return;
   final entry = await showEntrySheet(context, budget: scope.budget, draft: draft, title: l.receiptConfirm);
-  if (entry == null) return;
-  await scope.budget.addEntry(entry);
-  if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.entrySaved(euro(entry.amount)))));
+  if (entry == null || !context.mounted) return;
+  await saveNewEntry(context, scope.budget, entry);
 }
 
 /// Runs [work] behind a progress dialog; errors become a snackbar and null.

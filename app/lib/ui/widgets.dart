@@ -170,19 +170,38 @@ class SyncStatusBar extends StatelessWidget {
           SyncState.offline => (Icons.cloud_off_outlined, l.syncOffline(budget.pending.length), scheme.primary),
           SyncState.error => (Icons.error_outline, budget.lastError ?? l.syncError, scheme.error),
         };
-        return InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: Row(
-              children: [
-                Icon(icon, size: 16, color: color),
-                const SizedBox(width: 8),
-                Expanded(child: Text(text, style: TextStyle(fontSize: 12, color: color), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                if (budget.pending.isNotEmpty && budget.state != SyncState.offline)
-                  Text(l.pendingCount(budget.pending.length), style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
-              ],
-            ),
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: onTap,
+                  child: Row(
+                    children: [
+                      Icon(icon, size: 16, color: color),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(text, style: TextStyle(fontSize: 12, color: color), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                    ],
+                  ),
+                ),
+              ),
+              if (budget.pending.isNotEmpty && budget.state != SyncState.offline)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Text(l.pendingCount(budget.pending.length), style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+                ),
+              if (budget.yearFiles.isNotEmpty)
+                DropdownButtonHideUnderline(
+                  child: DropdownButton<int>(
+                    value: budget.year,
+                    isDense: true,
+                    style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600, color: scheme.onSurface),
+                    items: [for (final f in budget.yearFiles) DropdownMenuItem(value: f.year, child: Text('${f.year}'))],
+                    onChanged: (y) => y == null ? null : budget.selectYear(y),
+                  ),
+                ),
+            ],
           ),
         );
       },

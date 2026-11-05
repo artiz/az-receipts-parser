@@ -295,4 +295,72 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get receiptConfirm => 'Чек';
+
+  @override
+  String get entryExistsTitle => 'Уже записано?';
+
+  @override
+  String entryExistsBody(String entry, String amount) {
+    return '$entry на $amount уже есть в файле. Добавить детали чека в заметку?';
+  }
+
+  @override
+  String get addAnyway => 'Всё равно добавить';
+
+  @override
+  String get mergeNote => 'В заметку';
+
+  @override
+  String get noteMerged => 'Заметка дополнена';
+
+  @override
+  String get entryUpdated => 'Запись обновлена';
+
+  @override
+  String addToEntry(String entry, String amount) {
+    return 'Добавить к $entry ($amount)';
+  }
+
+  @override
+  String get addToEntryShort => 'Добавить сумму';
+
+  @override
+  String get addAmount => 'Сумма';
+
+  @override
+  String get addDetail => 'За что (попадёт в заметку)';
+
+  @override
+  String searchHint(int count) {
+    return 'Поиск по $count записям';
+  }
+
+  @override
+  String strandedPending(int count, int year) {
+    return '$count записей в очереди с датой $year: нет файла за этот год.';
+  }
+
+  @override
+  String get fixDate => 'Исправить дату';
+
+  @override
+  String yearFileMissing(int year) {
+    return 'Файла за $year ещё нет.';
+  }
+
+  @override
+  String createYearFile(int year) {
+    return 'Создать Budget $year.xlsx';
+  }
+
+  @override
+  String yearFileCreated(int year) {
+    return 'Budget $year.xlsx создан из прошлого года';
+  }
+
+  @override
+  String get language => 'Язык';
+
+  @override
+  String get languageSystem => 'Системный';
 }

@@ -585,6 +585,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Receipt'**
   String get receiptConfirm;
+
+  /// No description provided for @entryExistsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Already booked?'**
+  String get entryExistsTitle;
+
+  /// No description provided for @entryExistsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{entry} with {amount} is already in the file. Add the receipt details to its note?'**
+  String entryExistsBody(String entry, String amount);
+
+  /// No description provided for @addAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Add anyway'**
+  String get addAnyway;
+
+  /// No description provided for @mergeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to note'**
+  String get mergeNote;
+
+  /// No description provided for @noteMerged.
+  ///
+  /// In en, this message translates to:
+  /// **'Note updated'**
+  String get noteMerged;
+
+  /// No description provided for @entryUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry updated'**
+  String get entryUpdated;
+
+  /// No description provided for @addToEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to {entry} ({amount})'**
+  String addToEntry(String entry, String amount);
+
+  /// No description provided for @addToEntryShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Add amount'**
+  String get addToEntryShort;
+
+  /// No description provided for @addAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get addAmount;
+
+  /// No description provided for @addDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'What (goes into the note)'**
+  String get addDetail;
+
+  /// No description provided for @searchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search {count} entries'**
+  String searchHint(int count);
+
+  /// No description provided for @strandedPending.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} queued entries dated {year} have no file for that year.'**
+  String strandedPending(int count, int year);
+
+  /// No description provided for @fixDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix date'**
+  String get fixDate;
+
+  /// No description provided for @yearFileMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'No file for {year} yet.'**
+  String yearFileMissing(int year);
+
+  /// No description provided for @createYearFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Budget {year}.xlsx'**
+  String createYearFile(int year);
+
+  /// No description provided for @yearFileCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget {year}.xlsx created from the previous year'**
+  String yearFileCreated(int year);
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @languageSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get languageSystem;
 }
 
 class _AppLocalizationsDelegate

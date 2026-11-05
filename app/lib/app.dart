@@ -66,7 +66,10 @@ class _BudgetAppState extends State<BudgetApp> with WidgetsBindingObserver {
       budget: widget.budget,
       settings: widget.settings,
       engine: widget.engine,
-      child: MaterialApp(
+      child: ListenableBuilder(
+        listenable: widget.settings,
+        builder: (context, _) => MaterialApp(
+        locale: widget.settings.localeCode.isEmpty ? null : Locale(widget.settings.localeCode),
         onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
         localizationsDelegates: const [
           AppLocalizations.delegate,
@@ -78,6 +81,7 @@ class _BudgetAppState extends State<BudgetApp> with WidgetsBindingObserver {
         theme: azTheme(Brightness.light),
         darkTheme: azTheme(Brightness.dark),
         home: const HomePage(),
+        ),
       ),
     );
   }

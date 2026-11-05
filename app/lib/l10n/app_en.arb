@@ -195,5 +195,81 @@
   },
   "openAiKeyMissing": "Set your OpenAI API key in Settings first.",
   "sourceScreenshot": "Screenshot",
-  "receiptConfirm": "Receipt"
+  "receiptConfirm": "Receipt",
+  "entryExistsTitle": "Already booked?",
+  "entryExistsBody": "{entry} with {amount} is already in the file. Add the receipt details to its note?",
+  "@entryExistsBody": {
+    "placeholders": {
+      "entry": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "addAnyway": "Add anyway",
+  "mergeNote": "Add to note",
+  "noteMerged": "Note updated",
+  "entryUpdated": "Entry updated",
+  "addToEntry": "Add to {entry} ({amount})",
+  "@addToEntry": {
+    "placeholders": {
+      "entry": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "addToEntryShort": "Add amount",
+  "addAmount": "Amount",
+  "addDetail": "What (goes into the note)",
+  "searchHint": "Search {count} entries",
+  "@searchHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "strandedPending": "{count} queued entries dated {year} have no file for that year.",
+  "@strandedPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "fixDate": "Fix date",
+  "yearFileMissing": "No file for {year} yet.",
+  "@yearFileMissing": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "createYearFile": "Create Budget {year}.xlsx",
+  "@createYearFile": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "yearFileCreated": "Budget {year}.xlsx created from the previous year",
+  "@yearFileCreated": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "language": "Language",
+  "languageSystem": "System"
 }

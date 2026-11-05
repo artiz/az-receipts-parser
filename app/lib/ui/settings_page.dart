@@ -35,12 +35,8 @@ class SettingsPage extends StatelessWidget {
                   leading: const Icon(Icons.description_outlined),
                   title: Text(l.yearFile),
                   subtitle: Text(budget.year == null ? (budget.lastError ?? l.noFileLoaded) : 'Budget ${budget.year}.xlsx · ${l.categoriesCount(budget.categories.length)}'),
-                  trailing: budget.yearFiles.length > 1
-                      ? DropdownButton<int>(
-                          value: budget.year,
-                          items: [for (final f in budget.yearFiles) DropdownMenuItem(value: f.year, child: Text('${f.year}'))],
-                          onChanged: (y) => y == null ? null : budget.selectYear(y),
-                        )
+                  trailing: budget.currentYearMissing
+                      ? FilledButton.tonal(onPressed: () => budget.createYearFile(budget.currentYear), child: Text(l.createYearFile(budget.currentYear)))
                       : null,
                 ),
                 ListTile(
@@ -56,6 +52,22 @@ class SettingsPage extends StatelessWidget {
                   onTap: budget.forgetFolder,
                 ),
               ],
+              SectionTitle(l.language),
+              ListTile(
+                leading: const Icon(Icons.translate_outlined),
+                title: Text(l.language),
+                trailing: DropdownButton<String>(
+                  value: settings.localeCode,
+                  underline: const SizedBox.shrink(),
+                  items: [
+                    DropdownMenuItem(value: '', child: Text(l.languageSystem)),
+                    const DropdownMenuItem(value: 'de', child: Text('Deutsch')),
+                    const DropdownMenuItem(value: 'en', child: Text('English')),
+                    const DropdownMenuItem(value: 'ru', child: Text('Русский')),
+                  ],
+                  onChanged: (v) => v == null ? null : settings.setLocaleCode(v),
+                ),
+              ),
               SectionTitle(l.settingsOpenAi),
               ListTile(
                 leading: const Icon(Icons.key_outlined),

@@ -16,6 +16,7 @@ class FakeFolder implements FolderAccess {
   final Map<String, String> names = {'f1': 'Budget 2026.xlsx'};
   bool offline = false;
   int writes = 0;
+  String? createdName;
 
   void _check() {
     if (offline) throw FolderAccessException('offline');
@@ -47,7 +48,13 @@ class FakeFolder implements FolderAccess {
   }
 
   @override
-  Future<String> createFile(String folderUri, String name, String mimeType, Uint8List bytes) async => throw UnimplementedError();
+  Future<String> createFile(String folderUri, String name, String mimeType, Uint8List bytes) async {
+    _check();
+    final uri = 'f${files.length + 1}';
+    files[uri] = bytes;
+    names[uri] = createdName ?? name;
+    return uri;
+  }
   @override
   Future<FileEntry?> fileInfo(String uri) async => null;
 }

@@ -7,6 +7,10 @@
 /// so edits made on the laptop show up. A sync re-reads the file right
 /// before writing, so a concurrent edit is only lost in the few hundred
 /// milliseconds between that read and the write.
+///
+/// The displayed year follows the calendar: the current year's file is
+/// loaded unless the user picked another one; when the year changes the app
+/// moves on by itself (and can create the new file from the previous one).
 library;
 
 import 'dart:async';
@@ -27,6 +31,8 @@ enum SyncState { noFolder, idle, syncing, offline, error }
 
 final RegExp budgetFileName = RegExp(r'^Budget (20\d\d)\.xlsx$', caseSensitive: false);
 
+const String xlsxMime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
 class YearFileRef {
   const YearFileRef({required this.year, required this.entry});
   final int year;
@@ -38,6 +44,7 @@ class BudgetService extends ChangeNotifier {
 
   final FolderAccess folder;
   final AppSettings settings;
+
   /// Where the pending queue is stored (app support dir by default).
   final Directory? queueDir;
   final DateTime Function() _clock;
@@ -50,6 +57,9 @@ class BudgetService extends ChangeNotifier {
 
   /// The loaded year (the one entries are shown from).
   int? year;
+
+  /// Set when the user picked a year by hand; otherwise the calendar year.
+  bool _yearPinned = false;
   BudgetFile? file;
   Uint8List? _fileBytes;
 
@@ -72,6 +82,13 @@ class BudgetService extends ChangeNotifier {
     return out;
   }
 
+  /// Queued entries whose year has no file in the folder: they can never be
+  /// written as they are (usually a mis-read receipt date).
+  List<BudgetEntry> get strandedPending => [
+        for (final e in pending)
+          if (_refForYear(e.date.year) == null) e,
+      ];
+
   List<BudgetCategory> get categories => file?.categories ?? const [];
 
   EntrySuggestions get suggestions => EntrySuggestions(entries, now: _clock());
@@ -89,6 +106,28 @@ class BudgetService extends ChangeNotifier {
     }
     out.sort();
     return out;
+  }
+
+  /// True when the calendar year has no file yet (and one could be created
+  /// from the latest file).
+  bool get currentYearMissing => settings.hasFolder && yearFiles.isNotEmpty && _refForYear(_clock().year) == null;
+
+  int get currentYear => _clock().year;
+
+  /// An existing entry that looks like [entry] (same amount, date within
+  /// [days]): what a scanned receipt of an already typed purchase produces.
+  BudgetEntry? findSimilar(BudgetEntry entry, {int days = 3}) {
+    BudgetEntry? best;
+    var bestDays = days + 1;
+    for (final e in entries) {
+      if ((e.amount - entry.amount).abs() > 0.011) continue;
+      final d = e.date.difference(entry.date).inDays.abs();
+      if (d <= days && d < bestDays) {
+        best = e;
+        bestDays = d;
+      }
+    }
+    return best;
   }
 
   // --- lifecycle --------------------------------------------------------------------
@@ -116,12 +155,13 @@ class BudgetService extends ChangeNotifier {
     file = null;
     _fileBytes = null;
     year = null;
+    _yearPinned = false;
     yearFiles = const [];
     state = SyncState.noFolder;
     notifyListeners();
   }
 
-  // --- adding ---------------------------------------------------------------------
+  // --- adding and editing -------------------------------------------------------------
 
   /// Queue an entry and try to push it right away.
   Future<void> addEntry(BudgetEntry entry) => addEntries([entry]);
@@ -141,27 +181,97 @@ class BudgetService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Replace [old] with [updated]: a queued entry is swapped in the queue, a
+  /// file row is rewritten in place (same row, same year file).
+  Future<void> updateEntry(BudgetEntry old, BudgetEntry updated) async {
+    if (old.isPending) {
+      final i = pending.indexWhere((e) => e.pendingId == old.pendingId);
+      if (i < 0) return addEntry(updated);
+      if (updated.date.year == old.date.year || _refForYear(updated.date.year) != null) {
+        pending[i] = updated.copyWith(pendingId: old.pendingId);
+      }
+      await _saveQueue();
+      notifyListeners();
+      unawaited(sync());
+      return;
+    }
+    final row = old.row;
+    if (row == null) throw StateError('entry has neither a row nor a queue id');
+    if (updated.date.year != old.date.year) {
+      // Moving a booking to another year: the row of the old file is cleared
+      // and the entry queued for the other file.
+      await _withFile(old.date.year, (f) {
+        final sheet = f.workbook.requireSheet(sheetEntries);
+        for (final col in ['A', 'C', 'D', 'E', 'F']) {
+          sheet.clear('$col$row');
+        }
+      });
+      await addEntry(updated);
+      return;
+    }
+    await _withFile(old.date.year, (f) => f.updateEntry(row, updated.copyWith(row: row)));
+  }
+
+  /// "+6 Glühwein": add to the amount and append the detail to the note.
+  Future<void> addToEntry(BudgetEntry entry, double amount, String detail) async {
+    final sign = entry.amount < 0 ? -1 : 1;
+    final newAmount = ((entry.amount + sign * amount.abs()) * 100).round() / 100;
+    final piece = '+${_fmt(amount.abs())}${detail.trim().isEmpty ? '' : ' ${detail.trim()}'}';
+    final note = entry.note.isEmpty ? piece : '${entry.note}; $piece';
+    await updateEntry(entry, entry.copyWith(amount: newAmount, note: note));
+  }
+
+  /// Append text to an existing entry's note (receipt scanned after the
+  /// purchase was typed by hand).
+  Future<void> appendNote(BudgetEntry entry, String text) async {
+    final t = text.trim();
+    if (t.isEmpty) return;
+    final note = entry.note.isEmpty ? t : (entry.note.contains(t) ? entry.note : '${entry.note}; $t');
+    if (note == entry.note) return;
+    await updateEntry(entry, entry.copyWith(note: note));
+  }
+
+  static String _fmt(double v) => v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2).replaceAll('.', ',');
+
   /// Change an input cell of `Übersicht` (Kontostand, Sparkonto, Kreditkarte
   /// offen) in the loaded year file. Written through immediately.
   Future<void> setOverviewInput(String labelPrefix, int month, double? value) async {
-    await _withFile((f) => f.setOverviewInput(labelPrefix, month, value));
+    await _withFile(year ?? currentYear, (f) => f.setOverviewInput(labelPrefix, month, value));
   }
 
   Future<void> setPlan(String category, int month, double value) async {
-    await _withFile((f) => f.setPlan(category, month, value));
+    await _withFile(year ?? currentYear, (f) => f.setPlan(category, month, value));
   }
 
   Future<void> setBudgetSetting(String label, double value, {String note = ''}) async {
-    await _withFile((f) => f.setSetting(label, value, note: note));
+    await _withFile(year ?? currentYear, (f) => f.setSetting(label, value, note: note));
   }
 
-  Future<void> _withFile(void Function(BudgetFile) change) async {
-    final ref = _refForYear(year ?? _clock().year);
-    if (ref == null) throw StateError('no year file loaded');
+  Future<void> _withFile(int y, void Function(BudgetFile) change) async {
+    final ref = _refForYear(y);
+    if (ref == null) throw StateError('no file for $y');
     final bytes = await folder.readFile(ref.entry.uri);
     final f = BudgetFile.open(bytes, yearHint: ref.year);
     change(f);
     await folder.writeFile(ref.entry.uri, f.save());
+    await sync();
+  }
+
+  /// Create `Budget <newYear>.xlsx` from the latest existing file: same
+  /// categories, settings and plan, no bookings, empty account inputs.
+  Future<void> createYearFile(int newYear) async {
+    final uri = settings.folderUri;
+    if (uri == null) throw StateError('no folder');
+    if (_refForYear(newYear) != null) return;
+    if (yearFiles.isEmpty) throw StateError('no file to copy from');
+    final source = yearFiles.first;
+    final bytes = await folder.readFile(source.entry.uri);
+    final f = BudgetFile.open(bytes, yearHint: source.year);
+    f.clearEntries();
+    f.clearOverviewInputs();
+    f.setTitleYear(newYear);
+    await folder.createFile(uri, 'Budget $newYear.xlsx', xlsxMime, f.save());
+    _yearPinned = false;
     await sync();
   }
 
@@ -214,7 +324,7 @@ class BudgetService extends ChangeNotifier {
       }
       for (final entry in byYear.entries) {
         final ref = _refForYear(entry.key);
-        if (ref == null) continue; // stays queued until a file for that year exists
+        if (ref == null) continue; // stays queued (see strandedPending) until a file for that year exists
         final bytes = await folder.readFile(ref.entry.uri);
         final f = BudgetFile.open(bytes, yearHint: ref.year);
         f.appendEntries([for (final e in entry.value) e.copyWith(clearPending: true)]);
@@ -224,8 +334,8 @@ class BudgetService extends ChangeNotifier {
         await _saveQueue();
       }
 
-      // Load the year to show: the current year, else the newest file.
-      final wanted = year ?? _clock().year;
+      // The year to show: the calendar year unless pinned, else the newest file.
+      final wanted = _yearPinned && year != null ? year! : currentYear;
       final ref = _refForYear(wanted) ?? (yearFiles.isEmpty ? null : yearFiles.first);
       if (ref == null) {
         file = null;
@@ -254,9 +364,11 @@ class BudgetService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Switch the displayed year (the file must exist in the folder).
+  /// Switch the displayed year (the file must exist in the folder); the
+  /// calendar year un-pins it.
   Future<void> selectYear(int y) async {
     year = y;
+    _yearPinned = y != currentYear;
     await sync();
   }
 

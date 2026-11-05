@@ -20,6 +20,7 @@ class AppSettings extends ChangeNotifier {
   static const _kModel = 'openai_model';
   static const _kApiKey = 'openai_api_key';
   static const _kLastSync = 'last_sync';
+  static const _kLocale = 'locale';
 
   String? _apiKey;
 
@@ -71,6 +72,18 @@ class AppSettings extends ChangeNotifier {
       }
     } catch (_) {
       // Secure storage can be unavailable on exotic devices; keep in memory.
+    }
+    notifyListeners();
+  }
+
+  /// '' = follow the system, else 'en' | 'de' | 'ru'.
+  String get localeCode => _prefs.getString(_kLocale) ?? '';
+
+  Future<void> setLocaleCode(String code) async {
+    if (code.isEmpty) {
+      await _prefs.remove(_kLocale);
+    } else {
+      await _prefs.setString(_kLocale, code);
     }
     notifyListeners();
   }

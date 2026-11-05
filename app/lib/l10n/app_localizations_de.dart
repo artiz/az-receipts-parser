@@ -297,4 +297,72 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get receiptConfirm => 'Beleg';
+
+  @override
+  String get entryExistsTitle => 'Schon gebucht?';
+
+  @override
+  String entryExistsBody(String entry, String amount) {
+    return '$entry mit $amount steht schon in der Datei. Die Belegdetails in die Notiz übernehmen?';
+  }
+
+  @override
+  String get addAnyway => 'Trotzdem anlegen';
+
+  @override
+  String get mergeNote => 'In Notiz übernehmen';
+
+  @override
+  String get noteMerged => 'Notiz ergänzt';
+
+  @override
+  String get entryUpdated => 'Buchung aktualisiert';
+
+  @override
+  String addToEntry(String entry, String amount) {
+    return 'Zu $entry ($amount) dazu';
+  }
+
+  @override
+  String get addToEntryShort => 'Betrag dazu';
+
+  @override
+  String get addAmount => 'Betrag';
+
+  @override
+  String get addDetail => 'Wofür (kommt in die Notiz)';
+
+  @override
+  String searchHint(int count) {
+    return '$count Buchungen durchsuchen';
+  }
+
+  @override
+  String strandedPending(int count, int year) {
+    return '$count wartende Buchungen mit Datum $year haben keine Datei für dieses Jahr.';
+  }
+
+  @override
+  String get fixDate => 'Datum korrigieren';
+
+  @override
+  String yearFileMissing(int year) {
+    return 'Für $year gibt es noch keine Datei.';
+  }
+
+  @override
+  String createYearFile(int year) {
+    return 'Budget $year.xlsx anlegen';
+  }
+
+  @override
+  String yearFileCreated(int year) {
+    return 'Budget $year.xlsx aus dem Vorjahr angelegt';
+  }
+
+  @override
+  String get language => 'Sprache';
+
+  @override
+  String get languageSystem => 'System';
 }

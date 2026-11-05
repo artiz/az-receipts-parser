@@ -65,13 +65,25 @@ the bookings in the file.
 1. **Settings → Budget folder**: pick the folder that holds `Budget <year>.xlsx`
    (in the Drive app's folder picker choose the folder, not the file). The
    grant is persisted; the app lists the year files and loads the current year.
-2. **Entries**: quick tiles (tap → confirm or change the amount), the last five
-   bookings (tap *All* to scroll through the year), *New entry* with category,
-   description autocomplete, amount, note and date. Income is typed as a plain
-   number and stored negative. New bookings go into a local queue and are
-   written to the file right away; without network they wait and are flushed on
-   the next start/resume/sync, like a Drive client. Bookings already in the file
-   are edited in the spreadsheet.
+2. **Entries**: the upper half of the screen holds the quick tiles (tap →
+   confirm or change the amount), the lower half the bookings table with a
+   search field, paged by 20 as you scroll. Tap a row to edit it (queued rows
+   and rows already in the file alike, the file row is rewritten in place);
+   the **+** on a row tops it up ("+6 Glühwein": amount added, detail appended
+   to the note). *New entry* has category, description autocomplete, amount,
+   note and date; income is typed as a plain number and stored negative. A new
+   booking with the same amount as one booked within three days asks whether
+   to add its details to that booking's note instead (a scanned receipt of a
+   purchase typed by hand). New bookings go into a local queue and are written
+   to the file right away; without network they wait and are flushed on the
+   next start/resume/sync, like a Drive client. Queued bookings whose year has
+   no file (a mis-read receipt date) are shown in a banner with a *Fix date*
+   action instead of waiting forever.
+   The year follows the calendar: the current year's file is loaded, the year
+   menu in the status line switches to another file, and when a new year has
+   no file yet a banner offers to create `Budget <year>.xlsx` from the latest
+   file (categories, settings and plan kept, bookings and account inputs
+   cleared; `Verlauf` is left to the laptop).
 3. **Camera button**: photograph a receipt. docling.rs OCR + the parser
    propose one booking: merchant as description, total as amount, the line
    items in the note, the category from the file's history for that merchant.
@@ -88,6 +100,8 @@ the bookings in the file.
    Sparkonto, Kreditkarte offen) editable per month.
 7. **Settings → OpenAI**: API key (stored in Android's encrypted storage) and
    model (default `gpt-4.1-mini`). Only the statement/screenshot import uses it.
+   **Settings → Language** overrides the system language (German, English,
+   Russian).
 
 ## Build
 

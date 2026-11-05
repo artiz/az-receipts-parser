@@ -367,6 +367,42 @@ class BudgetFile {
     if (note.isNotEmpty) sheet.setText('H$row', note);
   }
 
+  /// Remove every entry row (keeps the pre-formatted rows and their month
+  /// formulas) so the file can serve as the template of a new year.
+  void clearEntries() {
+    final sheet = workbook.requireSheet(sheetEntries);
+    for (final e in entries) {
+      final r = e.row;
+      if (r == null) continue;
+      for (final col in ['A', 'C', 'D', 'E', 'F']) {
+        sheet.clear('$col$r');
+      }
+    }
+  }
+
+  /// Clear the monthly inputs of `Übersicht` (Kontostand, Sparkonto,
+  /// Kreditkarte offen) for a fresh year.
+  void clearOverviewInputs() {
+    final sheet = workbook.requireSheet(sheetOverview);
+    for (final e in overview.rows.values) {
+      for (var m = 1; m <= 12; m++) {
+        sheet.clear('${XlsxRef.columnLetters(1 + m)}${e.$1}');
+      }
+    }
+  }
+
+  /// Replace the year in the title cells ("Budget 2026" → "Budget 2027").
+  void setTitleYear(int newYear) {
+    for (final name in [sheetOverview, sheetSettings, sheetSettingsLegacy]) {
+      final sheet = workbook.sheet(name);
+      if (sheet == null) continue;
+      final a1 = sheet.readRow(1)['A']?.text;
+      if (a1 != null && RegExp(r'20\d\d').hasMatch(a1)) {
+        sheet.setText('A1', a1.replaceAll(RegExp(r'20\d\d'), '$newYear'));
+      }
+    }
+  }
+
   Uint8List save() => workbook.save();
 
   static double _round2(double v) => (v * 100).round() / 100;

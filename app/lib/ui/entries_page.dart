@@ -1,5 +1,5 @@
-/// Home: quick tiles learned from the file, the last entries, and the
-/// shortcuts to scan/import.
+/// Home: the upper half holds the quick tiles learned from the file, the
+/// lower half the bookings table with a search field, paged as you scroll.
 library;
 
 import 'package:flutter/material.dart';
@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import '../budget/budget_file.dart';
 import '../budget/budget_service.dart';
 import '../budget/entry_suggest.dart';
+import '../core/text_normalize.dart';
 import '../l10n/app_localizations.dart';
+import 'entry_actions.dart';
 import 'entry_sheet.dart';
 import 'widgets.dart';
 
@@ -21,8 +23,41 @@ class EntriesPage extends StatefulWidget {
 }
 
 class _EntriesPageState extends State<EntriesPage> {
-  bool _showAll = false;
-  static const int _recentCount = 5;
+  static const int _pageSize = 20;
+  final _search = TextEditingController();
+  final _scroll = ScrollController();
+  int _visible = _pageSize;
+  bool _loadingMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _search.addListener(() => setState(() => _visible = _pageSize));
+    _scroll.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// Next page when the list is near its end; the data is in memory, so the
+  /// "load" is just a deferred rebuild that keeps scrolling smooth.
+  void _onScroll() {
+    if (_loadingMore || !_scroll.hasClients) return;
+    if (_scroll.position.extentAfter < 400) {
+      _loadingMore = true;
+      Future<void>.delayed(const Duration(milliseconds: 50), () {
+        if (!mounted) return;
+        setState(() {
+          _visible += _pageSize;
+          _loadingMore = false;
+        });
+      });
+    }
+  }
 
   Future<void> _addFromTile(QuickTile tile) async {
     final l = AppLocalizations.of(context);
@@ -33,28 +68,18 @@ class _EntriesPageState extends State<EntriesPage> {
       title: l.confirmEntry,
       draft: EntryDraft(category: tile.category, description: tile.description, amount: tile.amount.abs()),
     );
-    if (entry == null) return;
-    await budget.addEntry(entry);
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.entrySaved(euro(entry.amount)))));
+    if (entry == null || !mounted) return;
+    await saveNewEntry(context, budget, entry);
   }
 
-  Future<void> _edit(BudgetEntry e) async {
-    final l = AppLocalizations.of(context);
-    final budget = widget.budget;
-    if (!e.isPending) {
-      // Entries already in the file are edited on the laptop; keep the app simple.
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.editInFile)));
-      return;
-    }
-    final entry = await showEntrySheet(
-      context,
-      budget: budget,
-      title: l.editEntry,
-      draft: EntryDraft(date: e.date, category: e.category, description: e.description, amount: e.amount.abs(), note: e.note),
-    );
-    if (entry == null) return;
-    await budget.removePending(e.pendingId!);
-    await budget.addEntry(entry);
+  List<BudgetEntry> _filtered(List<BudgetEntry> all) {
+    final q = normalize(_search.text.trim());
+    if (q.isEmpty) return all;
+    final words = q.split(' ');
+    return [
+      for (final e in all)
+        if (words.every((w) => normalize('${e.description} ${e.category} ${e.note} ${e.amount.toStringAsFixed(2)} ${e.amount.toStringAsFixed(2).replaceAll('.', ',')}').contains(w))) e,
+    ];
   }
 
   @override
@@ -72,47 +97,110 @@ class _EntriesPageState extends State<EntriesPage> {
           );
         }
         final all = budget.entries.reversed.toList();
-        final tiles = budget.suggestions.quickTiles(limit: 9, perCategory: 3);
-        final shown = _showAll ? all : all.take(_recentCount).toList();
-        return RefreshIndicator(
-          onRefresh: budget.sync,
-          child: CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(child: SyncStatusBar(budget: budget, onTap: budget.sync)),
-              if (tiles.isNotEmpty) ...[
-                SliverToBoxAdapter(child: SectionTitle(l.quickEntries)),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [for (final t in tiles) _QuickTileChip(tile: t, onTap: () => _addFromTile(t))],
+        final tiles = budget.suggestions.quickTiles(limit: 12, perCategory: 3);
+        final shown = _filtered(all);
+        final count = shown.length < _visible ? shown.length : _visible;
+        final stranded = budget.strandedPending;
+        return Column(
+          children: [
+            SyncStatusBar(budget: budget, onTap: budget.sync),
+            if (stranded.isNotEmpty)
+              MaterialBanner(
+                content: Text(l.strandedPending(stranded.length, stranded.first.date.year)),
+                leading: const Icon(Icons.event_busy_outlined),
+                actions: [TextButton(onPressed: () => editEntry(context, budget, stranded.first), child: Text(l.fixDate))],
+              ),
+            if (budget.currentYearMissing)
+              MaterialBanner(
+                content: Text(l.yearFileMissing(budget.currentYear)),
+                leading: const Icon(Icons.calendar_month_outlined),
+                actions: [TextButton(onPressed: () => _createYear(context), child: Text(l.createYearFile(budget.currentYear)))],
+              ),
+            Expanded(
+              flex: 1,
+              child: tiles.isEmpty
+                  ? EmptyHint(icon: Icons.bolt_outlined, text: l.noEntries)
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SectionTitle(l.quickEntries),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [for (final t in tiles) _QuickTileChip(tile: t, onTap: () => _addFromTile(t))],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+            const Divider(),
+            Expanded(
+              flex: 1,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    child: TextField(
+                      controller: _search,
+                      decoration: InputDecoration(
+                        hintText: l.searchHint(all.length),
+                        prefixIcon: const Icon(Icons.search),
+                        isDense: true,
+                        suffixIcon: _search.text.isEmpty ? null : IconButton(icon: const Icon(Icons.clear), onPressed: _search.clear),
+                      ),
                     ),
                   ),
-                ),
-              ],
-              SliverToBoxAdapter(
-                child: SectionTitle(
-                  l.recentEntries,
-                  trailing: all.length > _recentCount
-                      ? TextButton(onPressed: () => setState(() => _showAll = !_showAll), child: Text(_showAll ? l.showLess : l.showAll(all.length)))
-                      : null,
-                ),
+                  Expanded(
+                    child: shown.isEmpty
+                        ? EmptyHint(icon: Icons.receipt_long_outlined, text: l.noEntries)
+                        : RefreshIndicator(
+                            onRefresh: budget.sync,
+                            child: ListView.builder(
+                              controller: _scroll,
+                              padding: const EdgeInsets.only(bottom: 88),
+                              itemCount: count + (count < shown.length ? 1 : 0),
+                              itemBuilder: (context, i) {
+                                if (i >= count) {
+                                  return const Padding(padding: EdgeInsets.all(12), child: Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))));
+                                }
+                                final e = shown[i];
+                                return EntryTile(
+                                  entry: e,
+                                  onTap: () => editEntry(context, budget, e),
+                                  trailing: IconButton(
+                                    tooltip: l.addToEntryShort,
+                                    visualDensity: VisualDensity.compact,
+                                    icon: const Icon(Icons.add_circle_outline, size: 20),
+                                    onPressed: () => addToEntryDialog(context, budget, e),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                  ),
+                ],
               ),
-              if (all.isEmpty)
-                SliverToBoxAdapter(child: EmptyHint(icon: Icons.receipt_long_outlined, text: l.noEntries))
-              else
-                SliverList.builder(
-                  itemCount: shown.length,
-                  itemBuilder: (context, i) => EntryTile(entry: shown[i], onTap: () => _edit(shown[i])),
-                ),
-              const SliverToBoxAdapter(child: SizedBox(height: 96)),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
+  }
+
+  Future<void> _createYear(BuildContext context) async {
+    final l = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final y = widget.budget.currentYear;
+    try {
+      await widget.budget.createYearFile(y);
+      messenger.showSnackBar(SnackBar(content: Text(l.yearFileCreated(y))));
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(l.importFailed(e.toString()))));
+    }
   }
 }
 
