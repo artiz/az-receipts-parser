@@ -47,6 +47,10 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // R8 spends most of the release build time shrinking the onnxruntime
+            // AAR and the tiny app classes; the APK gets a little bigger without it.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }

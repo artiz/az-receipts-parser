@@ -157,8 +157,16 @@ downloads the models, cross-compiles the Rust crate for `arm64-v8a`, runs
 `scripts\build_android.bat` alone builds
 `app\build\app\outputs\flutter-apk\app-release.apk`; `--install` builds and
 installs it; `--debug` builds a debug APK only. The steps can be run on their
-own (`scripts\download_models.bat [dir]`,
+own (`scripts\download_models.bat [--verify] [dir]`,
 `scripts\build_android_rust.bat [--debug] [--abi arm64-v8a,x86_64]`).
+
+Build time: the models step returns at once when the files are present
+(`--verify` re-hashes them). The Rust step is incremental; it only takes
+minutes when a Rust source changed, because the release profile links with
+LTO. `--no-rust` skips it when only Dart/Kotlin changed. The Flutter release
+build (Dart AOT + Gradle) is the slow part; for day-to-day work use `--run`,
+which is a debug build with hot reload, and build the release APK only to
+install it.
 
 ### Host CLI (fixtures, debugging, statement text)
 
