@@ -4,7 +4,7 @@ library;
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:az_receipts/ocr/ocr_types.dart';
+import 'package:az_budget/ocr/ocr_types.dart';
 import 'package:path/path.dart' as p;
 
 String goldenDir() {

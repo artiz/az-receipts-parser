@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "dev.artiz.az_receipts"
+    namespace = "dev.artiz.az_budget"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "dev.artiz.az_receipts"
+        applicationId = "dev.artiz.az_budget"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = maxOf(26, flutter.minSdkVersion)

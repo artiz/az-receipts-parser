@@ -25,6 +25,7 @@ fn main() -> ExitCode {
     let mut out_dir: Option<PathBuf> = None;
     let mut pretty = false;
     let mut images: Vec<String> = Vec::new();
+    let mut pdf_text: Option<String> = None;
 
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
@@ -46,10 +47,24 @@ fn main() -> ExitCode {
             "--no-orientation" => config.textline_orientation = false,
             "--out-dir" => out_dir = Some(PathBuf::from(args.next().unwrap_or_else(|| usage()))),
             "--pretty" => pretty = true,
+            "--pdf-text" => pdf_text = Some(args.next().unwrap_or_else(|| usage())),
             "-h" | "--help" => usage(),
             s if s.starts_with('-') => usage(),
             _ => images.push(a),
         }
+    }
+    // Text layer of a PDF (no models needed): what the app's statement import feeds the LLM.
+    if let Some(path) = pdf_text {
+        return match receipt_ocr::pdf_text_path(&path) {
+            Ok(text) => {
+                println!("{text}");
+                ExitCode::SUCCESS
+            }
+            Err(e) => {
+                eprintln!("receipt-ocr: {e}");
+                ExitCode::FAILURE
+            }
+        };
     }
     if images.is_empty() {
         usage();

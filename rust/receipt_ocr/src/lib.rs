@@ -323,6 +323,89 @@ pub fn scan_path(path: &str) -> Result<OcrResult, String> {
     scan_bytes(&bytes)
 }
 
+/// Text of a PDF's embedded text layer, as Markdown, through docling.rs'
+/// pure-Rust content-stream parser (`convert_text_layer`): no ONNX models,
+/// no renderer. Bank statements are text PDFs, so this is what the
+/// statement import feeds to the LLM; a scanned PDF yields an empty string
+/// (the caller falls back to photographing it).
+pub fn pdf_text_bytes(bytes: &[u8], name: &str) -> Result<String, String> {
+    // Row-wise text first: docling's paragraph assembly reads a statement
+    // column by column (dates, texts and amounts end up in separate blocks),
+    // while the LLM needs "text … date … amount" per line. The positioned
+    // line cells of the same parser, re-grouped by their vertical position,
+    // give that; the Markdown export is the fallback for PDFs the glyph
+    // parser cannot read (it then tries lopdf's other code paths).
+    let rows = pdf_text_rows(bytes);
+    if rows.trim().len() >= 40 {
+        return Ok(rows);
+    }
+    let doc = docling_pdf::convert_text_layer(bytes, name).map_err(|e| format!("pdf: {e}"))?;
+    Ok(doc.export_to_markdown())
+}
+
+/// Text of a PDF as layout rows: cells of one printed line joined left to
+/// right, column gaps marked by two spaces, pages separated by a form feed.
+pub fn pdf_text_rows(bytes: &[u8]) -> String {
+    let mut out = String::new();
+    for (page_index, (_w, _h, cells)) in docling_pdf::textparse::pdf_textlines(bytes)
+        .into_iter()
+        .enumerate()
+    {
+        if page_index > 0 {
+            out.push('\x0c');
+            out.push('\n');
+        }
+        let mut cells: Vec<_> = cells
+            .into_iter()
+            .filter(|c| !c.text.trim().is_empty())
+            .collect();
+        cells.sort_by(|a, b| a.t.total_cmp(&b.t).then(a.l.total_cmp(&b.l)));
+        // Cluster into rows: a cell joins the current row when its vertical
+        // centre lies inside the row's band.
+        let mut rows: Vec<(f32, f32, Vec<docling_pdf::TextCell>)> = Vec::new();
+        for c in cells {
+            let cy = (c.t + c.b) / 2.0;
+            match rows.iter_mut().find(|(t, b, _)| cy >= *t && cy <= *b) {
+                Some((t, b, row)) => {
+                    *t = t.min(c.t);
+                    *b = b.max(c.b);
+                    row.push(c);
+                }
+                None => rows.push((c.t, c.b, vec![c])),
+            }
+        }
+        rows.sort_by(|a, b| a.0.total_cmp(&b.0));
+        for (_, _, mut row) in rows {
+            row.sort_by(|a, b| a.l.total_cmp(&b.l));
+            let mut line = String::new();
+            let mut last_r = f32::NEG_INFINITY;
+            let mut last_h = 10.0f32;
+            for c in row {
+                if !line.is_empty() {
+                    let gap = c.l - last_r;
+                    line.push_str(if gap > last_h * 1.2 { "  " } else { " " });
+                }
+                line.push_str(c.text.trim());
+                last_r = c.r;
+                last_h = (c.b - c.t).max(1.0);
+            }
+            out.push_str(line.trim_end());
+            out.push('\n');
+        }
+    }
+    out
+}
+
+/// [`pdf_text_bytes`] for a file path.
+pub fn pdf_text_path(path: &str) -> Result<String, String> {
+    let bytes = std::fs::read(path).map_err(|e| format!("read {path}: {e}"))?;
+    let name = std::path::Path::new(path)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("document.pdf");
+    pdf_text_bytes(&bytes, name)
+}
+
 fn lock_engine() -> std::sync::MutexGuard<'static, Option<Engine>> {
     // A panic while holding the lock must not poison every later call.
     ENGINE.lock().unwrap_or_else(|p| p.into_inner())
@@ -498,4 +581,48 @@ mod tests {
                 || v["error"].as_str().is_some()
         );
     }
+}
+
+#[derive(Serialize)]
+struct TextReply {
+    ok: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    text: Option<String>,
+}
+
+/// Text layer of a PDF file as `{"ok":true,"text":"…"}` (Markdown) or
+/// `{"ok":false,"error":"…"}`. Needs no engine. Free with
+/// [`receipt_ocr_free`].
+///
+/// # Safety
+/// `path` is a valid NUL-terminated string.
+#[no_mangle]
+pub unsafe extern "C" fn receipt_ocr_pdf_text(path: *const c_char) -> *mut c_char {
+    let outcome = catch_unwind(AssertUnwindSafe(|| -> Result<String, String> {
+        let path = c_str(path)?;
+        pdf_text_path(path)
+    }));
+    let reply = match outcome {
+        Ok(Ok(text)) => TextReply {
+            ok: true,
+            error: None,
+            text: Some(text),
+        },
+        Ok(Err(e)) => TextReply {
+            ok: false,
+            error: Some(e),
+            text: None,
+        },
+        Err(_) => TextReply {
+            ok: false,
+            error: Some("receipt_ocr: internal panic".into()),
+            text: None,
+        },
+    };
+    to_c(
+        serde_json::to_string(&reply)
+            .unwrap_or_else(|e| format!("{{\"ok\":false,\"error\":\"serialize: {e}\"}}")),
+    )
 }

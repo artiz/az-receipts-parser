@@ -17,8 +17,6 @@ jobs:
           cache: true
       - run: flutter pub get
         working-directory: app
-      - run: dart run build_runner build --delete-conflicting-outputs
-        working-directory: app
       - run: flutter analyze
         working-directory: app
       - run: flutter test

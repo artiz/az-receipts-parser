@@ -1,0 +1,207 @@
+package dev.artiz.az_budget
+
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
+import android.provider.DocumentsContract
+import android.provider.OpenableColumns
+import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.Executors
+
+/**
+ * Storage Access Framework bridge: the user picks a folder once (Google Drive,
+ * Dropbox, iCloud/OneDrive document providers, or local storage) and the app
+ * keeps a persisted read/write grant on it. Everything else is plain
+ * DocumentsContract: list the folder, read a file, overwrite a file.
+ *
+ * I/O runs on a worker thread; results are posted back on the main thread.
+ */
+class MainActivity : FlutterActivity() {
+    private val channelName = "dev.artiz.az_budget/files"
+    private val reqFolder = 4101
+    private val reqDocument = 4102
+    private val executor = Executors.newSingleThreadExecutor()
+    private var pendingFolder: MethodChannel.Result? = null
+    private var pendingDocument: MethodChannel.Result? = null
+
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "pickFolder" -> pickFolder(result)
+                "pickDocument" -> pickDocument(call.argument<List<String>>("mimeTypes") ?: listOf("*/*"), result)
+                "hasFolderPermission" -> result.success(hasPermission(Uri.parse(call.argument<String>("uri")!!)))
+                "listFiles" -> background(result) { listFiles(Uri.parse(call.argument<String>("uri")!!)) }
+                "readFile" -> background(result) { readFile(Uri.parse(call.argument<String>("uri")!!)) }
+                "writeFile" -> background(result) {
+                    writeFile(Uri.parse(call.argument<String>("uri")!!), call.argument<ByteArray>("bytes")!!)
+                    null
+                }
+                "createFile" -> background(result) {
+                    createFile(
+                        Uri.parse(call.argument<String>("treeUri")!!),
+                        call.argument<String>("name")!!,
+                        call.argument<String>("mimeType") ?: "application/octet-stream",
+                        call.argument<ByteArray>("bytes")!!,
+                    )
+                }
+                "fileInfo" -> background(result) { fileInfo(Uri.parse(call.argument<String>("uri")!!)) }
+                else -> result.notImplemented()
+            }
+        }
+    }
+
+    private fun background(result: MethodChannel.Result, work: () -> Any?) {
+        executor.execute {
+            try {
+                val value = work()
+                runOnUiThread { result.success(value) }
+            } catch (e: Exception) {
+                runOnUiThread { result.error("io", e.message ?: e.toString(), null) }
+            }
+        }
+    }
+
+    private fun pickFolder(result: MethodChannel.Result) {
+        if (pendingFolder != null) {
+            result.error("busy", "folder picker already open", null)
+            return
+        }
+        pendingFolder = result
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).addFlags(
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or
+                Intent.FLAG_GRANT_PREFIX_URI_PERMISSION,
+        )
+        startActivityForResult(intent, reqFolder)
+    }
+
+    private fun pickDocument(mimeTypes: List<String>, result: MethodChannel.Result) {
+        if (pendingDocument != null) {
+            result.error("busy", "document picker already open", null)
+            return
+        }
+        pendingDocument = result
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+            .addCategory(Intent.CATEGORY_OPENABLE)
+            .setType(if (mimeTypes.size == 1) mimeTypes[0] else "*/*")
+            .putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes.toTypedArray())
+        startActivityForResult(intent, reqDocument)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        when (requestCode) {
+            reqFolder -> {
+                val result = pendingFolder ?: return
+                pendingFolder = null
+                val uri = data?.data
+                if (resultCode != Activity.RESULT_OK || uri == null) {
+                    result.success(null)
+                    return
+                }
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                )
+                result.success(mapOf("uri" to uri.toString(), "name" to folderName(uri)))
+            }
+            reqDocument -> {
+                val result = pendingDocument ?: return
+                pendingDocument = null
+                val uri = data?.data
+                if (resultCode != Activity.RESULT_OK || uri == null) {
+                    result.success(null)
+                    return
+                }
+                background(result) {
+                    mapOf("uri" to uri.toString(), "name" to displayName(uri), "bytes" to readFile(uri))
+                }
+            }
+        }
+    }
+
+    private fun hasPermission(uri: Uri): Boolean =
+        contentResolver.persistedUriPermissions.any { it.uri == uri && it.isReadPermission && it.isWritePermission }
+
+    private fun folderName(tree: Uri): String {
+        val docId = DocumentsContract.getTreeDocumentId(tree)
+        val docUri = DocumentsContract.buildDocumentUriUsingTree(tree, docId)
+        return displayName(docUri)
+    }
+
+    private fun displayName(uri: Uri): String {
+        contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
+            if (c.moveToFirst()) return c.getString(0) ?: uri.lastPathSegment ?: ""
+        }
+        return uri.lastPathSegment ?: ""
+    }
+
+    private fun listFiles(tree: Uri): List<Map<String, Any?>> {
+        val parentId = DocumentsContract.getTreeDocumentId(tree)
+        val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, parentId)
+        val out = ArrayList<Map<String, Any?>>()
+        val cols = arrayOf(
+            DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+            DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+            DocumentsContract.Document.COLUMN_MIME_TYPE,
+            DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+            DocumentsContract.Document.COLUMN_SIZE,
+        )
+        contentResolver.query(children, cols, null, null, null)?.use { c ->
+            while (c.moveToNext()) {
+                val id = c.getString(0)
+                out.add(
+                    mapOf(
+                        "uri" to DocumentsContract.buildDocumentUriUsingTree(tree, id).toString(),
+                        "name" to c.getString(1),
+                        "mimeType" to c.getString(2),
+                        "lastModified" to (if (c.isNull(3)) null else c.getLong(3)),
+                        "size" to (if (c.isNull(4)) null else c.getLong(4)),
+                    ),
+                )
+            }
+        }
+        return out
+    }
+
+    private fun fileInfo(uri: Uri): Map<String, Any?>? {
+        val cols = arrayOf(
+            DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+            DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+            DocumentsContract.Document.COLUMN_SIZE,
+        )
+        contentResolver.query(uri, cols, null, null, null)?.use { c ->
+            if (c.moveToFirst()) {
+                return mapOf(
+                    "name" to c.getString(0),
+                    "lastModified" to (if (c.isNull(1)) null else c.getLong(1)),
+                    "size" to (if (c.isNull(2)) null else c.getLong(2)),
+                )
+            }
+        }
+        return null
+    }
+
+    private fun readFile(uri: Uri): ByteArray =
+        contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            ?: throw IllegalStateException("cannot open $uri")
+
+    private fun writeFile(uri: Uri, bytes: ByteArray) {
+        // "wt": truncate, so a shorter file never keeps stale tail bytes.
+        val stream = contentResolver.openOutputStream(uri, "wt") ?: throw IllegalStateException("cannot write $uri")
+        stream.use { it.write(bytes); it.flush() }
+    }
+
+    private fun createFile(tree: Uri, name: String, mimeType: String, bytes: ByteArray): String {
+        val parentId = DocumentsContract.getTreeDocumentId(tree)
+        val parent = DocumentsContract.buildDocumentUriUsingTree(tree, parentId)
+        val created = DocumentsContract.createDocument(contentResolver, parent, mimeType, name)
+            ?: throw IllegalStateException("cannot create $name")
+        writeFile(created, bytes)
+        return created.toString()
+    }
+}

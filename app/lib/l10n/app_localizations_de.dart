@@ -10,182 +10,200 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
-  String get appTitle => 'Kassenbons';
+  String get appTitle => 'AZ Budget';
 
   @override
-  String get tabReceipts => 'Bons';
+  String get tabEntries => 'Buchungen';
 
   @override
-  String get tabStats => 'Statistik';
+  String get tabOverview => 'Übersicht';
 
   @override
   String get tabSettings => 'Einstellungen';
 
   @override
-  String get scan => 'Bon scannen';
+  String get newEntry => 'Neue Buchung';
 
   @override
-  String get scanning => 'Bon wird gelesen…';
+  String get scanReceipt => 'Beleg scannen';
 
   @override
-  String get scanningHint =>
-      'Die Texterkennung läuft auf diesem Gerät. Das dauert ein paar Sekunden.';
+  String get importScreenshot => 'Screenshot importieren';
 
   @override
-  String get noReceipts =>
-      'Noch keine Bons. Tippe auf die Kamera, um einen zu scannen.';
+  String get importStatement => 'Kontoauszug (PDF) importieren';
 
   @override
-  String get searchHint => 'Händler oder Adresse suchen';
+  String get syncNoFolder => 'Kein Ordner gewählt';
 
   @override
-  String get merchant => 'Händler';
+  String get syncSyncing => 'Synchronisiere…';
 
   @override
-  String get address => 'Adresse';
+  String syncIdle(int year) {
+    return 'Budget $year.xlsx ist aktuell';
+  }
 
   @override
-  String get date => 'Datum';
+  String syncOffline(int count) {
+    return 'Offline: $count Buchungen warten';
+  }
 
   @override
-  String get time => 'Uhrzeit';
+  String get syncError => 'Fehler beim Synchronisieren';
 
   @override
-  String get total => 'Summe';
+  String pendingCount(int count) {
+    return '$count ausstehend';
+  }
 
   @override
-  String get payment => 'Zahlung';
-
-  @override
-  String get paymentCash => 'Bar';
-
-  @override
-  String get paymentCard => 'Karte';
-
-  @override
-  String get paymentUnknown => 'Unbekannt';
+  String get entryIncomplete => 'Bitte Kategorie wählen und Betrag eingeben.';
 
   @override
   String get category => 'Kategorie';
 
   @override
-  String get items => 'Positionen';
+  String get description => 'Beschreibung';
 
   @override
-  String get item => 'Artikel';
+  String get amount => 'Betrag';
 
   @override
-  String get quantity => 'Menge';
+  String get amountIncomeHint =>
+      'Einnahmen werden automatisch negativ gespeichert.';
 
   @override
-  String get price => 'Preis';
-
-  @override
-  String get addItem => 'Position hinzufügen';
-
-  @override
-  String get noItems => 'Keine Positionen erkannt.';
-
-  @override
-  String get itemsSum => 'Summe der Positionen';
-
-  @override
-  String get vat => 'MwSt';
-
-  @override
-  String get rawText => 'Erkannter Text';
-
-  @override
-  String get qrCode => 'Beleg-QR (RKSV)';
+  String get note => 'Notiz';
 
   @override
   String get save => 'Speichern';
 
   @override
-  String get delete => 'Löschen';
-
-  @override
-  String get deleteReceiptQuestion => 'Diesen Bon löschen?';
-
-  @override
   String get cancel => 'Abbrechen';
 
   @override
-  String get edit => 'Bearbeiten';
+  String get confirmEntry => 'Buchung bestätigen';
 
   @override
-  String get receiptSaved => 'Bon gespeichert';
+  String entrySaved(String amount) {
+    return 'Gespeichert: $amount';
+  }
 
   @override
-  String get confidence => 'Zuverlässigkeit';
+  String get editInFile =>
+      'Buchungen, die schon in der Datei sind, werden in der Tabelle bearbeitet.';
 
   @override
-  String get warnings => 'Bitte prüfen';
+  String get editEntry => 'Buchung bearbeiten';
 
   @override
-  String get warningTotalMissing => 'Summe nicht gefunden';
+  String get chooseFolderHint =>
+      'Wähle den Ordner mit deinen Budget <Jahr>.xlsx-Dateien (Google Drive, Dropbox, iCloud oder lokal).';
 
   @override
-  String get warningTotalGuessed => 'Summe wurde geschätzt';
+  String get chooseFolder => 'Ordner wählen';
 
   @override
-  String get warningDateMissing => 'Datum nicht gefunden';
+  String get quickEntries => 'Schnellbuchungen';
 
   @override
-  String get warningItemsMismatch => 'Positionen ergeben nicht die Summe';
+  String get recentEntries => 'Zuletzt';
 
   @override
-  String get warningTotalMismatch => 'OCR-Summe weicht von der QR-Summe ab';
+  String get showLess => 'Weniger';
 
   @override
-  String get month => 'Monat';
+  String showAll(int count) {
+    return 'Alle $count';
+  }
 
   @override
-  String get byCategory => 'Nach Kategorie';
+  String get noEntries => 'Noch keine Buchungen.';
 
   @override
-  String get byMerchant => 'Nach Händler';
+  String get noFileLoaded => 'Keine Budget-Datei geladen.';
 
   @override
-  String get noDataForMonth => 'Keine Bons in diesem Monat.';
+  String get income => 'Einnahmen';
 
   @override
-  String receiptsCount(int count) {
+  String get expenses => 'Ausgaben';
+
+  @override
+  String limitHint(String limit1, String limit2) {
+    return 'Limits $limit1 / $limit2';
+  }
+
+  @override
+  String get saldo => 'Saldo (Einnahmen − Ausgaben)';
+
+  @override
+  String get byCategory => 'Nach Kategorie (Ist / Plan)';
+
+  @override
+  String get total => 'Summe';
+
+  @override
+  String get accountInputs => 'Konto-Eingaben (Monatsanfang)';
+
+  @override
+  String get settingsFolder => 'Budget-Ordner';
+
+  @override
+  String get folderNone => 'Kein Ordner';
+
+  @override
+  String folderFiles(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count Bons',
-      one: '1 Bon',
+      other: '$count Budget-Dateien',
+      one: '1 Budget-Datei',
+      zero: 'keine Budget <Jahr>.xlsx gefunden',
     );
     return '$_temp0';
   }
 
   @override
-  String get settingsCategories => 'Kategorien';
+  String get changeFolder => 'Ändern';
 
   @override
-  String get settingsRules => 'Regeln zur Kategorisierung';
+  String get forgetFolder => 'Ordner trennen';
 
   @override
-  String get settingsMerchantRules => 'Händler-Regeln';
+  String get yearFile => 'Jahresdatei';
 
   @override
-  String get settingsKeywordRules => 'Stichwort-Regeln';
+  String categoriesCount(int count) {
+    return '$count Kategorien';
+  }
 
   @override
-  String get settingsExportCsv => 'CSV exportieren';
+  String get syncNow => 'Jetzt synchronisieren';
 
   @override
-  String get settingsExportJson => 'JSON exportieren';
+  String lastSync(String time) {
+    return 'Zuletzt $time';
+  }
 
   @override
-  String get settingsBackup => 'Datenbank sichern';
+  String get settingsOpenAi => 'OpenAI (Auszug-Import)';
 
   @override
-  String get settingsAbout => 'Über';
+  String get openAiKey => 'API-Schlüssel';
 
   @override
-  String get settingsEngine => 'OCR-Engine';
+  String get openAiKeySet => 'Auf diesem Gerät gespeichert';
+
+  @override
+  String get openAiKeyNotSet => 'Nicht gesetzt';
+
+  @override
+  String get openAiModel => 'Modell';
+
+  @override
+  String get settingsEngine => 'OCR-Engine (docling.rs)';
 
   @override
   String get engineReady => 'Bereit';
@@ -199,101 +217,84 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get addCategory => 'Kategorie hinzufügen';
+  String get scanning => 'Wird gelesen…';
 
   @override
-  String get categoryName => 'Name der Kategorie';
+  String get scanningHint =>
+      'Die Texterkennung läuft auf diesem Gerät. Das dauert ein paar Sekunden.';
 
   @override
-  String get learnedRule => 'gelernt';
+  String get settingsAbout => 'Über';
 
   @override
-  String get seedRule => 'vorgegeben';
+  String get aboutText =>
+      'Buchungen landen direkt in der Jahres-Tabelle. Nur der Auszug-Import spricht mit OpenAI, mit deinem eigenen Schlüssel.';
 
   @override
-  String get ruleDeleted => 'Regel gelöscht';
+  String get importTitle => 'Import prüfen';
 
   @override
-  String get noRules => 'Keine Regeln';
+  String get importSelectAll => 'Alle / keine';
 
   @override
-  String get privacyNote =>
-      'Alle Daten bleiben auf diesem Gerät. Kein Netzwerkzugriff.';
+  String get importNoText =>
+      'Keine Buchungen gefunden. Bei gescannten PDFs stattdessen die Seite fotografieren.';
 
   @override
-  String ocrFailed(String message) {
-    return 'Bon konnte nicht gelesen werden: $message';
+  String importFromSource(String source) {
+    return 'Quelle: $source';
   }
 
   @override
-  String get takePhoto => 'Foto aufnehmen';
+  String get importDuplicate => 'schon gebucht';
 
   @override
-  String get retake => 'Neu aufnehmen';
+  String importSkipped(String reason) {
+    return 'übersprungen: $reason';
+  }
 
   @override
-  String get newReceipt => 'Neuer Bon';
+  String get importNeedsReview => 'bitte Kategorie prüfen';
 
   @override
-  String get photo => 'Foto';
+  String importApply(int count) {
+    return '$count übernehmen';
+  }
 
   @override
-  String get unknownMerchant => 'Unbekannter Händler';
+  String get importNothingSelected => 'Nichts ausgewählt.';
 
   @override
-  String get exportDone => 'Export fertig';
+  String importDone(int count) {
+    return '$count Buchungen übernommen';
+  }
 
   @override
-  String get categoryGroceries => 'Lebensmittel';
+  String get chooseCategory => 'Kategorie wählen';
 
   @override
-  String get categoryBakery => 'Bäckerei';
+  String get importRunning => 'Importiere…';
 
   @override
-  String get categoryDrugstore => 'Drogerie & Kosmetik';
+  String get importReadingPdf => 'Textebene des PDFs wird gelesen.';
 
   @override
-  String get categoryPharmacy => 'Apotheke';
+  String importLlmHint(String model) {
+    return '$model macht aus dem Text Buchungen.';
+  }
 
   @override
-  String get categoryHousehold => 'Haushalt';
+  String importFailed(String message) {
+    return 'Import fehlgeschlagen: $message';
+  }
 
   @override
-  String get categoryClothing => 'Kleidung & Schuhe';
+  String get openAiKeyMissing =>
+      'Zuerst den OpenAI-API-Schlüssel in den Einstellungen eintragen.';
 
   @override
-  String get categoryToys => 'Spielzeug & Kinder';
+  String get sourceScreenshot => 'Screenshot';
 
   @override
-  String get categoryElectronics => 'Elektronik';
-
-  @override
-  String get categoryBooks => 'Bücher & Büro';
-
-  @override
-  String get categorySports => 'Sport';
-
-  @override
-  String get categoryDiy => 'Baumarkt & Garten';
-
-  @override
-  String get categoryRestaurant => 'Gastronomie';
-
-  @override
-  String get categoryFuel => 'Tanken';
-
-  @override
-  String get categoryTransport => 'Verkehr';
-
-  @override
-  String get categoryPets => 'Haustiere';
-
-  @override
-  String get categoryHealth => 'Gesundheit';
-
-  @override
-  String get categoryEntertainment => 'Freizeit';
-
-  @override
-  String get categoryOther => 'Sonstiges';
+  String get receiptConfirm => 'Beleg';
 }

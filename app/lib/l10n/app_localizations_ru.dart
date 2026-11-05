@@ -10,183 +10,199 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
-  String get appTitle => 'Чеки';
+  String get appTitle => 'AZ Budget';
 
   @override
-  String get tabReceipts => 'Чеки';
+  String get tabEntries => 'Записи';
 
   @override
-  String get tabStats => 'Статистика';
+  String get tabOverview => 'Обзор';
 
   @override
   String get tabSettings => 'Настройки';
 
   @override
-  String get scan => 'Сканировать чек';
+  String get newEntry => 'Новая запись';
 
   @override
-  String get scanning => 'Читаем чек…';
+  String get scanReceipt => 'Сканировать чек';
 
   @override
-  String get scanningHint =>
-      'Распознавание текста выполняется на устройстве. Это займёт несколько секунд.';
+  String get importScreenshot => 'Импорт скриншота';
 
   @override
-  String get noReceipts =>
-      'Чеков пока нет. Нажмите на камеру, чтобы отсканировать.';
+  String get importStatement => 'Импорт выписки (PDF)';
 
   @override
-  String get searchHint => 'Поиск по магазину или адресу';
+  String get syncNoFolder => 'Папка не выбрана';
 
   @override
-  String get merchant => 'Магазин';
+  String get syncSyncing => 'Синхронизация…';
 
   @override
-  String get address => 'Адрес';
+  String syncIdle(int year) {
+    return 'Budget $year.xlsx актуален';
+  }
 
   @override
-  String get date => 'Дата';
+  String syncOffline(int count) {
+    return 'Офлайн: ждут $count записей';
+  }
 
   @override
-  String get time => 'Время';
+  String get syncError => 'Ошибка синхронизации';
 
   @override
-  String get total => 'Итого';
+  String pendingCount(int count) {
+    return '$count в очереди';
+  }
 
   @override
-  String get payment => 'Оплата';
-
-  @override
-  String get paymentCash => 'Наличные';
-
-  @override
-  String get paymentCard => 'Карта';
-
-  @override
-  String get paymentUnknown => 'Неизвестно';
+  String get entryIncomplete => 'Выбери категорию и введи сумму.';
 
   @override
   String get category => 'Категория';
 
   @override
-  String get items => 'Позиции';
+  String get description => 'Описание';
 
   @override
-  String get item => 'Товар';
+  String get amount => 'Сумма';
 
   @override
-  String get quantity => 'Кол-во';
+  String get amountIncomeHint => 'Доходы сохраняются с минусом автоматически.';
 
   @override
-  String get price => 'Цена';
-
-  @override
-  String get addItem => 'Добавить позицию';
-
-  @override
-  String get noItems => 'Позиции не распознаны.';
-
-  @override
-  String get itemsSum => 'Сумма позиций';
-
-  @override
-  String get vat => 'НДС';
-
-  @override
-  String get rawText => 'Распознанный текст';
-
-  @override
-  String get qrCode => 'QR чека (RKSV)';
+  String get note => 'Заметка';
 
   @override
   String get save => 'Сохранить';
 
   @override
-  String get delete => 'Удалить';
-
-  @override
-  String get deleteReceiptQuestion => 'Удалить этот чек?';
-
-  @override
   String get cancel => 'Отмена';
 
   @override
-  String get edit => 'Изменить';
+  String get confirmEntry => 'Подтвердить запись';
 
   @override
-  String get receiptSaved => 'Чек сохранён';
+  String entrySaved(String amount) {
+    return 'Сохранено: $amount';
+  }
 
   @override
-  String get confidence => 'Уверенность';
+  String get editInFile => 'Записи, которые уже в файле, правятся в таблице.';
 
   @override
-  String get warnings => 'Проверьте поля';
+  String get editEntry => 'Изменить запись';
 
   @override
-  String get warningTotalMissing => 'Итог не найден';
+  String get chooseFolderHint =>
+      'Выбери папку с файлами Budget <год>.xlsx (Google Drive, Dropbox, iCloud или локально).';
 
   @override
-  String get warningTotalGuessed => 'Итог определён приблизительно';
+  String get chooseFolder => 'Выбрать папку';
 
   @override
-  String get warningDateMissing => 'Дата не найдена';
+  String get quickEntries => 'Быстрые записи';
 
   @override
-  String get warningItemsMismatch => 'Сумма позиций не совпадает с итогом';
+  String get recentEntries => 'Последние';
 
   @override
-  String get warningTotalMismatch => 'Итог по OCR отличается от итога в QR';
+  String get showLess => 'Меньше';
 
   @override
-  String get month => 'Месяц';
+  String showAll(int count) {
+    return 'Все $count';
+  }
 
   @override
-  String get byCategory => 'По категориям';
+  String get noEntries => 'Записей пока нет.';
 
   @override
-  String get byMerchant => 'По магазинам';
+  String get noFileLoaded => 'Файл бюджета не загружен.';
 
   @override
-  String get noDataForMonth => 'В этом месяце чеков нет.';
+  String get income => 'Доходы';
 
   @override
-  String receiptsCount(int count) {
+  String get expenses => 'Расходы';
+
+  @override
+  String limitHint(String limit1, String limit2) {
+    return 'Лимиты $limit1 / $limit2';
+  }
+
+  @override
+  String get saldo => 'Сальдо (доходы − расходы)';
+
+  @override
+  String get byCategory => 'По категориям (факт / план)';
+
+  @override
+  String get total => 'Итого';
+
+  @override
+  String get accountInputs => 'Остатки на начало месяца';
+
+  @override
+  String get settingsFolder => 'Папка бюджета';
+
+  @override
+  String get folderNone => 'Папка не выбрана';
+
+  @override
+  String folderFiles(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count чеков',
-      few: '$count чека',
-      one: '1 чек',
+      other: '$count файлов бюджета',
+      few: '$count файла бюджета',
+      one: '1 файл бюджета',
+      zero: 'нет файлов Budget <год>.xlsx',
     );
     return '$_temp0';
   }
 
   @override
-  String get settingsCategories => 'Категории';
+  String get changeFolder => 'Изменить';
 
   @override
-  String get settingsRules => 'Правила категоризации';
+  String get forgetFolder => 'Отключить папку';
 
   @override
-  String get settingsMerchantRules => 'Правила по магазинам';
+  String get yearFile => 'Файл года';
 
   @override
-  String get settingsKeywordRules => 'Правила по ключевым словам';
+  String categoriesCount(int count) {
+    return 'категорий: $count';
+  }
 
   @override
-  String get settingsExportCsv => 'Экспорт CSV';
+  String get syncNow => 'Синхронизировать';
 
   @override
-  String get settingsExportJson => 'Экспорт JSON';
+  String lastSync(String time) {
+    return 'Последняя: $time';
+  }
 
   @override
-  String get settingsBackup => 'Резервная копия базы';
+  String get settingsOpenAi => 'OpenAI (импорт выписок)';
 
   @override
-  String get settingsAbout => 'О приложении';
+  String get openAiKey => 'API-ключ';
 
   @override
-  String get settingsEngine => 'OCR-движок';
+  String get openAiKeySet => 'Сохранён на устройстве';
+
+  @override
+  String get openAiKeyNotSet => 'Не задан';
+
+  @override
+  String get openAiModel => 'Модель';
+
+  @override
+  String get settingsEngine => 'OCR-движок (docling.rs)';
 
   @override
   String get engineReady => 'Готов';
@@ -200,101 +216,83 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get addCategory => 'Добавить категорию';
+  String get scanning => 'Читаю…';
 
   @override
-  String get categoryName => 'Название категории';
+  String get scanningHint =>
+      'Распознавание идёт на устройстве. Это займёт несколько секунд.';
 
   @override
-  String get learnedRule => 'выучено';
+  String get settingsAbout => 'О приложении';
 
   @override
-  String get seedRule => 'встроено';
+  String get aboutText =>
+      'Записи попадают прямо в годовую таблицу. С OpenAI общается только импорт выписок, с твоим ключом.';
 
   @override
-  String get ruleDeleted => 'Правило удалено';
+  String get importTitle => 'Проверка импорта';
 
   @override
-  String get noRules => 'Правил нет';
+  String get importSelectAll => 'Все / ничего';
 
   @override
-  String get privacyNote =>
-      'Все данные остаются на устройстве. Без доступа к сети.';
+  String get importNoText =>
+      'Записей не найдено. Для сканированных PDF сфотографируй страницу.';
 
   @override
-  String ocrFailed(String message) {
-    return 'Не удалось прочитать чек: $message';
+  String importFromSource(String source) {
+    return 'Источник: $source';
   }
 
   @override
-  String get takePhoto => 'Сделать фото';
+  String get importDuplicate => 'уже записано';
 
   @override
-  String get retake => 'Переснять';
+  String importSkipped(String reason) {
+    return 'пропущено: $reason';
+  }
 
   @override
-  String get newReceipt => 'Новый чек';
+  String get importNeedsReview => 'проверь категорию';
 
   @override
-  String get photo => 'Фото';
+  String importApply(int count) {
+    return 'Добавить $count';
+  }
 
   @override
-  String get unknownMerchant => 'Неизвестный магазин';
+  String get importNothingSelected => 'Ничего не выбрано.';
 
   @override
-  String get exportDone => 'Экспорт готов';
+  String importDone(int count) {
+    return 'Добавлено записей: $count';
+  }
 
   @override
-  String get categoryGroceries => 'Продукты';
+  String get chooseCategory => 'Выбери категорию';
 
   @override
-  String get categoryBakery => 'Выпечка';
+  String get importRunning => 'Импорт…';
 
   @override
-  String get categoryDrugstore => 'Бытовая химия и косметика';
+  String get importReadingPdf => 'Читаю текстовый слой PDF.';
 
   @override
-  String get categoryPharmacy => 'Аптека';
+  String importLlmHint(String model) {
+    return '$model превращает текст в записи.';
+  }
 
   @override
-  String get categoryHousehold => 'Дом и хозяйство';
+  String importFailed(String message) {
+    return 'Импорт не удался: $message';
+  }
 
   @override
-  String get categoryClothing => 'Одежда и обувь';
+  String get openAiKeyMissing => 'Сначала укажи API-ключ OpenAI в настройках.';
 
   @override
-  String get categoryToys => 'Игрушки и дети';
+  String get sourceScreenshot => 'Скриншот';
 
   @override
-  String get categoryElectronics => 'Электроника';
-
-  @override
-  String get categoryBooks => 'Книги и канцелярия';
-
-  @override
-  String get categorySports => 'Спорт';
-
-  @override
-  String get categoryDiy => 'Ремонт и сад';
-
-  @override
-  String get categoryRestaurant => 'Кафе и рестораны';
-
-  @override
-  String get categoryFuel => 'Топливо';
-
-  @override
-  String get categoryTransport => 'Транспорт';
-
-  @override
-  String get categoryPets => 'Питомцы';
-
-  @override
-  String get categoryHealth => 'Здоровье';
-
-  @override
-  String get categoryEntertainment => 'Развлечения';
-
-  @override
-  String get categoryOther => 'Прочее';
+  String get receiptConfirm => 'Чек';
 }
