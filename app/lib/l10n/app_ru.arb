@@ -111,5 +111,9 @@
   "limitsInvalid": "Введи две суммы, лимит 2 не меньше лимита 1.",
   "planTitle": "План {category}, {month}",
   "planSaved": "План сохранён в файл",
-  "allBookings": "Все записи: {count}"
+  "allBookings": "Все записи: {count}",
+  "delete": "Удалить",
+  "deleteEntryTitle": "Удалить запись?",
+  "deleteEntryBody": "{entry} будет удалена из файла.",
+  "entryDeleted": "Запись удалена"
 }

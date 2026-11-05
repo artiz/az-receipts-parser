@@ -23,7 +23,7 @@ class EntryDraft {
 }
 
 /// Shows the form; returns the entry when saved, null when dismissed.
-Future<BudgetEntry?> showEntrySheet(BuildContext context, {required BudgetService budget, EntryDraft? draft, String? title}) {
+Future<BudgetEntry?> showEntrySheet(BuildContext context, {required BudgetService budget, EntryDraft? draft, String? title, Future<void> Function()? onDelete}) {
   // Refresh in the background while the user fills the form, so the
   // duplicate check on save sees what was added on the laptop meanwhile.
   unawaited(budget.sync());
@@ -39,13 +39,17 @@ Future<BudgetEntry?> showEntrySheet(BuildContext context, {required BudgetServic
     builder: (ctx) => AnimatedPadding(
       duration: const Duration(milliseconds: 150),
       padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-      child: EntryForm(budget: budget, draft: draft ?? EntryDraft(), title: title, bottomPadding: navBar),
+      child: EntryForm(budget: budget, draft: draft ?? EntryDraft(), title: title, bottomPadding: navBar, onDelete: onDelete),
     ),
   );
 }
 
 class EntryForm extends StatefulWidget {
-  const EntryForm({super.key, required this.budget, required this.draft, this.title, this.bottomPadding = 0});
+  const EntryForm({super.key, required this.budget, required this.draft, this.title, this.bottomPadding = 0, this.onDelete});
+
+  /// When set (editing an existing entry) a delete button is shown; the
+  /// callback runs after the user confirmed.
+  final Future<void> Function()? onDelete;
   final BudgetService budget;
   final EntryDraft draft;
   final String? title;
@@ -106,6 +110,24 @@ class _EntryFormState extends State<EntryForm> {
     _description.text = description;
     if (amount != null && _amount.text.trim().isEmpty) _amount.text = _fmt(amount);
     _amountFocus.requestFocus();
+  }
+
+  Future<void> _confirmDelete() async {
+    final l = AppLocalizations.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.deleteEntryTitle),
+        content: Text(l.deleteEntryBody('${_description.text.trim()} · ${_amount.text.trim()} €')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
+          FilledButton(style: FilledButton.styleFrom(backgroundColor: Theme.of(ctx).colorScheme.error), onPressed: () => Navigator.pop(ctx, true), child: Text(l.delete)),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    Navigator.of(context).pop();
+    await widget.onDelete!();
   }
 
   Future<void> _pickDate() async {
@@ -232,6 +254,13 @@ class _EntryFormState extends State<EntryForm> {
           ),
           const SizedBox(height: 16),
           FilledButton.icon(onPressed: _save, icon: const Icon(Icons.check), label: Text(l.save)),
+          if (widget.onDelete != null)
+            TextButton.icon(
+              onPressed: _confirmDelete,
+              style: TextButton.styleFrom(foregroundColor: scheme.error),
+              icon: const Icon(Icons.delete_outline, size: 18),
+              label: Text(l.delete),
+            ),
         ],
       ),
     );

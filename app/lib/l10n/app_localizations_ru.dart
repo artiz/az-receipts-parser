@@ -408,4 +408,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String allBookings(int count) {
     return 'Все записи: $count';
   }
+
+  @override
+  String get delete => 'Удалить';
+
+  @override
+  String get deleteEntryTitle => 'Удалить запись?';
+
+  @override
+  String deleteEntryBody(String entry) {
+    return '$entry будет удалена из файла.';
+  }
+
+  @override
+  String get entryDeleted => 'Запись удалена';
 }

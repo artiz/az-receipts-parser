@@ -324,6 +324,14 @@ class BudgetFile {
     return placed;
   }
 
+  /// Blank an entry row (the row stays, empty, so no other row moves).
+  void clearEntryRow(int row) {
+    final sheet = workbook.requireSheet(sheetEntries);
+    for (final col in ['A', 'C', 'D', 'E', 'F']) {
+      sheet.clear('$col$row');
+    }
+  }
+
   /// Overwrite an existing entry row in place.
   void updateEntry(int row, BudgetEntry e) {
     final sheet = workbook.requireSheet(sheetEntries);

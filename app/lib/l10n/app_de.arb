@@ -111,5 +111,9 @@
   "limitsInvalid": "Zwei Beträge eingeben, Limit 2 nicht unter Limit 1.",
   "planTitle": "Plan {category}, {month}",
   "planSaved": "Plan in der Datei gespeichert",
-  "allBookings": "Alle {count} Buchungen"
+  "allBookings": "Alle {count} Buchungen",
+  "delete": "Löschen",
+  "deleteEntryTitle": "Buchung löschen?",
+  "deleteEntryBody": "{entry} wird aus der Datei entfernt.",
+  "entryDeleted": "Buchung gelöscht"
 }

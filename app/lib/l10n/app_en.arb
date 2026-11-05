@@ -311,5 +311,16 @@
         "type": "int"
       }
     }
+  },
+  "delete": "Delete",
+  "deleteEntryTitle": "Delete entry?",
+  "deleteEntryBody": "{entry} will be removed from the file.",
+  "entryDeleted": "Entry deleted",
+  "@deleteEntryBody": {
+    "placeholders": {
+      "entry": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -411,4 +411,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String allBookings(int count) {
     return 'Alle $count Buchungen';
   }
+
+  @override
+  String get delete => 'Löschen';
+
+  @override
+  String get deleteEntryTitle => 'Buchung löschen?';
+
+  @override
+  String deleteEntryBody(String entry) {
+    return '$entry wird aus der Datei entfernt.';
+  }
+
+  @override
+  String get entryDeleted => 'Buchung gelöscht';
 }

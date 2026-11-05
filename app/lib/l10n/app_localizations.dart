@@ -771,6 +771,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All {count} bookings'**
   String allBookings(int count);
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @deleteEntryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete entry?'**
+  String get deleteEntryTitle;
+
+  /// No description provided for @deleteEntryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{entry} will be removed from the file.'**
+  String deleteEntryBody(String entry);
+
+  /// No description provided for @entryDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry deleted'**
+  String get entryDeleted;
 }
 
 class _AppLocalizationsDelegate

@@ -107,7 +107,16 @@ class _OverviewPageState extends State<OverviewPage> {
         children: [
           Row(
             children: [
-              Expanded(child: _StatCard(label: l.income, value: euro(stats.income), color: scheme.tertiary)),
+              Expanded(
+                child: _StatCard(
+                  label: l.income,
+                  value: euro(stats.income),
+                  color: scheme.tertiary,
+                  icon: _expanded.contains('\u0000income') ? Icons.expand_less : Icons.expand_more,
+                  showEdit: false,
+                  onTap: () => setState(() => _expanded.contains('\u0000income') ? _expanded.remove('\u0000income') : _expanded.add('\u0000income')),
+                ),
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: _StatCard(
@@ -121,6 +130,14 @@ class _OverviewPageState extends State<OverviewPage> {
               ),
             ],
           ),
+          if (_expanded.contains('\u0000income'))
+            Card(
+              margin: const EdgeInsets.only(top: 8),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 6, 14, 10),
+                child: _CategoryBreakdown(entries: entries.where((e) => file.category(e.category)?.isIncome ?? false).toList()),
+              ),
+            ),
           const SizedBox(height: 8),
           _StatCard(
             label: l.saldo,
@@ -205,7 +222,8 @@ class _MonthStats {
 }
 
 class _StatCard extends StatelessWidget {
-  const _StatCard({required this.label, required this.value, required this.color, this.hint, this.big = false, this.icon, this.onTap});
+  const _StatCard({required this.label, required this.value, required this.color, this.hint, this.big = false, this.icon, this.onTap, this.showEdit = true});
+  final bool showEdit;
   final String label;
   final String value;
   final Color color;
@@ -230,7 +248,7 @@ class _StatCard extends StatelessWidget {
               children: [
                 Expanded(child: Text(label, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w500))),
                 if (icon != null) Icon(icon, size: 18, color: color),
-                if (onTap != null) ...[
+                if (onTap != null && showEdit) ...[
                   const SizedBox(width: 6),
                   Icon(Icons.edit_outlined, size: 16, color: scheme.onSurfaceVariant),
                 ],

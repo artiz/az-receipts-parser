@@ -214,6 +214,15 @@ class BudgetService extends ChangeNotifier {
     unawaited(sync());
   }
 
+  /// Delete an entry: a queued one leaves the queue, a file row is blanked
+  /// (the row stays empty so nothing else moves).
+  Future<void> deleteEntry(BudgetEntry e) async {
+    if (e.isPending) return removePending(e.pendingId!);
+    final row = e.row;
+    if (row == null) return;
+    await _withFile(e.date.year, (f) => f.clearEntryRow(row));
+  }
+
   Future<void> removePending(String pendingId) async {
     pending.removeWhere((e) => e.pendingId == pendingId);
     await _saveQueue();
@@ -239,12 +248,7 @@ class BudgetService extends ChangeNotifier {
     if (updated.date.year != old.date.year) {
       // Moving a booking to another year: the row of the old file is cleared
       // and the entry queued for the other file.
-      await _withFile(old.date.year, (f) {
-        final sheet = f.workbook.requireSheet(sheetEntries);
-        for (final col in ['A', 'C', 'D', 'E', 'F']) {
-          sheet.clear('$col$row');
-        }
-      });
+      await _withFile(old.date.year, (f) => f.clearEntryRow(row));
       await addEntry(updated);
       return;
     }

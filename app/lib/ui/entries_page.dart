@@ -175,14 +175,25 @@ class _EntriesPageState extends State<EntriesPage> {
                                   return const Padding(padding: EdgeInsets.all(12), child: Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))));
                                 }
                                 final e = shown[i];
-                                return EntryTile(
-                                  entry: e,
-                                  onTap: () => editEntry(context, budget, e),
-                                  trailing: IconButton(
-                                    tooltip: l.addToEntryShort,
-                                    visualDensity: VisualDensity.compact,
-                                    icon: const Icon(Icons.add_circle_outline, size: 20),
-                                    onPressed: () => addToEntryDialog(context, budget, e),
+                                return Dismissible(
+                                  key: ValueKey(e.pendingId ?? 'row-${e.date.year}-${e.row}'),
+                                  direction: DismissDirection.endToStart,
+                                  confirmDismiss: (_) => confirmDeleteEntry(context, budget, e),
+                                  background: Container(
+                                    color: Theme.of(context).colorScheme.error,
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.only(right: 20),
+                                    child: const Icon(Icons.delete_outline, color: Colors.white),
+                                  ),
+                                  child: EntryTile(
+                                    entry: e,
+                                    onTap: () => editEntry(context, budget, e),
+                                    trailing: IconButton(
+                                      tooltip: l.addToEntryShort,
+                                      visualDensity: VisualDensity.compact,
+                                      icon: const Icon(Icons.add_circle_outline, size: 20),
+                                      onPressed: () => addToEntryDialog(context, budget, e),
+                                    ),
                                   ),
                                 );
                               },

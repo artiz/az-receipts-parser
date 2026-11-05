@@ -38,6 +38,24 @@ void main() {
     expect(folder.writes, 1);
   });
 
+  test('file rows and queued entries can be deleted', () async {
+    final e = service.entries.first;
+    await service.deleteEntry(e);
+    expect(service.entries.length, 35);
+    expect(service.entries.any((x) => x.row == 2), isFalse);
+    // The blank row is left alone; new bookings still go after the last one.
+    await service.addEntry(BudgetEntry(date: DateTime(2026, 4, 1), category: 'Kinder', description: 'Marina', amount: 5));
+    await service.sync();
+    expect(service.entries.last.row, 38);
+    folder.offline = true;
+    await service.addEntry(BudgetEntry(date: DateTime(2026, 4, 2), category: 'Kinder', description: 'Platon', amount: 5));
+    final queued = service.entries.last;
+    expect(queued.isPending, isTrue);
+    await service.deleteEntry(queued);
+    expect(service.pending, isEmpty);
+    folder.offline = false;
+  });
+
   test('+ adds to the amount and the note', () async {
     final e = service.entries.firstWhere((x) => x.description == 'Marina');
     await service.addToEntry(e, 6, 'Glühwein');

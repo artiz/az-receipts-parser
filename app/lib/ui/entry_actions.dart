@@ -60,6 +60,14 @@ Future<void> editEntry(BuildContext context, BudgetService budget, BudgetEntry e
     budget: budget,
     title: l.editEntry,
     draft: EntryDraft(date: e.date, category: e.category, description: e.description, amount: e.amount.abs(), note: e.note),
+    onDelete: () async {
+      try {
+        await budget.deleteEntry(e);
+        messenger.showSnackBar(SnackBar(content: Text(l.entryDeleted)));
+      } catch (err) {
+        messenger.showSnackBar(SnackBar(content: Text(l.importFailed(err.toString()))));
+      }
+    },
   );
   if (updated == null) return;
   try {
@@ -67,6 +75,32 @@ Future<void> editEntry(BuildContext context, BudgetService budget, BudgetEntry e
     messenger.showSnackBar(SnackBar(content: Text(l.entryUpdated)));
   } catch (err) {
     messenger.showSnackBar(SnackBar(content: Text(l.importFailed(err.toString()))));
+  }
+}
+
+/// Ask, then delete. Returns true when the entry is gone.
+Future<bool> confirmDeleteEntry(BuildContext context, BudgetService budget, BudgetEntry e) async {
+  final l = AppLocalizations.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(l.deleteEntryTitle),
+      content: Text(l.deleteEntryBody('${dateDm(e.date)} ${e.description.isEmpty ? e.category : e.description} · ${euro(e.amount)}')),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
+        FilledButton(style: FilledButton.styleFrom(backgroundColor: Theme.of(ctx).colorScheme.error), onPressed: () => Navigator.pop(ctx, true), child: Text(l.delete)),
+      ],
+    ),
+  );
+  if (ok != true) return false;
+  try {
+    await budget.deleteEntry(e);
+    messenger.showSnackBar(SnackBar(content: Text(l.entryDeleted)));
+    return true;
+  } catch (err) {
+    messenger.showSnackBar(SnackBar(content: Text(l.importFailed(err.toString()))));
+    return false;
   }
 }
 

@@ -409,4 +409,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String allBookings(int count) {
     return 'All $count bookings';
   }
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get deleteEntryTitle => 'Delete entry?';
+
+  @override
+  String deleteEntryBody(String entry) {
+    return '$entry will be removed from the file.';
+  }
+
+  @override
+  String get entryDeleted => 'Entry deleted';
 }
