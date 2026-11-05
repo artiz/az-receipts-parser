@@ -1,5 +1,5 @@
-name: az_receipts
-description: "Receipt scanner: on-device OCR with docling.rs, local SQLite, auto-categorisation."
+name: az_budget
+description: "AZ Budget: household budget on top of the yearly Budget xlsx (Drive/Dropbox folder), receipt OCR with docling.rs, bank statement import."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -36,15 +36,19 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  drift: ^2.35.3
-  drift_flutter: ^0.3.1
   path_provider: ^2.1.6
   path: ^1.9.1
   ffi: ^2.2.0
   image_picker: ^1.2.4
   intl: ^0.20.3
-  share_plus: ^13.3.1
   collection: ^1.19.1
+  # The yearly Budget xlsx is read and patched at the zip/XML level so the
+  # formulas, styles, charts and conditional formats stay untouched.
+  archive: ^4.0.7
+  xml: ^6.5.0
+  shared_preferences: ^2.5.3
+  flutter_secure_storage: ^9.2.4
+  http: ^1.4.0
 
 dev_dependencies:
   flutter_test:
@@ -56,8 +60,6 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
-  drift_dev: ^2.35.2
-  build_runner: ^2.17.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -68,6 +70,16 @@ flutter:
   uses-material-design: true
   assets:
     - assets/models/
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
 
   # To add assets to your application, add an assets section, like this:
   # assets:

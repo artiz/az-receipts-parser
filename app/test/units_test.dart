@@ -1,9 +1,9 @@
-import 'package:az_receipts/categorize/categorizer.dart';
-import 'package:az_receipts/core/money.dart';
-import 'package:az_receipts/core/text_normalize.dart';
-import 'package:az_receipts/ocr/ocr_rows.dart';
-import 'package:az_receipts/ocr/ocr_types.dart';
-import 'package:az_receipts/parser/rksv_qr.dart';
+import 'package:az_budget/categorize/categorizer.dart';
+import 'package:az_budget/core/money.dart';
+import 'package:az_budget/core/text_normalize.dart';
+import 'package:az_budget/ocr/ocr_rows.dart';
+import 'package:az_budget/ocr/ocr_types.dart';
+import 'package:az_budget/parser/rksv_qr.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

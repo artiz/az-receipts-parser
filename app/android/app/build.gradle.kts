@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "dev.artiz.az_receipts"
+    namespace = "dev.artiz.az_budget"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "dev.artiz.az_receipts"
+        applicationId = "dev.artiz.az_budget"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = maxOf(26, flutter.minSdkVersion)
@@ -47,6 +47,10 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // R8 spends most of the release build time shrinking the onnxruntime
+            // AAR and the tiny app classes; the APK gets a little bigger without it.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
@@ -65,6 +69,8 @@ dependencies {
     // ONNX Runtime for Android (CPU + NNAPI). Loaded at run time by the Rust
     // side (ort `load-dynamic`); the version must be >= 1.17 (ORT API 17).
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.31.1")
+    // NotificationCompat for the limit alerts (MainActivity.showNotification).
+    implementation("androidx.core:core-ktx:1.15.0")
 }
 
 // Fail early when the native OCR library is missing from jniLibs.

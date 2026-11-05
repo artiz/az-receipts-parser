@@ -105,6 +105,9 @@ class ReceiptOcr {
 
   static bool get isInitialized => _initialized;
 
+  /// The loaded native library (shared with the PDF text binding).
+  static DynamicLibrary library() => _Bindings._open();
+
   static String version() {
     final b = _Bindings.instance;
     return b.version().toDartString();

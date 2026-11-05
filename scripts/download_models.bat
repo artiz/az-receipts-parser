@@ -7,12 +7,16 @@ rem   ocr_det.onnx          PP-OCRv6 text detector
 rem   ocr_rec_v6.onnx       PP-OCRv6 multilingual recognizer (+ dictionary)
 rem   ocr_textline_ori.onnx 0/180 degree text-line orientation classifier (optional)
 rem
-rem Usage: scripts\download_models.bat [target-dir]   (default: app\assets\models)
+rem Usage: scripts\download_models.bat [--verify] [target-dir]   (default: app\assets\models)
 rem Needs curl.exe and PowerShell, both part of Windows 10/11.
+rem When every model is already present the script returns at once; --verify
+rem re-checks the SHA256 of each file against the release manifest.
 setlocal EnableDelayedExpansion
 
 set "ROOT=%~dp0.."
 for %%I in ("%ROOT%") do set "ROOT=%%~fI"
+set "VERIFY="
+if /i "%~1"=="--verify" (set "VERIFY=1" & shift)
 if "%~1"=="" (set "TARGET=%ROOT%\app\assets\models") else (set "TARGET=%~f1")
 if "%DOCLING_RS_MODELS_URL%"=="" (
   set "BASE=https://github.com/docling-project/docling.rs/releases/download/models-v1"
@@ -25,6 +29,17 @@ where curl.exe >nul 2>nul || (echo curl.exe not found. Install it or use Windows
 
 if not exist "%TARGET%" mkdir "%TARGET%"
 pushd "%TARGET%" || exit /b 1
+
+if not defined VERIFY (
+  set "MISSING="
+  for %%F in (%FILES%) do if not exist "%%F" set "MISSING=1"
+  if not exist VERSION set "MISSING=1"
+  if not defined MISSING (
+    echo models present in %TARGET% ^(scripts\download_models.bat --verify re-checks the hashes^)
+    popd
+    exit /b 0
+  )
+)
 
 curl.exe -fsSL -o SHA256SUMS "%BASE%/SHA256SUMS" || (echo failed to download SHA256SUMS & popd & exit /b 1)
 

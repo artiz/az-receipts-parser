@@ -10,182 +10,200 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Receipts';
+  String get appTitle => 'AZ Budget';
 
   @override
-  String get tabReceipts => 'Receipts';
+  String get tabEntries => 'Entries';
 
   @override
-  String get tabStats => 'Statistics';
+  String get tabOverview => 'Overview';
 
   @override
   String get tabSettings => 'Settings';
 
   @override
-  String get scan => 'Scan receipt';
+  String get newEntry => 'New entry';
 
   @override
-  String get scanning => 'Reading receipt…';
+  String get scanReceipt => 'Scan receipt';
 
   @override
-  String get scanningHint =>
-      'Text recognition runs on this device. This takes a few seconds.';
+  String get importScreenshot => 'Import screenshot';
 
   @override
-  String get noReceipts =>
-      'No receipts yet. Tap the camera button to scan one.';
+  String get importStatement => 'Import statement (PDF)';
 
   @override
-  String get searchHint => 'Search merchant or address';
+  String get syncNoFolder => 'No folder chosen';
 
   @override
-  String get merchant => 'Merchant';
+  String get syncSyncing => 'Syncing…';
 
   @override
-  String get address => 'Address';
+  String syncIdle(int year) {
+    return 'Budget $year.xlsx is up to date';
+  }
 
   @override
-  String get date => 'Date';
+  String syncOffline(int count) {
+    return 'Offline: $count entries waiting';
+  }
 
   @override
-  String get time => 'Time';
+  String get syncError => 'Sync error';
 
   @override
-  String get total => 'Total';
+  String pendingCount(int count) {
+    return '$count pending';
+  }
 
   @override
-  String get payment => 'Payment';
-
-  @override
-  String get paymentCash => 'Cash';
-
-  @override
-  String get paymentCard => 'Card';
-
-  @override
-  String get paymentUnknown => 'Unknown';
+  String get entryIncomplete => 'Please choose a category and enter an amount.';
 
   @override
   String get category => 'Category';
 
   @override
-  String get items => 'Items';
+  String get description => 'Description';
 
   @override
-  String get item => 'Item';
+  String get amount => 'Amount';
 
   @override
-  String get quantity => 'Qty';
+  String get amountIncomeHint =>
+      'Income is stored as a negative amount automatically.';
 
   @override
-  String get price => 'Price';
-
-  @override
-  String get addItem => 'Add item';
-
-  @override
-  String get noItems => 'No line items were recognised.';
-
-  @override
-  String get itemsSum => 'Sum of items';
-
-  @override
-  String get vat => 'VAT';
-
-  @override
-  String get rawText => 'Recognised text';
-
-  @override
-  String get qrCode => 'Receipt QR (RKSV)';
+  String get note => 'Note';
 
   @override
   String get save => 'Save';
 
   @override
-  String get delete => 'Delete';
-
-  @override
-  String get deleteReceiptQuestion => 'Delete this receipt?';
-
-  @override
   String get cancel => 'Cancel';
 
   @override
-  String get edit => 'Edit';
+  String get confirmEntry => 'Confirm entry';
 
   @override
-  String get receiptSaved => 'Receipt saved';
+  String entrySaved(String amount) {
+    return 'Saved: $amount';
+  }
 
   @override
-  String get confidence => 'Confidence';
+  String get editInFile =>
+      'Entries already in the file are edited in the spreadsheet.';
 
   @override
-  String get warnings => 'Check these fields';
+  String get editEntry => 'Edit entry';
 
   @override
-  String get warningTotalMissing => 'Total not found';
+  String get chooseFolderHint =>
+      'Choose the folder that holds your Budget <year>.xlsx files (Google Drive, Dropbox, iCloud or local).';
 
   @override
-  String get warningTotalGuessed => 'Total was guessed';
+  String get chooseFolder => 'Choose folder';
 
   @override
-  String get warningDateMissing => 'Date not found';
+  String get quickEntries => 'Quick entries';
 
   @override
-  String get warningItemsMismatch => 'Items do not add up to the total';
+  String get recentEntries => 'Recent';
 
   @override
-  String get warningTotalMismatch => 'OCR total differs from the QR total';
+  String get showLess => 'Show less';
 
   @override
-  String get month => 'Month';
+  String showAll(int count) {
+    return 'All $count';
+  }
 
   @override
-  String get byCategory => 'By category';
+  String get noEntries => 'No entries yet.';
 
   @override
-  String get byMerchant => 'By merchant';
+  String get noFileLoaded => 'No budget file loaded.';
 
   @override
-  String get noDataForMonth => 'No receipts in this month.';
+  String get income => 'Income';
 
   @override
-  String receiptsCount(int count) {
+  String get expenses => 'Expenses';
+
+  @override
+  String limitHint(String limit1, String limit2) {
+    return 'Limits $limit1 / $limit2';
+  }
+
+  @override
+  String get saldo => 'Saldo (income − expenses)';
+
+  @override
+  String get byCategory => 'By category (actual / plan)';
+
+  @override
+  String get total => 'Total';
+
+  @override
+  String get accountInputs => 'Account inputs (start of month)';
+
+  @override
+  String get settingsFolder => 'Budget folder';
+
+  @override
+  String get folderNone => 'No folder';
+
+  @override
+  String folderFiles(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count receipts',
-      one: '1 receipt',
+      other: '$count budget files',
+      one: '1 budget file',
+      zero: 'no Budget <year>.xlsx found',
     );
     return '$_temp0';
   }
 
   @override
-  String get settingsCategories => 'Categories';
+  String get changeFolder => 'Change';
 
   @override
-  String get settingsRules => 'Categorisation rules';
+  String get forgetFolder => 'Disconnect folder';
 
   @override
-  String get settingsMerchantRules => 'Merchant rules';
+  String get yearFile => 'Year file';
 
   @override
-  String get settingsKeywordRules => 'Keyword rules';
+  String categoriesCount(int count) {
+    return '$count categories';
+  }
 
   @override
-  String get settingsExportCsv => 'Export CSV';
+  String get syncNow => 'Sync now';
 
   @override
-  String get settingsExportJson => 'Export JSON';
+  String lastSync(String time) {
+    return 'Last sync $time';
+  }
 
   @override
-  String get settingsBackup => 'Backup database';
+  String get settingsOpenAi => 'OpenAI (statement import)';
 
   @override
-  String get settingsAbout => 'About';
+  String get openAiKey => 'API key';
 
   @override
-  String get settingsEngine => 'OCR engine';
+  String get openAiKeySet => 'Stored on this device';
+
+  @override
+  String get openAiKeyNotSet => 'Not set';
+
+  @override
+  String get openAiModel => 'Model';
+
+  @override
+  String get settingsEngine => 'OCR engine (docling.rs)';
 
   @override
   String get engineReady => 'Ready';
@@ -199,100 +217,210 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get addCategory => 'Add category';
+  String get scanning => 'Reading…';
 
   @override
-  String get categoryName => 'Category name';
+  String get scanningHint =>
+      'Text recognition runs on this device. This takes a few seconds.';
 
   @override
-  String get learnedRule => 'learned';
+  String get settingsAbout => 'About';
 
   @override
-  String get seedRule => 'built-in';
+  String get aboutText =>
+      'Entries go straight into your yearly Budget spreadsheet. Only statement import talks to OpenAI, with your own key.';
 
   @override
-  String get ruleDeleted => 'Rule deleted';
+  String get importTitle => 'Review import';
 
   @override
-  String get noRules => 'No rules';
+  String get importSelectAll => 'All / none';
 
   @override
-  String get privacyNote => 'All data stays on this device. No network access.';
+  String get importNoText =>
+      'No bookings found. For scanned PDFs take a photo of the page instead.';
 
   @override
-  String ocrFailed(String message) {
-    return 'Could not read the receipt: $message';
+  String importFromSource(String source) {
+    return 'From: $source';
   }
 
   @override
-  String get takePhoto => 'Take photo';
+  String get importDuplicate => 'already booked';
 
   @override
-  String get retake => 'Retake';
+  String importSkipped(String reason) {
+    return 'skipped: $reason';
+  }
 
   @override
-  String get newReceipt => 'New receipt';
+  String get importNeedsReview => 'please check the category';
 
   @override
-  String get photo => 'Photo';
+  String importApply(int count) {
+    return 'Add $count';
+  }
 
   @override
-  String get unknownMerchant => 'Unknown merchant';
+  String get importNothingSelected => 'Nothing selected.';
 
   @override
-  String get exportDone => 'Export ready';
+  String importDone(int count) {
+    return '$count entries added';
+  }
 
   @override
-  String get categoryGroceries => 'Groceries';
+  String get chooseCategory => 'Choose category';
 
   @override
-  String get categoryBakery => 'Bakery';
+  String get importRunning => 'Importing…';
 
   @override
-  String get categoryDrugstore => 'Drugstore & cosmetics';
+  String get importReadingPdf => 'Reading the PDF text layer.';
 
   @override
-  String get categoryPharmacy => 'Pharmacy';
+  String importLlmHint(String model) {
+    return 'Asking $model to turn the text into entries.';
+  }
 
   @override
-  String get categoryHousehold => 'Household';
+  String importFailed(String message) {
+    return 'Import failed: $message';
+  }
 
   @override
-  String get categoryClothing => 'Clothing & shoes';
+  String get openAiKeyMissing => 'Set your OpenAI API key in Settings first.';
 
   @override
-  String get categoryToys => 'Toys & kids';
+  String get sourceScreenshot => 'Screenshot';
 
   @override
-  String get categoryElectronics => 'Electronics';
+  String get receiptConfirm => 'Receipt';
 
   @override
-  String get categoryBooks => 'Books & office';
+  String get entryExistsTitle => 'Already booked?';
 
   @override
-  String get categorySports => 'Sports';
+  String entryExistsBody(String entry, String amount) {
+    return '$entry with $amount is already in the file. Add the receipt details to its note?';
+  }
 
   @override
-  String get categoryDiy => 'DIY & garden';
+  String get addAnyway => 'Add anyway';
 
   @override
-  String get categoryRestaurant => 'Restaurants & cafés';
+  String get mergeNote => 'Add to note';
 
   @override
-  String get categoryFuel => 'Fuel';
+  String get noteMerged => 'Note updated';
 
   @override
-  String get categoryTransport => 'Transport';
+  String get entryUpdated => 'Entry updated';
 
   @override
-  String get categoryPets => 'Pets';
+  String addToEntry(String entry, String amount) {
+    return 'Add to $entry ($amount)';
+  }
 
   @override
-  String get categoryHealth => 'Health';
+  String get addToEntryShort => 'Add amount';
 
   @override
-  String get categoryEntertainment => 'Entertainment';
+  String get addAmount => 'Amount';
 
   @override
-  String get categoryOther => 'Other';
+  String get addDetail => 'What (goes into the note)';
+
+  @override
+  String searchHint(int count) {
+    return 'Search $count entries';
+  }
+
+  @override
+  String strandedPending(int count, int year) {
+    return '$count queued entries dated $year have no file for that year.';
+  }
+
+  @override
+  String get fixDate => 'Fix date';
+
+  @override
+  String yearFileMissing(int year) {
+    return 'No file for $year yet.';
+  }
+
+  @override
+  String createYearFile(int year) {
+    return 'Create Budget $year.xlsx';
+  }
+
+  @override
+  String yearFileCreated(int year) {
+    return 'Budget $year.xlsx created from the previous year';
+  }
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get languageSystem => 'System';
+
+  @override
+  String get formulaHint => 'Sums are fine: 5+6,50 or =500+232,23';
+
+  @override
+  String importPart(int done, int total) {
+    return 'Part $done of $total';
+  }
+
+  @override
+  String get limitsTitle => 'Month limits';
+
+  @override
+  String get monthLimit1 => 'Monatslimit 1';
+
+  @override
+  String get monthLimit2 => 'Monatslimit 2';
+
+  @override
+  String get monthLimit1Hint => 'Expenses from here: amber + notification';
+
+  @override
+  String get monthLimit2Hint => 'Expenses from here: red + notification';
+
+  @override
+  String get limitsTap => 'Tap to set the limits';
+
+  @override
+  String get limitsSaved => 'Limits saved to the file';
+
+  @override
+  String get limitsInvalid => 'Enter two amounts, limit 2 not below limit 1.';
+
+  @override
+  String planTitle(String category, String month) {
+    return 'Plan $category, $month';
+  }
+
+  @override
+  String get planSaved => 'Plan saved to the file';
+
+  @override
+  String allBookings(int count) {
+    return 'All $count bookings';
+  }
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get deleteEntryTitle => 'Delete entry?';
+
+  @override
+  String deleteEntryBody(String entry) {
+    return '$entry will be removed from the file.';
+  }
+
+  @override
+  String get entryDeleted => 'Entry deleted';
 }

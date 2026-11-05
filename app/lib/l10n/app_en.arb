@@ -1,97 +1,326 @@
 {
   "@@locale": "en",
-  "appTitle": "Receipts",
-  "tabReceipts": "Receipts",
-  "tabStats": "Statistics",
+  "appTitle": "AZ Budget",
+  "tabEntries": "Entries",
+  "tabOverview": "Overview",
   "tabSettings": "Settings",
-  "scan": "Scan receipt",
-  "scanning": "Reading receipt…",
-  "scanningHint": "Text recognition runs on this device. This takes a few seconds.",
-  "noReceipts": "No receipts yet. Tap the camera button to scan one.",
-  "searchHint": "Search merchant or address",
-  "merchant": "Merchant",
-  "address": "Address",
-  "date": "Date",
-  "time": "Time",
-  "total": "Total",
-  "payment": "Payment",
-  "paymentCash": "Cash",
-  "paymentCard": "Card",
-  "paymentUnknown": "Unknown",
+  "newEntry": "New entry",
+  "scanReceipt": "Scan receipt",
+  "importScreenshot": "Import screenshot",
+  "importStatement": "Import statement (PDF)",
+  "syncNoFolder": "No folder chosen",
+  "syncSyncing": "Syncing…",
+  "syncIdle": "Budget {year}.xlsx is up to date",
+  "@syncIdle": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "syncOffline": "Offline: {count} entries waiting",
+  "@syncOffline": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncError": "Sync error",
+  "pendingCount": "{count} pending",
+  "@pendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "entryIncomplete": "Please choose a category and enter an amount.",
   "category": "Category",
-  "items": "Items",
-  "item": "Item",
-  "quantity": "Qty",
-  "price": "Price",
-  "addItem": "Add item",
-  "noItems": "No line items were recognised.",
-  "itemsSum": "Sum of items",
-  "vat": "VAT",
-  "rawText": "Recognised text",
-  "qrCode": "Receipt QR (RKSV)",
+  "description": "Description",
+  "amount": "Amount",
+  "amountIncomeHint": "Income is stored as a negative amount automatically.",
+  "note": "Note",
   "save": "Save",
-  "delete": "Delete",
-  "deleteReceiptQuestion": "Delete this receipt?",
   "cancel": "Cancel",
-  "edit": "Edit",
-  "receiptSaved": "Receipt saved",
-  "confidence": "Confidence",
-  "warnings": "Check these fields",
-  "warningTotalMissing": "Total not found",
-  "warningTotalGuessed": "Total was guessed",
-  "warningDateMissing": "Date not found",
-  "warningItemsMismatch": "Items do not add up to the total",
-  "warningTotalMismatch": "OCR total differs from the QR total",
-  "month": "Month",
-  "byCategory": "By category",
-  "byMerchant": "By merchant",
-  "noDataForMonth": "No receipts in this month.",
-  "receiptsCount": "{count, plural, =1{1 receipt} other{{count} receipts}}",
-  "@receiptsCount": {"placeholders": {"count": {"type": "int"}}},
-  "settingsCategories": "Categories",
-  "settingsRules": "Categorisation rules",
-  "settingsMerchantRules": "Merchant rules",
-  "settingsKeywordRules": "Keyword rules",
-  "settingsExportCsv": "Export CSV",
-  "settingsExportJson": "Export JSON",
-  "settingsBackup": "Backup database",
-  "settingsAbout": "About",
-  "settingsEngine": "OCR engine",
+  "confirmEntry": "Confirm entry",
+  "entrySaved": "Saved: {amount}",
+  "@entrySaved": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "editInFile": "Entries already in the file are edited in the spreadsheet.",
+  "editEntry": "Edit entry",
+  "chooseFolderHint": "Choose the folder that holds your Budget <year>.xlsx files (Google Drive, Dropbox, iCloud or local).",
+  "chooseFolder": "Choose folder",
+  "quickEntries": "Quick entries",
+  "recentEntries": "Recent",
+  "showLess": "Show less",
+  "showAll": "All {count}",
+  "@showAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noEntries": "No entries yet.",
+  "noFileLoaded": "No budget file loaded.",
+  "income": "Income",
+  "expenses": "Expenses",
+  "limitHint": "Limits {limit1} / {limit2}",
+  "@limitHint": {
+    "placeholders": {
+      "limit1": {
+        "type": "String"
+      },
+      "limit2": {
+        "type": "String"
+      }
+    }
+  },
+  "saldo": "Saldo (income − expenses)",
+  "byCategory": "By category (actual / plan)",
+  "total": "Total",
+  "accountInputs": "Account inputs (start of month)",
+  "settingsFolder": "Budget folder",
+  "folderNone": "No folder",
+  "folderFiles": "{count, plural, =0{no Budget <year>.xlsx found} =1{1 budget file} other{{count} budget files}}",
+  "@folderFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "changeFolder": "Change",
+  "forgetFolder": "Disconnect folder",
+  "yearFile": "Year file",
+  "categoriesCount": "{count} categories",
+  "@categoriesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncNow": "Sync now",
+  "lastSync": "Last sync {time}",
+  "@lastSync": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsOpenAi": "OpenAI (statement import)",
+  "openAiKey": "API key",
+  "openAiKeySet": "Stored on this device",
+  "openAiKeyNotSet": "Not set",
+  "openAiModel": "Model",
+  "settingsEngine": "OCR engine (docling.rs)",
   "engineReady": "Ready",
   "engineNotReady": "Not loaded",
   "engineError": "Engine error: {message}",
-  "@engineError": {"placeholders": {"message": {"type": "String"}}},
-  "addCategory": "Add category",
-  "categoryName": "Category name",
-  "learnedRule": "learned",
-  "seedRule": "built-in",
-  "ruleDeleted": "Rule deleted",
-  "noRules": "No rules",
-  "privacyNote": "All data stays on this device. No network access.",
-  "ocrFailed": "Could not read the receipt: {message}",
-  "@ocrFailed": {"placeholders": {"message": {"type": "String"}}},
-  "takePhoto": "Take photo",
-  "retake": "Retake",
-  "newReceipt": "New receipt",
-  "photo": "Photo",
-  "unknownMerchant": "Unknown merchant",
-  "exportDone": "Export ready",
-  "categoryGroceries": "Groceries",
-  "categoryBakery": "Bakery",
-  "categoryDrugstore": "Drugstore & cosmetics",
-  "categoryPharmacy": "Pharmacy",
-  "categoryHousehold": "Household",
-  "categoryClothing": "Clothing & shoes",
-  "categoryToys": "Toys & kids",
-  "categoryElectronics": "Electronics",
-  "categoryBooks": "Books & office",
-  "categorySports": "Sports",
-  "categoryDiy": "DIY & garden",
-  "categoryRestaurant": "Restaurants & cafés",
-  "categoryFuel": "Fuel",
-  "categoryTransport": "Transport",
-  "categoryPets": "Pets",
-  "categoryHealth": "Health",
-  "categoryEntertainment": "Entertainment",
-  "categoryOther": "Other"
+  "@engineError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "scanning": "Reading…",
+  "scanningHint": "Text recognition runs on this device. This takes a few seconds.",
+  "settingsAbout": "About",
+  "aboutText": "Entries go straight into your yearly Budget spreadsheet. Only statement import talks to OpenAI, with your own key.",
+  "importTitle": "Review import",
+  "importSelectAll": "All / none",
+  "importNoText": "No bookings found. For scanned PDFs take a photo of the page instead.",
+  "importFromSource": "From: {source}",
+  "@importFromSource": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "importDuplicate": "already booked",
+  "importSkipped": "skipped: {reason}",
+  "@importSkipped": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "importNeedsReview": "please check the category",
+  "importApply": "Add {count}",
+  "@importApply": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importNothingSelected": "Nothing selected.",
+  "importDone": "{count} entries added",
+  "@importDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chooseCategory": "Choose category",
+  "importRunning": "Importing…",
+  "importReadingPdf": "Reading the PDF text layer.",
+  "importLlmHint": "Asking {model} to turn the text into entries.",
+  "@importLlmHint": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "importFailed": "Import failed: {message}",
+  "@importFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "openAiKeyMissing": "Set your OpenAI API key in Settings first.",
+  "sourceScreenshot": "Screenshot",
+  "receiptConfirm": "Receipt",
+  "entryExistsTitle": "Already booked?",
+  "entryExistsBody": "{entry} with {amount} is already in the file. Add the receipt details to its note?",
+  "@entryExistsBody": {
+    "placeholders": {
+      "entry": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "addAnyway": "Add anyway",
+  "mergeNote": "Add to note",
+  "noteMerged": "Note updated",
+  "entryUpdated": "Entry updated",
+  "addToEntry": "Add to {entry} ({amount})",
+  "@addToEntry": {
+    "placeholders": {
+      "entry": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "addToEntryShort": "Add amount",
+  "addAmount": "Amount",
+  "addDetail": "What (goes into the note)",
+  "searchHint": "Search {count} entries",
+  "@searchHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "strandedPending": "{count} queued entries dated {year} have no file for that year.",
+  "@strandedPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "fixDate": "Fix date",
+  "yearFileMissing": "No file for {year} yet.",
+  "@yearFileMissing": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "createYearFile": "Create Budget {year}.xlsx",
+  "@createYearFile": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "yearFileCreated": "Budget {year}.xlsx created from the previous year",
+  "@yearFileCreated": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "language": "Language",
+  "languageSystem": "System",
+  "formulaHint": "Sums are fine: 5+6,50 or =500+232,23",
+  "importPart": "Part {done} of {total}",
+  "@importPart": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "limitsTitle": "Month limits",
+  "monthLimit1": "Monatslimit 1",
+  "monthLimit2": "Monatslimit 2",
+  "monthLimit1Hint": "Expenses from here: amber + notification",
+  "monthLimit2Hint": "Expenses from here: red + notification",
+  "limitsTap": "Tap to set the limits",
+  "limitsSaved": "Limits saved to the file",
+  "limitsInvalid": "Enter two amounts, limit 2 not below limit 1.",
+  "planTitle": "Plan {category}, {month}",
+  "planSaved": "Plan saved to the file",
+  "@planTitle": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "allBookings": "All {count} bookings",
+  "@allBookings": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "delete": "Delete",
+  "deleteEntryTitle": "Delete entry?",
+  "deleteEntryBody": "{entry} will be removed from the file.",
+  "entryDeleted": "Entry deleted",
+  "@deleteEntryBody": {
+    "placeholders": {
+      "entry": {
+        "type": "String"
+      }
+    }
+  }
 }

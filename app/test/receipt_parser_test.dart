@@ -1,6 +1,6 @@
-import 'package:az_receipts/categorize/categorizer.dart';
-import 'package:az_receipts/parser/parsed_receipt.dart';
-import 'package:az_receipts/parser/receipt_parser.dart';
+import 'package:az_budget/categorize/categorizer.dart';
+import 'package:az_budget/parser/parsed_receipt.dart';
+import 'package:az_budget/parser/receipt_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fixtures.dart';

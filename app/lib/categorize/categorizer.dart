@@ -13,8 +13,10 @@ library;
 import '../core/text_normalize.dart';
 import '../parser/merchants.dart';
 import '../parser/parsed_receipt.dart';
-import 'categories.dart';
+
 import 'default_rules.dart';
+
+const String otherCategory = 'other';
 
 enum RuleSource { seed, learned }
 

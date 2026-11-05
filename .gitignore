@@ -49,3 +49,6 @@ app/.models/
 
 # Downloaded models / runtimes
 .models/
+
+# Written by scripts/download_models.* with the download date; the app falls back to "unknown" without it.
+app/assets/models/VERSION
