@@ -364,4 +364,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get languageSystem => 'System';
+
+  @override
+  String get formulaHint => 'Sums are fine: 5+6,50 or =500+232,23';
 }

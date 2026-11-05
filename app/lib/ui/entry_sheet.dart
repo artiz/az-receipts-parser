@@ -200,11 +200,11 @@ class _EntryFormState extends State<EntryForm> {
             controller: _amount,
             focusNode: _amountFocus,
             keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,\-]'))],
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,\-+*/()= ]'))],
             decoration: InputDecoration(
               labelText: l.amount,
               suffixText: '€',
-              helperText: _cat?.isIncome ?? false ? l.amountIncomeHint : null,
+              helperText: _cat?.isIncome ?? false ? l.amountIncomeHint : l.formulaHint,
             ),
             onSubmitted: (_) => _save(),
           ),

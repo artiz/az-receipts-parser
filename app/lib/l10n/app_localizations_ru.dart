@@ -363,4 +363,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get languageSystem => 'Системный';
+
+  @override
+  String get formulaHint => 'Можно сумму: 5+6,50 или =500+232,23';
 }

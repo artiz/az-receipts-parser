@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../app.dart';
 import '../budget/budget_file.dart';
 import '../budget/budget_service.dart';
+import '../core/expression.dart';
 import '../l10n/app_localizations.dart';
 import '../theme.dart';
 
@@ -30,9 +31,11 @@ String dateDmy(DateTime d) => DateFormat('dd.MM.yyyy').format(d);
 String monthName(int year, int month, Locale locale) => DateFormat.yMMMM(locale.toString()).format(DateTime(year, month));
 
 /// Parse "12,5", "12.50", "1.234,56", "-3,2" the way a German user types it.
+/// Also accepts a small formula: "=500+232,23+100.34", "12,5*3".
 double? parseAmount(String text) {
   var t = text.trim().replaceAll('€', '').replaceAll(' ', '');
   if (t.isEmpty) return null;
+  if (t.startsWith('=') || RegExp(r'[+*/()]|\d-').hasMatch(t)) return evalExpression(t);
   if (t.contains(',') && t.contains('.')) {
     t = t.replaceAll('.', '').replaceAll(',', '.');
   } else if (t.contains(',')) {

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../budget/budget_file.dart';
 import '../budget/budget_service.dart';
+import '../core/expression.dart';
 import '../l10n/app_localizations.dart';
 import '../theme.dart';
 import 'widgets.dart';
@@ -113,7 +114,8 @@ class _OverviewPageState extends State<OverviewPage> {
                       _InputRow(
                         label: e.key,
                         value: e.value.$2[month - 1],
-                        onChanged: (v) => budget.setOverviewInput(e.key, month, v),
+                        formula: file.overview.formulas[e.key]?[month - 1],
+                        onChanged: (v, f) => budget.setOverviewInput(e.key, month, v, formula: f),
                       ),
                   ],
                 ),
@@ -236,14 +238,15 @@ class _CategoryRow extends StatelessWidget {
 }
 
 class _InputRow extends StatelessWidget {
-  const _InputRow({required this.label, required this.value, required this.onChanged});
+  const _InputRow({required this.label, required this.value, required this.formula, required this.onChanged});
   final String label;
   final double? value;
-  final Future<void> Function(double?) onChanged;
+  final String? formula;
+  final Future<void> Function(double?, String?) onChanged;
 
   Future<void> _edit(BuildContext context) async {
     final l = AppLocalizations.of(context);
-    final controller = TextEditingController(text: value == null ? '' : value!.toStringAsFixed(2).replaceAll('.', ','));
+    final controller = TextEditingController(text: formula ?? (value == null ? '' : value!.toStringAsFixed(2).replaceAll('.', ',')));
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -251,8 +254,8 @@ class _InputRow extends StatelessWidget {
         content: TextField(
           controller: controller,
           autofocus: true,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-          decoration: const InputDecoration(suffixText: '€'),
+          keyboardType: TextInputType.text,
+          decoration: InputDecoration(suffixText: '€', helperText: l.formulaHint),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
@@ -264,7 +267,7 @@ class _InputRow extends StatelessWidget {
     final v = result.trim().isEmpty ? null : parseAmount(result);
     if (result.trim().isNotEmpty && v == null) return;
     try {
-      await onChanged(v);
+      await onChanged(v, normalizeFormula(result));
     } catch (e) {
       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }
@@ -276,6 +279,7 @@ class _InputRow extends StatelessWidget {
     return ListTile(
       dense: true,
       title: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: formula == null ? null : Text(formula!, style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
       trailing: Text(value == null ? '–' : euro(value!), style: TextStyle(fontWeight: FontWeight.w600, color: value == null ? scheme.onSurfaceVariant : scheme.onSurface)),
       onTap: () => _edit(context),
     );

@@ -204,7 +204,11 @@ class XlsxSheet {
   /// Clear a cell's value (keeps its style).
   void clear(String ref) => _setCell(ref);
 
-  void _setCell(String ref, {num? number, String? text}) {
+  /// Store a formula (without the leading '=') together with its computed
+  /// value, so readers that do not recalculate still see the number.
+  void setFormula(String ref, String formula, num cached) => _setCell(ref, number: cached, formula: formula.startsWith('=') ? formula.substring(1) : formula);
+
+  void _setCell(String ref, {num? number, String? text, String? formula}) {
     final (col, rowIndex) = XlsxRef.split(ref);
     final row = _findRow(rowIndex) ?? _insertRow(rowIndex);
     var cell = row.findElements('c').where((c) => c.getAttribute('r') == ref).firstOrNull;
@@ -212,6 +216,9 @@ class XlsxSheet {
     // Drop the old content but keep the style attribute.
     cell.children.clear();
     cell.removeAttribute('t');
+    if (formula != null) {
+      cell.children.add(XmlElement(XmlName('f'), [], [XmlText(formula)]));
+    }
     if (number != null) {
       cell.children.add(XmlElement(XmlName('v'), [], [XmlText(_formatNumber(number))]));
     } else if (text != null) {

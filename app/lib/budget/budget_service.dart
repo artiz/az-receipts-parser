@@ -235,8 +235,8 @@ class BudgetService extends ChangeNotifier {
 
   /// Change an input cell of `Übersicht` (Kontostand, Sparkonto, Kreditkarte
   /// offen) in the loaded year file. Written through immediately.
-  Future<void> setOverviewInput(String labelPrefix, int month, double? value) async {
-    await _withFile(year ?? currentYear, (f) => f.setOverviewInput(labelPrefix, month, value));
+  Future<void> setOverviewInput(String labelPrefix, int month, double? value, {String? formula}) async {
+    await _withFile(year ?? currentYear, (f) => f.setOverviewInput(labelPrefix, month, value, formula: formula));
   }
 
   Future<void> setPlan(String category, int month, double value) async {

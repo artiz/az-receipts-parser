@@ -123,10 +123,14 @@ class BudgetEntry {
 
 /// Monthly input rows of `Übersicht` (values per month 1..12, null = empty).
 class OverviewInputs {
-  OverviewInputs({required this.rows, required this.plan, required this.planHeaderRow});
+  OverviewInputs({required this.rows, required this.plan, required this.planHeaderRow, this.formulas = const {}});
 
   /// label → (sheet row, 12 values).
   final Map<String, (int, List<double?>)> rows;
+
+  /// label → 12 formulas ("=500+232.23", null when the cell holds a number),
+  /// so the app can show how an input was composed.
+  final Map<String, List<String?>> formulas;
 
   /// category → (sheet row, 12 plan values).
   final Map<String, (int, List<double?>)> plan;
@@ -257,6 +261,7 @@ class BudgetFile {
     if (sheet == null) return OverviewInputs(rows: const {}, plan: const {}, planHeaderRow: null);
     final rows = sheet.readRows();
     final inputs = <String, (int, List<double?>)>{};
+    final formulas = <String, List<String?>>{};
     final plan = <String, (int, List<double?>)>{};
     int? planHeader;
     var inPlan = false;
@@ -279,12 +284,17 @@ class BudgetFile {
       }
       final l = label.toLowerCase();
       if (l.startsWith('kontostand') || l.startsWith('sparkonto') || l.startsWith('kreditkarte')) {
-        // Only the input rows: their cells carry no formula.
-        final anyFormula = [for (var m = 1; m <= 12; m++) cells[XlsxRef.columnLetters(1 + m)]?.formula].any((f) => f != null);
-        if (!anyFormula) inputs[label] = (r, values());
+        // Input rows: typed numbers or the user's own sums ("=500+232.23");
+        // cell references would mean a computed row, which is not an input.
+        final fs = [for (var m = 1; m <= 12; m++) cells[XlsxRef.columnLetters(1 + m)]?.formula];
+        final computed = fs.any((f) => f != null && RegExp(r'[A-Za-z]').hasMatch(f));
+        if (!computed) {
+          inputs[label] = (r, values());
+          formulas[label] = [for (final f in fs) f == null ? null : '=$f'];
+        }
       }
     }
-    return OverviewInputs(rows: inputs, plan: plan, planHeaderRow: planHeader);
+    return OverviewInputs(rows: inputs, plan: plan, planHeaderRow: planHeader, formulas: formulas);
   }
 
   // --- writing ---------------------------------------------------------------
@@ -330,12 +340,16 @@ class BudgetFile {
 
   /// Set a monthly input (Kontostand, Sparkonto, Kreditkarte offen) in
   /// `Übersicht`; [month] 1..12.
-  void setOverviewInput(String labelPrefix, int month, double? value) {
+  /// [formula] ("=500+232.23") is stored next to the computed [value] so the
+  /// spreadsheet keeps the composition of the number.
+  void setOverviewInput(String labelPrefix, int month, double? value, {String? formula}) {
     final sheet = workbook.requireSheet(sheetOverview);
     final target = overview.byLabelPrefix(labelPrefix) ?? (throw XlsxException('row "$labelPrefix" not found in $sheetOverview'));
     final ref = '${XlsxRef.columnLetters(1 + month)}${target.$1}';
     if (value == null) {
       sheet.clear(ref);
+    } else if (formula != null) {
+      sheet.setFormula(ref, formula, _round2(value));
     } else {
       sheet.setNumber(ref, _round2(value));
     }

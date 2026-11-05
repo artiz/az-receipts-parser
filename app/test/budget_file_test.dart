@@ -5,6 +5,7 @@ import 'package:archive/archive.dart';
 import 'package:az_budget/budget/budget_file.dart';
 import 'package:az_budget/budget/entry_suggest.dart';
 import 'package:az_budget/budget/xlsx_workbook.dart';
+import 'package:az_budget/core/expression.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Uint8List fixture(String name) => File('test/fixtures/$name').readAsBytesSync();
@@ -135,6 +136,28 @@ void main() {
       });
     });
   }
+
+  group('expressions', () {
+    test('evaluates sums with comma decimals', () {
+      expect(evalExpression('=500+232,23+100.34'), closeTo(832.57, 1e-9));
+      expect(evalExpression('5+6,50'), 11.5);
+      expect(evalExpression('(10+5)/2*3'), 22.5);
+      expect(evalExpression('1.234,56-4,56'), 1230);
+      expect(evalExpression('-12,5'), -12.5);
+      expect(evalExpression('abc'), isNull);
+      expect(evalExpression('5+'), isNull);
+      expect(normalizeFormula('= 500 + 232,23'), '=500+232.23');
+      expect(normalizeFormula('12,5'), isNull);
+    });
+    test('input formulas are stored with their value and read back', () {
+      final f = BudgetFile.open(fixture('budget_small.xlsx'));
+      f.setOverviewInput('Kontostand', 5, 832.57, formula: '=500+232.23+100.34');
+      final g = BudgetFile.open(f.save());
+      expect(g.overview.byLabelPrefix('Kontostand')!.$2[4], 832.57);
+      expect(g.overview.formulas.entries.firstWhere((e) => e.key.startsWith('Kontostand')).value[4], '=500+232.23+100.34');
+      expect(g.overview.formulas.entries.firstWhere((e) => e.key.startsWith('Kontostand')).value[0], isNull);
+    });
+  });
 
   group('suggestions', () {
     final entries = BudgetFile.open(fixture('budget_small.xlsx')).entries;

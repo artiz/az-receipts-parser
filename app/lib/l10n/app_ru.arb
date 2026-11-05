@@ -98,5 +98,6 @@
   "createYearFile": "Создать Budget {year}.xlsx",
   "yearFileCreated": "Budget {year}.xlsx создан из прошлого года",
   "language": "Язык",
-  "languageSystem": "Системный"
+  "languageSystem": "Системный",
+  "formulaHint": "Можно сумму: 5+6,50 или =500+232,23"
 }

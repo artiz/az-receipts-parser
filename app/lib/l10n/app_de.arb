@@ -98,5 +98,6 @@
   "createYearFile": "Budget {year}.xlsx anlegen",
   "yearFileCreated": "Budget {year}.xlsx aus dem Vorjahr angelegt",
   "language": "Sprache",
-  "languageSystem": "System"
+  "languageSystem": "System",
+  "formulaHint": "Summen gehen auch: 5+6,50 oder =500+232,23"
 }

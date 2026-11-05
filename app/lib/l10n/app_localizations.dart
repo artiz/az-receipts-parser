@@ -693,6 +693,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System'**
   String get languageSystem;
+
+  /// No description provided for @formulaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sums are fine: 5+6,50 or =500+232,23'**
+  String get formulaHint;
 }
 
 class _AppLocalizationsDelegate

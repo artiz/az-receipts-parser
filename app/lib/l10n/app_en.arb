@@ -271,5 +271,6 @@
     }
   },
   "language": "Language",
-  "languageSystem": "System"
+  "languageSystem": "System",
+  "formulaHint": "Sums are fine: 5+6,50 or =500+232,23"
 }
