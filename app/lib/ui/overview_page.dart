@@ -5,10 +5,13 @@ library;
 import 'package:flutter/material.dart';
 
 import '../budget/budget_file.dart';
+import '../app.dart';
 import '../budget/budget_service.dart';
+import '../core/text_normalize.dart';
 import '../core/expression.dart';
 import '../l10n/app_localizations.dart';
 import '../theme.dart';
+import 'entry_actions.dart';
 import 'widgets.dart';
 
 class OverviewPage extends StatefulWidget {
@@ -21,6 +24,7 @@ class OverviewPage extends StatefulWidget {
 
 class _OverviewPageState extends State<OverviewPage> {
   int? _month;
+  final Set<String> _expanded = {};
 
   @override
   Widget build(BuildContext context) {
@@ -98,9 +102,12 @@ class _OverviewPageState extends State<OverviewPage> {
                           name: c.name,
                           actual: stats.byCategory[c.name] ?? 0,
                           plan: file.overview.plan[c.name]?.$2[month - 1],
+                          expanded: _expanded.contains(c.name),
+                          onTap: () => setState(() => _expanded.contains(c.name) ? _expanded.remove(c.name) : _expanded.add(c.name)),
                           onEditPlan: file.overview.plan.containsKey(c.name)
                               ? () => _editPlan(context, budget, c.name, month, file.overview.plan[c.name]!.$2[month - 1], monthName(year, month, locale))
                               : null,
+                          breakdown: _expanded.contains(c.name) ? _CategoryBreakdown(entries: entries.where((e) => e.category == c.name).toList()) : null,
                         ),
                     const Divider(),
                     _CategoryRow(name: l.total, actual: stats.expenses, plan: stats.planTotal(file, month), bold: true),
@@ -276,12 +283,15 @@ Future<void> _editLimits(BuildContext context, BudgetService budget) async {
 }
 
 class _CategoryRow extends StatelessWidget {
-  const _CategoryRow({required this.name, required this.actual, required this.plan, this.bold = false, this.onEditPlan});
+  const _CategoryRow({required this.name, required this.actual, required this.plan, this.bold = false, this.onEditPlan, this.onTap, this.expanded = false, this.breakdown});
   final String name;
   final double actual;
   final double? plan;
   final bool bold;
   final VoidCallback? onEditPlan;
+  final VoidCallback? onTap;
+  final bool expanded;
+  final Widget? breakdown;
 
   @override
   Widget build(BuildContext context) {
@@ -289,7 +299,9 @@ class _CategoryRow extends StatelessWidget {
     final over = plan != null && plan! > 0 && actual > plan!;
     final ratio = plan == null || plan == 0 ? null : (actual / plan!).clamp(0.0, 1.0);
     final style = TextStyle(fontWeight: bold ? FontWeight.w700 : FontWeight.w500, fontFeatures: const [FontFeature.tabularFigures()]);
-    return Padding(
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       child: Column(
         children: [
@@ -297,6 +309,8 @@ class _CategoryRow extends StatelessWidget {
             children: [
               if (!bold) ...[CategoryDot(name: name), const SizedBox(width: 10)],
               Expanded(child: Text(name, style: style, overflow: TextOverflow.ellipsis)),
+              if (onTap != null) Icon(expanded ? Icons.expand_less : Icons.expand_more, size: 18, color: scheme.onSurfaceVariant),
+              if (onTap != null) const SizedBox(width: 4),
               Text(euro(actual), style: style.copyWith(color: over ? scheme.primary : null)),
               if (plan != null) ...[
                 const SizedBox(width: 6),
@@ -326,6 +340,74 @@ class _CategoryRow extends StatelessWidget {
                 ),
               ),
             ),
+          ?breakdown,
+        ],
+      ),
+      ),
+    );
+  }
+}
+
+/// What the category's month consists of: the descriptions with their
+/// count and sum, largest first, then the single bookings.
+class _CategoryBreakdown extends StatelessWidget {
+  const _CategoryBreakdown({required this.entries});
+  final List<BudgetEntry> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final budget = AppScope.of(context).budget;
+    if (entries.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Align(alignment: Alignment.centerLeft, child: Text(l.noEntries, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant))),
+      );
+    }
+    final groups = <String, (String, int, double)>{};
+    for (final e in entries) {
+      final key = normalize(e.description.isEmpty ? e.category : e.description);
+      final g = groups[key];
+      groups[key] = (e.description.isEmpty ? e.category : e.description, (g?.$2 ?? 0) + 1, (g?.$3 ?? 0) + e.amount);
+    }
+    final sorted = groups.values.toList()..sort((a, b) => b.$3.abs().compareTo(a.$3.abs()));
+    final byDate = entries.toList()..sort((a, b) => a.date.compareTo(b.date));
+    final small = TextStyle(fontSize: 12, color: scheme.onSurfaceVariant);
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, left: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final g in sorted)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  Expanded(child: Text(g.$2 > 1 ? '${g.$1} ×${g.$2}' : g.$1, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis)),
+                  Text(euro(g.$3), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFeatures: [FontFeature.tabularFigures()])),
+                ],
+              ),
+            ),
+          if (sorted.length < byDate.length) ...[
+            const SizedBox(height: 6),
+            Text(l.allBookings(byDate.length), style: small),
+            for (final e in byDate)
+              InkWell(
+                onTap: () => editEntry(context, budget, e),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      Text(dateDm(e.date), style: small),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text([e.description, if (e.note.isNotEmpty) e.note].join(' · '), style: small, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      Text(euro(e.amount), style: small.copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         ],
       ),
     );

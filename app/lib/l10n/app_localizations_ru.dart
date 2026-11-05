@@ -403,4 +403,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get planSaved => 'План сохранён в файл';
+
+  @override
+  String allBookings(int count) {
+    return 'Все записи: $count';
+  }
 }

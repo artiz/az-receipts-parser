@@ -110,5 +110,6 @@
   "limitsSaved": "Лимиты сохранены в файл",
   "limitsInvalid": "Введи две суммы, лимит 2 не меньше лимита 1.",
   "planTitle": "План {category}, {month}",
-  "planSaved": "План сохранён в файл"
+  "planSaved": "План сохранён в файл",
+  "allBookings": "Все записи: {count}"
 }

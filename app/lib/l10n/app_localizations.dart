@@ -765,6 +765,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Plan saved to the file'**
   String get planSaved;
+
+  /// No description provided for @allBookings.
+  ///
+  /// In en, this message translates to:
+  /// **'All {count} bookings'**
+  String allBookings(int count);
 }
 
 class _AppLocalizationsDelegate

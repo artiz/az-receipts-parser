@@ -110,5 +110,6 @@
   "limitsSaved": "Limits in der Datei gespeichert",
   "limitsInvalid": "Zwei Beträge eingeben, Limit 2 nicht unter Limit 1.",
   "planTitle": "Plan {category}, {month}",
-  "planSaved": "Plan in der Datei gespeichert"
+  "planSaved": "Plan in der Datei gespeichert",
+  "allBookings": "Alle {count} Buchungen"
 }

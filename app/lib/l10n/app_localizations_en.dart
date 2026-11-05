@@ -404,4 +404,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get planSaved => 'Plan saved to the file';
+
+  @override
+  String allBookings(int count) {
+    return 'All $count bookings';
+  }
 }

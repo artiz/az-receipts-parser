@@ -303,5 +303,13 @@
         "type": "String"
       }
     }
+  },
+  "allBookings": "All {count} bookings",
+  "@allBookings": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }
