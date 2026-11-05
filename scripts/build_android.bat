@@ -43,7 +43,7 @@ if /i "%MODE%"=="--debug" (
 )
 call flutter build apk --release || goto :fail
 if /i "%MODE%"=="--install" (
-  call flutter install --release
+  call :install
   goto :done
 )
 echo.
@@ -57,3 +57,22 @@ exit /b %RC%
 :fail
 popd
 exit /b 1
+
+:install
+rem `flutter install` uninstalls the old version first, which wipes the app's
+rem data (folder grant, API key, queued bookings). `adb install -r` updates in
+rem place like a store update.
+set "APK=%ROOT%\app\build\app\outputs\flutter-apk\app-release.apk"
+set "ADB="
+if not "%ANDROID_HOME%"=="" if exist "%ANDROID_HOME%\platform-tools\adb.exe" set "ADB=%ANDROID_HOME%\platform-tools\adb.exe"
+if "%ADB%"=="" if not "%ANDROID_SDK_ROOT%"=="" if exist "%ANDROID_SDK_ROOT%\platform-tools\adb.exe" set "ADB=%ANDROID_SDK_ROOT%\platform-tools\adb.exe"
+if "%ADB%"=="" if exist "%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" set "ADB=%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe"
+if "%ADB%"=="" for %%p in (adb.exe) do if not "%%~$PATH:p"=="" set "ADB=%%~$PATH:p"
+if "%ADB%"=="" (
+  echo adb.exe not found, falling back to "flutter install" ^(this uninstalls the old version and clears the app data^)
+  call flutter install --release
+  exit /b %ERRORLEVEL%
+)
+echo Installing %APK% with "%ADB%" install -r
+"%ADB%" install -r "%APK%"
+exit /b %ERRORLEVEL%
