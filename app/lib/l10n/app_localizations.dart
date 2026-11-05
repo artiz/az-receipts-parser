@@ -699,6 +699,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sums are fine: 5+6,50 or =500+232,23'**
   String get formulaHint;
+
+  /// No description provided for @importPart.
+  ///
+  /// In en, this message translates to:
+  /// **'Part {done} of {total}'**
+  String importPart(int done, int total);
 }
 
 class _AppLocalizationsDelegate

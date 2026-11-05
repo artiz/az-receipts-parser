@@ -75,6 +75,15 @@ void main() {
     expect(card.needsReview, isFalse);
   });
 
+  test('long texts are split at line ends', () {
+    final text = List.generate(300, (i) => 'line $i with some statement text 12,34-').join('\n');
+    final chunks = StatementImporter.splitChunks(text, 2000);
+    expect(chunks.length, greaterThan(3));
+    expect(chunks.every((c) => c.length <= 2000), isTrue);
+    expect(chunks.join(''), '$text\n');
+    expect(StatementImporter.splitChunks('short', 2000), ['short']);
+  });
+
   test('duplicate matching uses each existing entry once', () {
     final p = [
       ProposedEntry(entry: BudgetEntry(date: DateTime(2026, 2, 4), category: 'Kinder', description: 'a', amount: 10), confidence: 1),

@@ -69,6 +69,11 @@ class StatementImporter {
 
   static const int maxChars = 60000;
 
+  /// Long statements go to the model in pieces of about this size (split at
+  /// line ends): shorter requests, less to lose when a mobile connection
+  /// drops, and the model stays accurate.
+  static const int chunkChars = 7000;
+
   /// Build the prompts (exposed for tests).
   String systemPrompt() {
     final buf = StringBuffer();
@@ -135,17 +140,46 @@ class StatementImporter {
       };
 
   /// Run the model on extracted text and post-process the rows.
-  Future<StatementImportResult> import(String text, {required String sourceDescription}) async {
+  Future<StatementImportResult> import(String text, {required String sourceDescription, void Function(int done, int total)? onProgress}) async {
     var body = text.trim();
     if (body.isEmpty) throw OpenAiException('no text to import');
     if (body.length > maxChars) body = body.substring(0, maxChars);
-    final json = await client.completeJson(
-      system: systemPrompt(),
-      user: 'Today is ${_now.toIso8601String().substring(0, 10)}. Source: $sourceDescription.\n\n$body',
-      schema: schema(),
-      schemaName: 'budget_rows',
-    );
-    return parseResponse(json, sourceDescription: sourceDescription);
+    final chunks = splitChunks(body, chunkChars);
+    final system = systemPrompt();
+    final rows = <dynamic>[];
+    final notes = <String>[];
+    for (var i = 0; i < chunks.length; i++) {
+      onProgress?.call(i, chunks.length);
+      final part = chunks.length == 1 ? '' : ' (part ${i + 1} of ${chunks.length}; the other parts are handled separately, do not comment on missing context)';
+      final json = await client.completeJson(
+        system: system,
+        user: 'Today is ${_now.toIso8601String().substring(0, 10)}. Source: $sourceDescription$part.\n\n${chunks[i]}',
+        schema: schema(),
+        schemaName: 'budget_rows',
+      );
+      rows.addAll(json['rows'] as List<dynamic>? ?? const []);
+      final n = (json['notes'] as String?)?.trim() ?? '';
+      if (n.isNotEmpty) notes.add(n);
+    }
+    onProgress?.call(chunks.length, chunks.length);
+    return parseResponse({'rows': rows, 'notes': notes.join(' ')}, sourceDescription: sourceDescription);
+  }
+
+  /// Split at line ends into pieces of at most [size] chars (a single
+  /// longer line is kept whole).
+  static List<String> splitChunks(String text, int size) {
+    if (text.length <= size) return [text];
+    final out = <String>[];
+    final buf = StringBuffer();
+    for (final line in text.split('\n')) {
+      if (buf.length + line.length + 1 > size && buf.isNotEmpty) {
+        out.add(buf.toString());
+        buf.clear();
+      }
+      buf.writeln(line);
+    }
+    if (buf.isNotEmpty) out.add(buf.toString());
+    return out;
   }
 
   /// Turn the model's JSON into proposals, validate categories, find

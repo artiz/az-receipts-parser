@@ -366,4 +366,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get formulaHint => 'Можно сумму: 5+6,50 или =500+232,23';
+
+  @override
+  String importPart(int done, int total) {
+    return 'Часть $done из $total';
+  }
 }

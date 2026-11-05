@@ -137,13 +137,20 @@ class _EntriesPageState extends State<EntriesPage> {
                       ],
                     ),
             ),
-            const Divider(),
+            // A clear seam between the quick tiles and the table.
+            Container(
+              height: 10,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                border: Border.symmetric(horizontal: BorderSide(color: Theme.of(context).colorScheme.outline)),
+              ),
+            ),
             Expanded(
               flex: 1,
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                     child: TextField(
                       controller: _search,
                       decoration: InputDecoration(

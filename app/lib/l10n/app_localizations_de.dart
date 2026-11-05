@@ -368,4 +368,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get formulaHint => 'Summen gehen auch: 5+6,50 oder =500+232,23';
+
+  @override
+  String importPart(int done, int total) {
+    return 'Teil $done von $total';
+  }
 }

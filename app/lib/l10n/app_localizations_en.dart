@@ -367,4 +367,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get formulaHint => 'Sums are fine: 5+6,50 or =500+232,23';
+
+  @override
+  String importPart(int done, int total) {
+    return 'Part $done of $total';
+  }
 }

@@ -272,5 +272,16 @@
   },
   "language": "Language",
   "languageSystem": "System",
-  "formulaHint": "Sums are fine: 5+6,50 or =500+232,23"
+  "formulaHint": "Sums are fine: 5+6,50 or =500+232,23",
+  "importPart": "Part {done} of {total}",
+  "@importPart": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
 }

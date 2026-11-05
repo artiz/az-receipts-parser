@@ -93,7 +93,19 @@ Future<void> _importText(BuildContext context, String text, {required String sou
     categories: budget.categories,
     existing: budget.entries,
   );
-  final result = await _withProgress<StatementImportResult?>(context, l.importRunning, l.importLlmHint(scope.settings.openAiModel), () => importer.import(text, sourceDescription: sourceDescription));
+  final hint = ValueNotifier<String>(l.importLlmHint(scope.settings.openAiModel));
+  final result = await _withProgress<StatementImportResult?>(
+    context,
+    l.importRunning,
+    hint,
+    () => importer.import(
+      text,
+      sourceDescription: sourceDescription,
+      onProgress: (done, total) {
+        if (total > 1) hint.value = '${l.importLlmHint(scope.settings.openAiModel)} ${l.importPart(done + 1 > total ? total : done + 1, total)}';
+      },
+    ),
+  );
   if (result == null || !context.mounted) return;
   await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ImportReviewPage(result: result)));
 }
@@ -114,7 +126,8 @@ Future<void> _receiptFromPhoto(BuildContext context, String sourcePath) async {
 }
 
 /// Runs [work] behind a progress dialog; errors become a snackbar and null.
-Future<T?> _withProgress<T>(BuildContext context, String title, String hint, Future<T> Function() work) async {
+Future<T?> _withProgress<T>(BuildContext context, String title, Object hint, Future<T> Function() work) async {
+  final hintListenable = hint is ValueNotifier<String> ? hint : ValueNotifier<String>(hint.toString());
   final l = AppLocalizations.of(context);
   final navigator = Navigator.of(context);
   final messenger = ScaffoldMessenger.of(context);
@@ -127,7 +140,7 @@ Future<T?> _withProgress<T>(BuildContext context, String title, String hint, Fut
         children: [
           const CircularProgressIndicator(),
           const SizedBox(width: 20),
-          Expanded(child: Text(hint)),
+          Expanded(child: ValueListenableBuilder<String>(valueListenable: hintListenable, builder: (_, v, _) => Text(v))),
         ],
       ),
     ),
