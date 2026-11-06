@@ -99,6 +99,7 @@ void main() {
 
   _categoryTests();
   _typeTests();
+  _sortTests();
 
   group('service with an empty folder', () {
     late Directory tmp;
@@ -436,5 +437,19 @@ void _typeTests() {
       expect(f.workbook.sheet('Einstellungen')!.readRow(f.category('Gehalt Kate')!.row!)['B']?.text, 'Einnahme');
       expect(f.workbook.sheet('Übersicht')!.readRow(8)['C']?.formula, '-(SUMIFS(Buchungen!\$E:\$E,Buchungen!\$B:\$B,C\$3,Buchungen!\$C:\$C,"Einnahmen")+SUMIFS(Buchungen!\$E:\$E,Buchungen!\$B:\$B,C\$3,Buchungen!\$C:\$C,"Gehalt Kate"))');
     });
+  });
+}
+
+void _sortTests() {
+  test('categories by name fold case and umlauts', () {
+    final f = BudgetFile.open(template('de'));
+    final names = f.categoriesByName.map((c) => c.name).toList();
+    expect(names.first, 'Abos & Internet');
+    expect(names.last, 'Wohnen');
+    expect(names, isNot(f.categories.map((c) => c.name).toList()), reason: 'the file order is not alphabetical');
+    expect(f.expenseCategoriesByName.every((c) => c.isExpense), isTrue);
+    expect(BudgetFile.compareNames('Übersicht', 'Transport'), greaterThan(0));
+    expect(BudgetFile.compareNames('übersicht', 'Urlaub'), lessThan(0));
+    expect(BudgetFile.compareNames('arbeit', 'Business'), lessThan(0));
   });
 }

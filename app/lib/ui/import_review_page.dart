@@ -44,7 +44,7 @@ class _ImportReviewPageState extends State<ImportReviewPage> {
     final l = AppLocalizations.of(context);
     final budget = AppScope.of(context).budget;
     final p = widget.result.proposals[i];
-    final names = budget.categories.map((c) => c.name).toList();
+    final names = budget.categoriesByName.map((c) => c.name).toList();
     final ordered = [p.entry.category, ...p.alternatives, ...names.where((n) => n != p.entry.category && !p.alternatives.contains(n))];
     final navBar = MediaQuery.of(context).viewPadding.bottom;
     final picked = await showModalBottomSheet<String>(

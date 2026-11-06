@@ -152,7 +152,7 @@ class _OverviewPageState extends State<OverviewPage> {
           Card(
             child: Column(
               children: [
-                for (final c in file.expenseCategories)
+                for (final c in file.expenseCategoriesByName)
                   if ((stats.byCategory[c.name] ?? 0) != 0 || (file.overview.plan[c.name]?.$2[month - 1] ?? 0) != 0)
                     _CategoryRow(
                       name: c.name,

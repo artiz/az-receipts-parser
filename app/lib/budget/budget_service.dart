@@ -119,6 +119,9 @@ class BudgetService extends ChangeNotifier {
 
   List<BudgetCategory> get categories => file?.categories ?? const [];
 
+  /// Categories in alphabetical order, for lists and pickers.
+  List<BudgetCategory> get categoriesByName => file?.categoriesByName ?? const [];
+
   EntrySuggestions get suggestions => EntrySuggestions(entries, now: _clock());
 
   double? get monthLimit1 => file?.setting('Monatslimit 1');

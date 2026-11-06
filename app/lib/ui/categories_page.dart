@@ -30,11 +30,12 @@ class CategoriesPage extends StatelessWidget {
           final file = budget.file;
           if (file == null) return EmptyHint(icon: Icons.category_outlined, text: l.noFileLoaded);
           final brightness = Theme.of(context).brightness;
+          final cats = file.categoriesByName;
           return ListView.builder(
             padding: const EdgeInsets.only(bottom: 88),
-            itemCount: file.categories.length,
+            itemCount: cats.length,
             itemBuilder: (context, i) {
-              final c = file.categories[i];
+              final c = cats[i];
               final color = categoryColor(c.name, brightness, hex: c.color);
               final type = switch (c.type) {
                 CategoryType.expense => null,

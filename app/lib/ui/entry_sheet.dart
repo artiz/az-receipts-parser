@@ -161,8 +161,7 @@ class _EntryFormState extends State<EntryForm> {
     final l = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
     final budget = widget.budget;
-    final cats = budget.categories;
-    final byUse = budget.suggestions.categoriesByUse(cats.map((c) => c.name));
+    final cats = budget.categoriesByName;
     final suggestions = _category == null
         ? const []
         : budget.suggestions.descriptions(_category!, prefix: _description.text.trim(), limit: 8);
@@ -185,10 +184,10 @@ class _EntryFormState extends State<EntryForm> {
             isExpanded: true,
             decoration: InputDecoration(labelText: l.category),
             items: [
-              for (final name in byUse)
+              for (final c in cats)
                 DropdownMenuItem(
-                  value: name,
-                  child: Row(children: [CategoryDot(name: name), const SizedBox(width: 10), Expanded(child: Text(name, overflow: TextOverflow.ellipsis))]),
+                  value: c.name,
+                  child: Row(children: [CategoryDot(name: c.name), const SizedBox(width: 10), Expanded(child: Text(c.name, overflow: TextOverflow.ellipsis))]),
                 ),
             ],
             onChanged: (v) => setState(() => _category = v),

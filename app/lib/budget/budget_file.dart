@@ -20,6 +20,7 @@ library;
 
 import 'dart:typed_data';
 
+import '../core/text_normalize.dart';
 import 'budget_labels.dart';
 import 'template_texts.dart';
 import 'xlsx_workbook.dart';
@@ -279,6 +280,17 @@ class BudgetFile {
   }
 
   List<BudgetCategory> get expenseCategories => categories.where((c) => c.isExpense).toList();
+
+  /// Categories in alphabetical order (lists and pickers); [categories] keeps
+  /// the file order, which the overview blocks follow.
+  List<BudgetCategory> get categoriesByName => sortedByName(categories);
+  List<BudgetCategory> get expenseCategoriesByName => sortedByName(expenseCategories);
+
+  static List<BudgetCategory> sortedByName(Iterable<BudgetCategory> cats) =>
+      cats.toList()..sort((a, b) => compareNames(a.name, b.name));
+
+  /// Case-insensitive, umlauts folded ("Übersicht" sorts with "U").
+  static int compareNames(String a, String b) => normalize(a).compareTo(normalize(b));
 
   /// Value of the setting whose label starts with [labelPrefix], in any
   /// language ("Monatslimit 1" also finds "Month limit 1").
