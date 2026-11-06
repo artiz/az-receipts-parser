@@ -46,9 +46,10 @@ String? mapRuleCategory(String? ruleKey, List<BudgetCategory> categories) {
   return null;
 }
 
-/// Items as "name 1,29; name 2,49" for the note, capped so the cell stays
-/// readable.
-String itemsNote(ParsedReceipt r, {int maxChars = 240}) {
+/// Items as "name 1,29; name 2,49" for the note. Nothing is cut except at
+/// Excel's limit for one cell (32 767 characters): the full list is what
+/// the note is for.
+String itemsNote(ParsedReceipt r, {int maxChars = 32767}) {
   final parts = <String>[];
   for (final i in r.items) {
     final q = i.quantity != 1 ? '${_q(i.quantity)}× ' : '';

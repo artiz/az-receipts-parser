@@ -248,7 +248,8 @@ class _EntryFormState extends State<EntryForm> {
             controller: _note,
             textCapitalization: TextCapitalization.sentences,
             decoration: InputDecoration(labelText: l.note),
-            maxLines: 2,
+            // A scanned receipt's item list can be long: grow with it.
+            maxLines: 8,
             minLines: 1,
           ),
           const SizedBox(height: 16),
