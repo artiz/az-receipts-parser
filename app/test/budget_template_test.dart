@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:archive/archive.dart';
 import 'package:az_budget/budget/budget_file.dart';
 import 'package:az_budget/budget/budget_service.dart';
 import 'package:az_budget/budget/receipt_to_entry.dart';
@@ -14,6 +15,9 @@ import 'budget_service_test.dart' show FakeFolder;
 /// The bundled templates (built by tools/budget_template.py) as the app
 /// reads them: every language must look the same to the code.
 Uint8List template(String lang) => File('assets/templates/budget_$lang.xlsx').readAsBytesSync();
+
+/// The XML of the first worksheet (the entries sheet) inside a saved workbook.
+String entriesXml(Uint8List bytes) => String.fromCharCodes(ZipDecoder().decodeBytes(bytes).findFile('xl/worksheets/sheet1.xml')!.content as List<int>);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -94,6 +98,7 @@ void main() {
   });
 
   _categoryTests();
+  _typeTests();
 
   group('service with an empty folder', () {
     late Directory tmp;
@@ -288,8 +293,9 @@ void _categoryTests() {
       expect(exp, contains('"<>Gehalt"'));
       expect(exp, contains('"<>Karte"'));
       expect(exp, isNot(contains('Kreditkarte')));
-      final sheetXml = String.fromCharCodes(g.workbook.save()).contains('Kreditkarte');
-      expect(sheetXml, isFalse, reason: 'no "Kreditkarte" left anywhere, including the conditional format');
+      final xml = entriesXml(g.workbook.save());
+      expect(xml, isNot(contains('Kreditkarte')), reason: 'no "Kreditkarte" left in the entries sheet, including the conditional format');
+      expect(xml, contains(r'$C2="Karte"'));
 
       expect(() => g.updateCategory(g.category('Essen')!, g.category('Essen')!.copyWith(name: 'Wohnen')), throwsA(isA<XlsxException>()));
     });
@@ -343,6 +349,92 @@ void _categoryTests() {
       expect(g.category('Жильё')!.legacyGroups, 'flat');
       expect(g.entries.every((e) => g.category(e.category) != null), isTrue, reason: 'every booking still has its category');
       expect(g.setting('Monatslimit 1'), 3000);
+    });
+  });
+}
+
+void _typeTests() {
+  group('categories: type and adding', () {
+    test('an expense category turned into income counts as income in the overview', () {
+      var f = BudgetFile.open(template('de'));
+      f.appendEntries([
+        BudgetEntry(date: DateTime(2026, 3, 1), category: 'Einnahmen', description: 'Gehalt', amount: -2000),
+        BudgetEntry(date: DateTime(2026, 3, 2), category: 'Spenden', description: 'Rückzahlung', amount: -50),
+      ]);
+      f = BudgetFile.open(f.save());
+      final spenden = f.category('Spenden')!;
+      final istRow = 29; // 15th expense category in the Ist block (rows 15..30)
+      final overview = f.workbook.sheet('Übersicht')!;
+      expect(overview.readRow(istRow)['A']?.text, 'Spenden');
+      f.updateCategory(spenden, spenden.copyWith(type: CategoryType.income));
+      f = BudgetFile.open(f.save());
+      expect(f.category('Spenden')!.type, CategoryType.income);
+      expect(f.workbook.sheet('Einstellungen')!.readRow(spenden.row!)['B']?.text, 'Einnahme');
+      final inc = f.workbook.sheet('Übersicht')!.readRow(8)['D']?.formula ?? '';
+      final exp = f.workbook.sheet('Übersicht')!.readRow(9)['D']?.formula ?? '';
+      expect(inc, '-(SUMIFS(\'Buchungen\'!\$E:\$E,\'Buchungen\'!\$B:\$B,D\$3,\'Buchungen\'!\$C:\$C,"Spenden")+SUMIFS(\'Buchungen\'!\$E:\$E,\'Buchungen\'!\$B:\$B,D\$3,\'Buchungen\'!\$C:\$C,"Einnahmen"))');
+      expect(exp, 'SUMIFS(\'Buchungen\'!\$E:\$E,\'Buchungen\'!\$B:\$B,D\$3,\'Buchungen\'!\$C:\$C,"<>Kreditkarte",\'Buchungen\'!\$C:\$C,"<>Spenden",\'Buchungen\'!\$C:\$C,"<>Einnahmen")');
+      expect(f.workbook.sheet('Übersicht')!.readRow(istRow)['D']?.formula, isNull, reason: 'the actual row of an income category is blanked');
+      expect(f.workbook.sheet('Übersicht')!.readRow(istRow)['A']?.text, 'Spenden');
+      expect(f.expenseCategories.length, 15);
+
+      // Back to expense: the SUMIFS row is restored from a sibling row.
+      final cat = f.category('Spenden')!;
+      f.updateCategory(cat, cat.copyWith(type: CategoryType.expense));
+      f = BudgetFile.open(f.save());
+      expect(f.category('Spenden')!.type, CategoryType.expense);
+      expect(f.workbook.sheet('Übersicht')!.readRow(istRow)['D']?.formula, 'SUMIFS(\'Buchungen\'!\$E:\$E,\'Buchungen\'!\$C:\$C,\$A$istRow,\'Buchungen\'!\$B:\$B,D\$3)');
+      expect(f.workbook.sheet('Übersicht')!.readRow(8)['D']?.formula, contains('"Einnahmen")'));
+      expect(f.workbook.sheet('Übersicht')!.readRow(8)['D']?.formula, isNot(contains('Spenden')));
+    });
+
+    test('added income and transfer categories: settings row, totals, dropdown, transfer format', () {
+      var f = BudgetFile.open(template('en'));
+      f.addCategory(const BudgetCategory(name: 'Salary Kate', type: CategoryType.income, icon: 'income', color: '#3BA55D', hint: 'Her salary'));
+      f.addCategory(const BudgetCategory(name: 'Amex', type: CategoryType.transfer));
+      expect(() => f.addCategory(const BudgetCategory(name: 'Amex', type: CategoryType.transfer)), throwsA(isA<XlsxException>()));
+      f.appendEntries([
+        BudgetEntry(date: DateTime(2026, 3, 1), category: 'Salary Kate', description: 'ACME', amount: -1500),
+        BudgetEntry(date: DateTime(2026, 3, 2), category: 'Amex', description: 'bill', amount: 400),
+      ]);
+      f = BudgetFile.open(f.save());
+      expect(f.categories.length, 20);
+      final kate = f.category('Salary Kate')!;
+      expect(kate.type, CategoryType.income);
+      expect(kate.row, 23);
+      expect(kate.icon, 'income');
+      expect(kate.hint, 'Her salary');
+      expect(f.category('Amex')!.type, CategoryType.transfer);
+      final settings = f.workbook.sheet('Settings')!;
+      expect(settings.readRow(23)['B']?.text, 'Income');
+      expect(settings.readRow(24)['B']?.text, 'Transfer');
+      final inc = f.workbook.sheet('Overview')!.readRow(8)['D']?.formula ?? '';
+      final exp = f.workbook.sheet('Overview')!.readRow(9)['D']?.formula ?? '';
+      expect(inc, contains('"Salary Kate"'));
+      expect(inc, contains('"Income"'));
+      expect(exp, contains('"<>Amex"'));
+      expect(exp, contains('"<>Credit card"'));
+      expect(exp, contains('"<>Salary Kate"'));
+      final xml = entriesXml(f.workbook.save());
+      expect(xml, contains(r"$A$5:$A$24"), reason: 'the dropdown covers the new rows');
+      expect(xml, contains(r'$C2="Amex"'), reason: 'the transfer format is cloned');
+      expect(f.entries.length, 2);
+
+      // Turning the transfer into an expense drops its format.
+      final amex = f.category('Amex')!;
+      f.updateCategory(amex, amex.copyWith(type: CategoryType.expense));
+      final xml2 = entriesXml(f.save());
+      expect(xml2, isNot(contains(r'$C2="Amex"')));
+      expect(xml2, contains(r'$C2="Credit card"'));
+    });
+
+    test("a user's file: the totals rows are recognised", () {
+      var f = BudgetFile.open(File('test/fixtures/budget_small.xlsx').readAsBytesSync());
+      f.addCategory(const BudgetCategory(name: 'Gehalt Kate', type: CategoryType.income));
+      f = BudgetFile.open(f.save());
+      expect(f.category('Gehalt Kate')!.type, CategoryType.income);
+      expect(f.workbook.sheet('Einstellungen')!.readRow(f.category('Gehalt Kate')!.row!)['B']?.text, 'Einnahme');
+      expect(f.workbook.sheet('Übersicht')!.readRow(8)['C']?.formula, '-(SUMIFS(Buchungen!\$E:\$E,Buchungen!\$B:\$B,C\$3,Buchungen!\$C:\$C,"Einnahmen")+SUMIFS(Buchungen!\$E:\$E,Buchungen!\$B:\$B,C\$3,Buchungen!\$C:\$C,"Gehalt Kate"))');
     });
   });
 }

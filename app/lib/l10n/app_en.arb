@@ -424,5 +424,10 @@
   },
   "chartHint": "Plan in grey, actual in the category colour. Tap a bar.",
   "actual": "Actual",
-  "planLabel": "Plan"
+  "planLabel": "Plan",
+  "addCategory": "Add category",
+  "categoryType": "Type",
+  "typeChangeNote": "Changing the type rebuilds the income and expense rows of the overview sheet.",
+  "newExpenseNote": "A new expense category gets no row of its own in the overview sheet's actual/plan blocks; the app counts it anyway.",
+  "categoryAdded": "Category added"
 }

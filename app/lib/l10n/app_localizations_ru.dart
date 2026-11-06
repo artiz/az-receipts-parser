@@ -567,4 +567,21 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get planLabel => 'План';
+
+  @override
+  String get addCategory => 'Добавить категорию';
+
+  @override
+  String get categoryType => 'Тип';
+
+  @override
+  String get typeChangeNote =>
+      'Смена типа перестраивает строки доходов и расходов на листе обзора.';
+
+  @override
+  String get newExpenseNote =>
+      'Новая расходная категория не получает своей строки факт/план на листе обзора; приложение её всё равно считает.';
+
+  @override
+  String get categoryAdded => 'Категория добавлена';
 }

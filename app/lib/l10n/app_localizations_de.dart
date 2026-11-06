@@ -571,4 +571,21 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get planLabel => 'Plan';
+
+  @override
+  String get addCategory => 'Kategorie hinzufügen';
+
+  @override
+  String get categoryType => 'Typ';
+
+  @override
+  String get typeChangeNote =>
+      'Ein geänderter Typ baut die Einnahmen- und Ausgaben-Zeilen der Übersicht neu auf.';
+
+  @override
+  String get newExpenseNote =>
+      'Eine neue Ausgabenkategorie bekommt in der Übersicht der Tabelle keine eigene Ist/Plan-Zeile; die App zählt sie trotzdem.';
+
+  @override
+  String get categoryAdded => 'Kategorie hinzugefügt';
 }

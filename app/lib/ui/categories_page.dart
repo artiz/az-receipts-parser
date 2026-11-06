@@ -19,6 +19,11 @@ class CategoriesPage extends StatelessWidget {
     final budget = AppScope.of(context).budget;
     return Scaffold(
       appBar: AppBar(title: Text(l.categories)),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: budget.file == null ? null : () => Navigator.of(context).push(MaterialPageRoute<void>(fullscreenDialog: true, builder: (_) => const CategoryEditPage())),
+        icon: const Icon(Icons.add),
+        label: Text(l.addCategory),
+      ),
       body: ListenableBuilder(
         listenable: budget,
         builder: (context, _) {
@@ -26,6 +31,7 @@ class CategoriesPage extends StatelessWidget {
           if (file == null) return EmptyHint(icon: Icons.category_outlined, text: l.noFileLoaded);
           final brightness = Theme.of(context).brightness;
           return ListView.builder(
+            padding: const EdgeInsets.only(bottom: 88),
             itemCount: file.categories.length,
             itemBuilder: (context, i) {
               final c = file.categories[i];
@@ -73,19 +79,25 @@ class _IconBadge extends StatelessWidget {
 }
 
 class CategoryEditPage extends StatefulWidget {
-  const CategoryEditPage({super.key, required this.category});
-  final BudgetCategory category;
+  const CategoryEditPage({super.key, this.category});
+
+  /// The category to edit; null adds a new one.
+  final BudgetCategory? category;
 
   @override
   State<CategoryEditPage> createState() => _CategoryEditPageState();
 }
 
 class _CategoryEditPageState extends State<CategoryEditPage> {
-  late final _name = TextEditingController(text: widget.category.name);
-  late final _hint = TextEditingController(text: widget.category.hint);
-  late String _icon = widget.category.icon;
-  late String _color = widget.category.color;
+  late final BudgetCategory _base = widget.category ?? const BudgetCategory(name: '', type: CategoryType.expense);
+  late final _name = TextEditingController(text: _base.name);
+  late final _hint = TextEditingController(text: _base.hint);
+  late CategoryType _type = _base.type;
+  late String _icon = _base.icon;
+  late String _color = _base.color;
   bool _saving = false;
+
+  bool get _adding => widget.category == null;
 
   @override
   void dispose() {
@@ -101,14 +113,19 @@ class _CategoryEditPageState extends State<CategoryEditPage> {
     final navigator = Navigator.of(context);
     final name = _name.text.trim();
     if (name.isEmpty) return;
-    if (name != widget.category.name && budget.categories.any((c) => c.name == name)) {
+    if (name != _base.name && budget.categories.any((c) => c.name == name)) {
       messenger.showSnackBar(SnackBar(content: Text(l.categoryNameTaken)));
       return;
     }
     setState(() => _saving = true);
     try {
-      await budget.updateCategory(widget.category, widget.category.copyWith(name: name, hint: _hint.text.trim(), icon: _icon, color: _color), year: budget.year);
-      messenger.showSnackBar(SnackBar(content: Text(l.categorySaved)));
+      final updated = _base.copyWith(name: name, type: _type, hint: _hint.text.trim(), icon: _icon, color: _color);
+      if (_adding) {
+        await budget.addCategory(updated, year: budget.year);
+      } else {
+        await budget.updateCategory(_base, updated, year: budget.year);
+      }
+      messenger.showSnackBar(SnackBar(content: Text(_adding ? l.categoryAdded : l.categorySaved)));
       navigator.pop();
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(l.importFailed(e.toString()))));
@@ -121,12 +138,14 @@ class _CategoryEditPageState extends State<CategoryEditPage> {
     final l = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
     final brightness = Theme.of(context).brightness;
-    final preview = widget.category.copyWith(name: _name.text, icon: _icon, color: _color);
+    final preview = _base.copyWith(name: _name.text, type: _type, icon: _icon, color: _color);
     final color = categoryColor(preview.name, brightness, hex: _color);
-    final renamed = _name.text.trim() != widget.category.name;
+    final renamed = !_adding && _name.text.trim() != _base.name;
+    final retyped = !_adding && _type != _base.type;
+    final noteStyle = TextStyle(color: scheme.onSurfaceVariant, fontSize: 12);
     return Scaffold(
       appBar: AppBar(
-        title: Text(l.editCategory),
+        title: Text(_adding ? l.addCategory : l.editCategory),
         actions: [
           TextButton(onPressed: _saving ? null : _save, child: Text(l.save)),
           const SizedBox(width: 8),
@@ -149,7 +168,7 @@ class _CategoryEditPageState extends State<CategoryEditPage> {
               ),
             ],
           ),
-          if (renamed) Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.renameNote, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12))),
+          if (renamed) Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.renameNote, style: noteStyle)),
           const SizedBox(height: 12),
           TextField(
             controller: _hint,
@@ -157,6 +176,19 @@ class _CategoryEditPageState extends State<CategoryEditPage> {
             textCapitalization: TextCapitalization.sentences,
             maxLines: 2,
           ),
+          const SizedBox(height: 20),
+          SectionTitle(l.categoryType),
+          SegmentedButton<CategoryType>(
+            segments: [
+              ButtonSegment(value: CategoryType.expense, label: Text(l.typeExpense), icon: const Icon(Icons.shopping_cart_outlined)),
+              ButtonSegment(value: CategoryType.income, label: Text(l.typeIncome), icon: const Icon(Icons.payments_outlined)),
+              ButtonSegment(value: CategoryType.transfer, label: Text(l.typeTransfer), icon: const Icon(Icons.swap_horiz)),
+            ],
+            selected: {_type},
+            onSelectionChanged: (s) => setState(() => _type = s.first),
+          ),
+          if (retyped) Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.typeChangeNote, style: noteStyle)),
+          if (_adding && _type == CategoryType.expense) Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.newExpenseNote, style: noteStyle)),
           const SizedBox(height: 20),
           SectionTitle(l.categoryIconLabel),
           Wrap(

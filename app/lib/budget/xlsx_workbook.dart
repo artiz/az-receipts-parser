@@ -313,6 +313,59 @@ class XlsxSheet {
     return n;
   }
 
+  /// Copy every conditional-formatting block whose formula contains [from]
+  /// (e.g. `"Kreditkarte"`) with [to] in its place, so a new transfer
+  /// category gets the same look as the existing one. Returns the count.
+  int cloneConditionalFormatting(String from, String to) {
+    var n = 0;
+    final root = _document.rootElement;
+    for (final cf in root.findElements('conditionalFormatting').toList()) {
+      if (!cf.findAllElements('formula').any((f) => f.innerText.contains(from))) continue;
+      final copy = cf.copy();
+      for (final f in copy.findAllElements('formula')) {
+        final text = f.innerText;
+        f.children.clear();
+        f.children.add(XmlText(text.replaceAll(from, to)));
+      }
+      root.children.insert(root.children.indexOf(cf) + 1, copy);
+      n++;
+    }
+    if (n > 0) _dirty = true;
+    return n;
+  }
+
+  /// Remove every conditional-formatting block whose formula contains [text].
+  int removeConditionalFormatting(String text) {
+    var n = 0;
+    final root = _document.rootElement;
+    for (final cf in root.findElements('conditionalFormatting').toList()) {
+      if (!cf.findAllElements('formula').any((f) => f.innerText.contains(text))) continue;
+      root.children.remove(cf);
+      n++;
+    }
+    if (n > 0) _dirty = true;
+    return n;
+  }
+
+  /// Grow every list validation of the form `$A$5:$A$22` to end at
+  /// [lastRow] (the category dropdown follows an added category).
+  int extendListValidations(int lastRow) {
+    var n = 0;
+    final range = RegExp(r'(\$A\$\d+:\$A\$)(\d+)');
+    for (final dv in _document.rootElement.findAllElements('dataValidation')) {
+      for (final f in dv.findElements('formula1')) {
+        final text = f.innerText;
+        final m = range.firstMatch(text);
+        if (m == null || int.parse(m.group(2)!) >= lastRow) continue;
+        f.children.clear();
+        f.children.add(XmlText(text.replaceFirst(range, '${m.group(1)}$lastRow')));
+        n++;
+      }
+    }
+    if (n > 0) _dirty = true;
+    return n;
+  }
+
   /// Ensure column B of [rowIndex] carries the month formula the template
   /// pre-fills (rows beyond the pre-filled range need it).
   void ensureMonthFormula(int rowIndex, String formulaTemplate) {

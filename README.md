@@ -128,11 +128,18 @@ the bookings in the file.
    model (default `gpt-4.1-mini`). Only the statement/screenshot import uses it.
    **Settings → Language** overrides the system language (German, English,
    Russian).
-8. **Settings → Categories**: name, hint, icon (from a built-in set) and
-   colour of every category, stored in the file's `Einstellungen` sheet. A
+8. **Settings → Categories**: name, type, hint, icon (from a built-in set)
+   and colour of every category, stored in the file's `Einstellungen` sheet,
+   plus *Add category* (several income categories, several credit cards). A
    rename follows into the bookings, the overview rows, the formulas that
    quote the name (income and transfer categories) and the conditional
-   format of the entries sheet. When the file is in another language than the
+   format of the entries sheet. A changed or added type rebuilds the
+   overview's `Einnahmen` row (sum over every income category) and
+   `Ausgaben` row (everything but income and transfer categories), blanks or
+   restores the category's row in the actual block, extends the category
+   dropdown of the entries sheet and clones the grey-italic format of
+   transfer rows. A new *expense* category gets no row of its own in the
+   sheet's actual/plan blocks (the app counts it anyway). When the file is in another language than the
    app (say it was created before the language was changed), *Translate file*
    turns category names and hints, type labels, settings labels and the
    overview/history labels into the app language; bookings are renamed with

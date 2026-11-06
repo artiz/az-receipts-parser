@@ -1041,6 +1041,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Plan'**
   String get planLabel;
+
+  /// No description provided for @addCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Add category'**
+  String get addCategory;
+
+  /// No description provided for @categoryType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get categoryType;
+
+  /// No description provided for @typeChangeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing the type rebuilds the income and expense rows of the overview sheet.'**
+  String get typeChangeNote;
+
+  /// No description provided for @newExpenseNote.
+  ///
+  /// In en, this message translates to:
+  /// **'A new expense category gets no row of its own in the overview sheet\'s actual/plan blocks; the app counts it anyway.'**
+  String get newExpenseNote;
+
+  /// No description provided for @categoryAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Category added'**
+  String get categoryAdded;
 }
 
 class _AppLocalizationsDelegate

@@ -340,6 +340,11 @@ class BudgetService extends ChangeNotifier {
     }
   }
 
+  /// Add a category to the loaded year's file (see [BudgetFile.addCategory]).
+  Future<void> addCategory(BudgetCategory c, {int? year}) async {
+    await _withFile(year ?? this.year ?? currentYear, (f) => f.addCategory(c));
+  }
+
   /// Translate the loaded year's file into [language] (see
   /// [BudgetFile.translateTo]); returns the number of changed cells.
   Future<int> translateFile(String language, {int? year}) async {

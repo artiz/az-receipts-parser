@@ -568,4 +568,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get planLabel => 'Plan';
+
+  @override
+  String get addCategory => 'Add category';
+
+  @override
+  String get categoryType => 'Type';
+
+  @override
+  String get typeChangeNote =>
+      'Changing the type rebuilds the income and expense rows of the overview sheet.';
+
+  @override
+  String get newExpenseNote =>
+      'A new expense category gets no row of its own in the overview sheet\'s actual/plan blocks; the app counts it anyway.';
+
+  @override
+  String get categoryAdded => 'Category added';
 }

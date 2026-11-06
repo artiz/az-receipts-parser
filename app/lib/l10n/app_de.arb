@@ -156,5 +156,10 @@
   "fileLanguage": "Sprache der Datei: {language}",
   "chartHint": "Plan grau, Ist in der Farbe der Kategorie. Tippe auf einen Balken.",
   "actual": "Ist",
-  "planLabel": "Plan"
+  "planLabel": "Plan",
+  "addCategory": "Kategorie hinzufügen",
+  "categoryType": "Typ",
+  "typeChangeNote": "Ein geänderter Typ baut die Einnahmen- und Ausgaben-Zeilen der Übersicht neu auf.",
+  "newExpenseNote": "Eine neue Ausgabenkategorie bekommt in der Übersicht der Tabelle keine eigene Ist/Plan-Zeile; die App zählt sie trotzdem.",
+  "categoryAdded": "Kategorie hinzugefügt"
 }
