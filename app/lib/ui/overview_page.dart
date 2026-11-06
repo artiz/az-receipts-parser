@@ -101,6 +101,19 @@ class _OverviewPageState extends State<OverviewPage> {
         return;
       }
       final i = sequence.indexOf(month);
+      if (i + delta < 0) {
+        // Before the first month: the previous year's year view, when it has a file.
+        final ys = [...years]..sort();
+        final prev = ys.lastWhere((y) => y < year, orElse: () => year);
+        if (prev != year) {
+          setState(() {
+            _year = prev;
+            _month = 0;
+            _expanded.clear();
+          });
+        }
+        return;
+      }
       final next = (i + delta).clamp(0, sequence.length - 1);
       if (next != i) setState(() => _month = sequence[next]);
     }
