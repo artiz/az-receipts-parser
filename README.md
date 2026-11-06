@@ -254,6 +254,16 @@ made. Neither needs a model.
 host `libonnxruntime.so` is e.g. `onnxruntime/capi/libonnxruntime.so.*` from the
 `onnxruntime` PyPI wheel (`onnxruntime.dll` on Windows).
 
+## Release (Google Play)
+
+`scripts\make_keystore.bat` once (upload key + `app\android\key.properties`,
+both outside git), then `scripts\build_android.bat --bundle` for the `.aab`.
+The version code is the branch's commit count, the version name comes from
+`pubspec.yaml`. Console steps, data-safety answers and the internal-testing
+flow are in [docs/release.md](docs/release.md); the privacy policy the
+listing links to is [docs/privacy.md](docs/privacy.md). Without
+`key.properties` release builds keep using the debug key, as before.
+
 ## Why det+rec and not the full docling pipeline
 
 docling.rs' image pipeline runs layout analysis (RT-DETR, 65 MB int8) and merges

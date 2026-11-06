@@ -1,0 +1,11 @@
+# Google Play requires native libraries to support 16 KB memory pages
+# (Android 15+). NDK r28 links that way by default; the flag makes it explicit
+# for older NDKs. Host builds are not affected.
+[target.aarch64-linux-android]
+rustflags = ["-C", "link-arg=-Wl,-z,max-page-size=16384"]
+
+[target.x86_64-linux-android]
+rustflags = ["-C", "link-arg=-Wl,-z,max-page-size=16384"]
+
+[target.armv7-linux-androideabi]
+rustflags = ["-C", "link-arg=-Wl,-z,max-page-size=16384"]
