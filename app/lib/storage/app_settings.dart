@@ -26,7 +26,6 @@ class AppSettings extends ChangeNotifier {
   static const _kBackups = 'backups';
   static const _kSavePhotos = 'save_photos';
   static const _kCurrency = 'currency';
-  static const _kForecastNotified = 'forecast_notified_';
 
   String? _apiKey;
 
@@ -119,10 +118,6 @@ class AppSettings extends ChangeNotifier {
     }
     notifyListeners();
   }
-
-  /// The month's forecast notification was shown.
-  bool forecastNotified(int year, int month) => _prefs.getBool('$_kForecastNotified$year-$month') ?? false;
-  Future<void> setForecastNotified(int year, int month, bool on) => _prefs.setBool('$_kForecastNotified$year-$month', on);
 
   /// The start screen was shown (or skipped) once.
   bool get onboardingSeen => _prefs.getBool(_kOnboarding) ?? false;

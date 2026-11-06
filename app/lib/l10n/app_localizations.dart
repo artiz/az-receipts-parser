@@ -1108,18 +1108,6 @@ abstract class AppLocalizations {
   /// **'Save {count} bookings'**
   String splitSave(int count);
 
-  /// No description provided for @forecastHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Pace: about {amount} this month, limit 1 on day {day}.'**
-  String forecastHint(String amount, int day);
-
-  /// No description provided for @forecastHintOk.
-  ///
-  /// In en, this message translates to:
-  /// **'Pace: about {amount} this month.'**
-  String forecastHintOk(String amount);
-
   /// No description provided for @saveAsRule.
   ///
   /// In en, this message translates to:

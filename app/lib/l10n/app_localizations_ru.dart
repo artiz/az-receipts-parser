@@ -611,16 +611,6 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String forecastHint(String amount, int day) {
-    return 'Темп: около $amount за месяц, лимит 1 будет $day-го.';
-  }
-
-  @override
-  String forecastHintOk(String amount) {
-    return 'Темп: около $amount за месяц.';
-  }
-
-  @override
   String get saveAsRule => 'Запомнить как правило';
 
   @override

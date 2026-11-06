@@ -168,8 +168,6 @@
   "splitReceipt": "Разбить по категориям ({count} позиций)",
   "splitTitle": "Разбить чек",
   "splitSave": "Сохранить записей: {count}",
-  "forecastHint": "Темп: около {amount} за месяц, лимит 1 будет {day}-го.",
-  "forecastHintOk": "Темп: около {amount} за месяц.",
   "saveAsRule": "Запомнить как правило",
   "ruleSaved": "Правило сохранено: «{pattern}» → {category}",
   "settingsData": "Данные",

@@ -6,7 +6,6 @@ import 'package:archive/archive.dart';
 import 'package:az_budget/budget/budget_file.dart';
 import 'package:az_budget/budget/budget_service.dart';
 import 'package:az_budget/budget/entry_suggest.dart';
-import 'package:az_budget/budget/limit_notifier.dart';
 import 'package:az_budget/budget/receipt_split.dart';
 import 'package:az_budget/budget/receipt_to_entry.dart';
 import 'package:az_budget/import/statement_rows.dart';
@@ -16,7 +15,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'budget_service_test.dart' show FakeFolder;
-import 'limit_notifier_test.dart' show FakeSink;
 
 Uint8List fixture(String name) => File('test/fixtures/$name').readAsBytesSync();
 Uint8List template(String lang) => File('assets/templates/budget_$lang.xlsx').readAsBytesSync();
@@ -150,7 +148,7 @@ GHOST SHOP
     });
   });
 
-  group('forecast and csv', () {
+  group('csv', () {
     late Directory tmp;
     late AppSettings settings;
     setUp(() async {
@@ -160,41 +158,6 @@ GHOST SHOP
       tmp = await Directory.systemTemp.createTemp('azbudget');
     });
     tearDown(() => tmp.delete(recursive: true));
-
-    test('the pace of the month projects the total and the day limit 1 falls', () async {
-      final folder = FakeFolder(fixture('budget_small.xlsx'));
-      var now = DateTime(2026, 3, 1);
-      final s = BudgetService(folder: folder, settings: settings, queueDir: tmp, clock: () => now);
-      await s.sync();
-      expect(s.forecast(), isNull, reason: 'too early in the month');
-      now = DateTime(2026, 4, 10);
-      expect(s.forecast(), isNull, reason: 'nothing spent in April');
-      now = DateTime(2026, 3, 10);
-      final spent = s.monthExpenses(3);
-      expect(spent, greaterThan(0));
-      final f = s.forecast()!;
-      expect(f.dailyRate, closeTo(spent / 10, 0.001));
-      expect(f.projected, closeTo(spent / 10 * 31, 0.01));
-      expect(f.daysInMonth, 31);
-      if (spent / 10 * 31 >= 3000) {
-        expect(f.limit1Day, (3000 / (spent / 10)).ceil());
-      } else {
-        expect(f.limit1Day, isNull);
-      }
-      // Pace warning: once, before the limit itself, forgotten when the pace drops.
-      await s.setMonthLimits(spent * 2, spent * 3); // limit 1 reached around day 20 at this pace
-      final sink = FakeSink();
-      final notifier = LimitNotifier(budget: s, settings: settings, sink: sink, texts: (l, e, lim) => ('t', 'b'), forecastTexts: (fc, lim) => ('Kurs', 'Tag ${fc.limit1Day}'), clock: () => now);
-      await notifier.checkForecast();
-      expect(sink.shown.map((n) => n.$2), contains('Kurs'));
-      expect(sink.shown.last.$3, 'Tag 20');
-      await notifier.checkForecast();
-      expect(sink.shown.where((n) => n.$2 == 'Kurs').length, 1, reason: 'once per month');
-      await s.setMonthLimits(spent * 20, spent * 30); // pace no longer crosses: forgotten
-      await notifier.checkForecast();
-      expect(settings.forecastNotified(2026, 3), isFalse);
-      notifier.dispose();
-    });
 
     test('CSV export writes the bookings into the folder, replacing an older export', () async {
       final folder = FakeFolder(fixture('budget_small.xlsx'));

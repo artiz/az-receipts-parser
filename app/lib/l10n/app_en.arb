@@ -457,25 +457,6 @@
       }
     }
   },
-  "forecastHint": "Pace: about {amount} this month, limit 1 on day {day}.",
-  "@forecastHint": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      },
-      "day": {
-        "type": "int"
-      }
-    }
-  },
-  "forecastHintOk": "Pace: about {amount} this month.",
-  "@forecastHintOk": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
   "saveAsRule": "Save as rule",
   "ruleSaved": "Rule saved: \"{pattern}\" → {category}",
   "@ruleSaved": {

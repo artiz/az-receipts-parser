@@ -615,16 +615,6 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String forecastHint(String amount, int day) {
-    return 'Tempo: etwa $amount im Monat, Limit 1 am $day.';
-  }
-
-  @override
-  String forecastHintOk(String amount) {
-    return 'Tempo: etwa $amount im Monat.';
-  }
-
-  @override
   String get saveAsRule => 'Als Regel merken';
 
   @override

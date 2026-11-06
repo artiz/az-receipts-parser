@@ -612,16 +612,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String forecastHint(String amount, int day) {
-    return 'Pace: about $amount this month, limit 1 on day $day.';
-  }
-
-  @override
-  String forecastHintOk(String amount) {
-    return 'Pace: about $amount this month.';
-  }
-
-  @override
   String get saveAsRule => 'Save as rule';
 
   @override

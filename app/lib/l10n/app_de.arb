@@ -168,8 +168,6 @@
   "splitReceipt": "Nach Kategorie aufteilen ({count} Positionen)",
   "splitTitle": "Beleg aufteilen",
   "splitSave": "{count} Buchungen speichern",
-  "forecastHint": "Tempo: etwa {amount} im Monat, Limit 1 am {day}.",
-  "forecastHintOk": "Tempo: etwa {amount} im Monat.",
   "saveAsRule": "Als Regel merken",
   "ruleSaved": "Regel gespeichert: „{pattern}“ → {category}",
   "settingsData": "Daten",

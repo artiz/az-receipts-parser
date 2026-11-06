@@ -140,7 +140,7 @@ class _OverviewPageState extends State<OverviewPage> {
                   value: euro(stats.expenses),
                   color: limitColor(context, level),
                   icon: limitIcon(level),
-                  hint: _expenseHint(l, budget, year, month, limit1, limit2),
+                  hint: limit1 == null ? l.limitsTap : l.limitHint(euroShort(limit1), euroShort(limit2 ?? limit1)),
                   onTap: () => _editLimits(context, budget, year, limit1, limit2),
                 ),
               ),
@@ -316,18 +316,6 @@ class _YearRow extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The expenses card's second line: the limits, plus the pace of the
-/// calendar month when it is the one shown.
-String _expenseHint(AppLocalizations l, BudgetService budget, int year, int month, double? limit1, double? limit2) {
-  final limits = limit1 == null ? l.limitsTap : l.limitHint(euroShort(limit1), euroShort(limit2 ?? limit1));
-  final now = DateTime.now();
-  if (year != now.year || month != now.month) return limits;
-  final f = budget.forecast();
-  if (f == null) return limits;
-  final pace = f.limit1Day != null && f.limit1Day! >= f.day ? l.forecastHint(euroShort(f.projected), f.limit1Day!) : l.forecastHintOk(euroShort(f.projected));
-  return '$limits\n$pace';
 }
 
 /// Plain text of the month for the share sheet.

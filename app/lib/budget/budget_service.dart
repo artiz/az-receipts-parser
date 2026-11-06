@@ -34,18 +34,6 @@ final RegExp budgetFileName = RegExp(r'^Budget (20\d\d)\.xlsx$', caseSensitive: 
 
 const String xlsxMime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
-class MonthForecast {
-  const MonthForecast({required this.projected, required this.dailyRate, required this.limit1Day, required this.limit2Day, required this.daysInMonth, required this.day});
-  final double projected;
-  final double dailyRate;
-
-  /// Day of month when limit 1 / 2 is reached at this pace (null: not this month).
-  final int? limit1Day;
-  final int? limit2Day;
-  final int daysInMonth;
-  final int day;
-}
-
 class YearFileRef {
   const YearFileRef({required this.year, required this.entry});
   final int year;
@@ -510,24 +498,6 @@ class BudgetService extends ChangeNotifier {
     return name;
   }
 
-  /// Where the calendar month is heading at the current pace of spending:
-  /// the projected month total and the day each limit would be reached.
-  /// Null before the third day or without expenses.
-  MonthForecast? forecast() {
-    final now = _clock();
-    if (year != now.year || file == null) return null;
-    if (now.day < 3) return null;
-    final spent = monthExpenses(now.month);
-    if (spent <= 0) return null;
-    final days = DateTime(now.year, now.month + 1, 0).day;
-    final rate = spent / now.day;
-    int? dayFor(double? limit) {
-      if (limit == null || limit <= 0) return null;
-      final d = (limit / rate).ceil();
-      return d <= days ? (d < now.day ? now.day : d) : null;
-    }
-    return MonthForecast(projected: rate * days, dailyRate: rate, limit1Day: dayFor(monthLimit1), limit2Day: dayFor(monthLimit2), daysInMonth: days, day: now.day);
-  }
 
   /// Create `Budget <newYear>.xlsx` from the latest existing file: same
   /// categories, settings and plan, no bookings, empty account inputs. With

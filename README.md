@@ -167,21 +167,17 @@ the bookings in the file.
     saved, the items in the notes, a rounding remainder with the main one.
     The scanned file (photo or PDF) goes to `Belege/<year>/` next to the
     budget files and is linked from the note (*Settings → Data*).
-12. **Pace**: from the third day of the month the expenses card shows where
-    the month is heading at the current pace and the day limit 1 would be
-    reached; once per month, before the limit itself, that comes as a
-    notification too.
-13. **Year view**: the month menu of *Overview* has a *Year* entry: twelve
+12. **Year view**: the month menu of *Overview* has a *Year* entry: twelve
     months as bars (colour = limit, plan grey, line = cumulated saldo) and
     every category's actual / plan / previous year (from `Budget <year-1>.xlsx`).
-14. **Widget and shortcuts**: a home-screen widget shows the month's
+13. **Widget and shortcuts**: a home-screen widget shows the month's
     expenses against limit 1 with the traffic-light colour and a "+" for a
     booking; long-pressing the launcher icon offers scan, new booking and
     statement import.
-15. **Settings → Data**: currency symbol (the file carries none), CSV export
+14. **Settings → Data**: currency symbol (the file carries none), CSV export
     of the loaded year into the folder; *Overview* shares a text summary of
     the month.
-16. **Overview**: under the Saldo a bar per expense category for the month,
+15. **Overview**: under the Saldo a bar per expense category for the month,
    the plan in grey with the actual amount over it in the category's colour,
    icons on the x axis, the largest on the right; tapping a bar shows its
    name and numbers.
