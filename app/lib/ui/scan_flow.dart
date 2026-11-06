@@ -1,7 +1,9 @@
-/// The three capture paths:
-/// * receipt photo → OCR → parser → one entry to confirm;
+/// The capture paths:
+/// * receipt photo (camera or a shared image) → OCR → parser → one entry to confirm;
 /// * banking screenshot → OCR → LLM → review list;
-/// * statement PDF → text layer → LLM → review list.
+/// * PDF (picked or shared): a statement → rows → review list; a shop's
+///   digital receipt → text layer with positions → parser → one entry.
+/// * shared text → LLM → review list.
 library;
 
 import 'dart:async';
@@ -19,6 +21,7 @@ import '../import/pdf_text.dart';
 import '../import/statement_import.dart';
 import '../import/statement_rows.dart';
 import '../l10n/app_localizations.dart';
+import '../ocr/ocr_types.dart';
 import '../ocr/receipt_ocr_ffi.dart';
 import '../parser/receipt_parser.dart';
 import 'entry_actions.dart';
@@ -57,27 +60,64 @@ Future<void> importScreenshot(BuildContext context) async {
 
 Future<void> importStatement(BuildContext context) async {
   final scope = AppScope.of(context);
-  final l = AppLocalizations.of(context);
   final doc = await scope.budget.folder.pickDocument(const ['application/pdf']);
   if (doc == null || !context.mounted) return;
-  final text = await _withProgress<String?>(context, l.importRunning, l.importReadingPdf, () async {
-    final dir = await getTemporaryDirectory();
-    final file = File(p.join(dir.path, 'statement_${DateTime.now().millisecondsSinceEpoch}.pdf'));
-    await file.writeAsBytes(doc.bytes, flush: true);
+  final dir = await getTemporaryDirectory();
+  final file = File(p.join(dir.path, 'statement_${DateTime.now().millisecondsSinceEpoch}.pdf'));
+  await file.writeAsBytes(doc.bytes, flush: true);
+  if (!context.mounted) return;
+  try {
+    await importPdfFile(context, file.path, name: doc.name);
+  } finally {
     try {
-      return await PdfText.extract(file.path);
-    } finally {
-      try {
-        await file.delete();
-      } catch (_) {}
-    }
+      await file.delete();
+    } catch (_) {}
+  }
+}
+
+/// A PDF from the picker or the share sheet: a bank statement goes to the
+/// review list, a digital receipt (e-bon) to the entry sheet, other text to
+/// the model.
+Future<void> importPdfFile(BuildContext context, String path, {required String name}) async {
+  final scope = AppScope.of(context);
+  final l = AppLocalizations.of(context);
+  final read = await _withProgress<(String, OcrResult)?>(context, l.importRunning, l.importReadingPdf, () async {
+    final text = await PdfText.extract(path);
+    final lines = await PdfText.extractLines(path);
+    return (text, lines);
   });
-  if (text == null || !context.mounted) return;
-  if (text.trim().length < 40) {
+  if (read == null || !context.mounted) return;
+  final (text, lines) = read;
+  if (text.trim().length < 40 || lines.lines.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.importNoText)));
     return;
   }
-  await _importText(context, text, sourceDescription: doc.name);
+  if (StatementRows.looksLikeStatement(text)) {
+    await _importText(context, text, sourceDescription: name);
+    return;
+  }
+  final parsed = ReceiptParser().parse(lines);
+  if (parsed.totalCents != null && parsed.merchant != null) {
+    unawaited(scope.budget.sync());
+    final draft = receiptToDraft(parsed, categories: scope.budget.categories, suggestions: scope.budget.suggestions);
+    final entry = await showEntrySheet(context, budget: scope.budget, draft: draft, title: l.receiptConfirm);
+    if (entry == null || !context.mounted) return;
+    await saveNewEntry(context, scope.budget, entry);
+    return;
+  }
+  await _importText(context, text, sourceDescription: name);
+}
+
+/// A shared image: the receipt scanner.
+Future<void> receiptFromImageFile(BuildContext context, String path) async {
+  unawaited(AppScope.of(context).budget.sync());
+  await _receiptFromPhoto(context, path);
+}
+
+/// Shared text (a receipt pasted as text, a booking list): the model.
+Future<void> importSharedText(BuildContext context, String text) async {
+  final l = AppLocalizations.of(context);
+  await _importText(context, text, sourceDescription: l.sourceShared);
 }
 
 Future<void> _importText(BuildContext context, String text, {required String sourceDescription}) async {

@@ -161,5 +161,8 @@
   "categoryType": "Typ",
   "typeChangeNote": "Ein geänderter Typ baut die Einnahmen- und Ausgaben-Zeilen der Übersicht neu auf.",
   "newExpenseNote": "Eine neue Ausgabenkategorie bekommt in der Übersicht der Tabelle keine eigene Ist/Plan-Zeile; die App zählt sie trotzdem.",
-  "categoryAdded": "Kategorie hinzugefügt"
+  "categoryAdded": "Kategorie hinzugefügt",
+  "sourceShared": "Geteilt",
+  "shareNoFolder": "Wähle zuerst den Budget-Ordner, dann teile den Beleg noch einmal.",
+  "shareUnsupported": "„{name}“ kann nicht verwendet werden: teile ein PDF, ein Bild oder Text."
 }

@@ -396,6 +396,55 @@ pub fn pdf_text_rows(bytes: &[u8]) -> String {
     out
 }
 
+/// The text layer of a PDF as an [`OcrResult`]: every positioned text cell
+/// becomes a line with its box in PDF points, pages stacked top to bottom.
+/// A digital receipt (a shop's e-bon) then goes through the same parser as
+/// a photographed one. An empty `lines` means a scanned PDF.
+pub fn pdf_lines_bytes(bytes: &[u8]) -> OcrResult {
+    let started = std::time::Instant::now();
+    let mut lines = Vec::new();
+    let mut width = 0f32;
+    let mut y_offset = 0f32;
+    for (w, h, cells) in docling_pdf::textparse::pdf_textlines(bytes) {
+        for c in cells {
+            let text = c.text.trim();
+            if text.is_empty() {
+                continue;
+            }
+            lines.push(OcrLine {
+                text: text.to_string(),
+                confidence: 1.0,
+                det_score: 1.0,
+                x0: c.l,
+                y0: c.t + y_offset,
+                x1: c.r,
+                y1: c.b + y_offset,
+            });
+        }
+        width = width.max(w);
+        y_offset += h;
+    }
+    let (w, h) = (width.round() as u32, y_offset.round() as u32);
+    OcrResult {
+        width: w,
+        height: h,
+        source_width: w,
+        source_height: h,
+        scale: 1.0,
+        exif_orientation: 1,
+        lines,
+        qr_codes: Vec::new(),
+        elapsed_ms: started.elapsed().as_millis() as u64,
+        engine: "pdf-text".into(),
+    }
+}
+
+/// [`pdf_lines_bytes`] for a file path.
+pub fn pdf_lines_path(path: &str) -> Result<OcrResult, String> {
+    let bytes = std::fs::read(path).map_err(|e| format!("read {path}: {e}"))?;
+    Ok(pdf_lines_bytes(&bytes))
+}
+
 /// [`pdf_text_bytes`] for a file path.
 pub fn pdf_text_path(path: &str) -> Result<String, String> {
     let bytes = std::fs::read(path).map_err(|e| format!("read {path}: {e}"))?;
@@ -592,6 +641,21 @@ struct TextReply {
     text: Option<String>,
 }
 
+/// Text layer of a PDF file as the scan JSON (`{"ok":true,"result":{…}}`,
+/// see [`receipt_ocr_scan_file`]), lines with their boxes in PDF points.
+/// Needs no engine. Free with [`receipt_ocr_free`].
+///
+/// # Safety
+/// `path` is a valid NUL-terminated string.
+#[no_mangle]
+pub unsafe extern "C" fn receipt_ocr_pdf_lines(path: *const c_char) -> *mut c_char {
+    let path = match c_str(path) {
+        Ok(p) => p.to_string(),
+        Err(e) => return reply(Err(e)),
+    };
+    guarded(move || pdf_lines_path(&path))
+}
+
 /// Text layer of a PDF file as `{"ok":true,"text":"…"}` (Markdown) or
 /// `{"ok":false,"error":"…"}`. Needs no engine. Free with
 /// [`receipt_ocr_free`].
@@ -625,4 +689,36 @@ pub unsafe extern "C" fn receipt_ocr_pdf_text(path: *const c_char) -> *mut c_cha
         serde_json::to_string(&reply)
             .unwrap_or_else(|e| format!("{{\"ok\":false,\"error\":\"serialize: {e}\"}}")),
     )
+}
+
+#[cfg(test)]
+mod pdf_lines_tests {
+    use super::*;
+
+    #[test]
+    fn e_receipt_pdf_becomes_positioned_lines() {
+        let path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../samples/receipts/billa_ebon.pdf"
+        );
+        let result = pdf_lines_path(path).expect("fixture readable");
+        assert_eq!(result.engine, "pdf-text");
+        assert!(result.width > 0 && result.height > 0);
+        assert!(result.lines.len() > 50, "{} lines", result.lines.len());
+        let total = result
+            .lines
+            .iter()
+            .find(|l| l.text == "26.33")
+            .expect("total present");
+        let summe = result
+            .lines
+            .iter()
+            .find(|l| l.text == "Summe")
+            .expect("label present");
+        assert!((total.cy() - summe.cy()).abs() < 2.0, "same row");
+        assert!(total.x0 > summe.x1, "amount right of the label");
+        assert!(result.qr_codes.is_empty());
+        // A scanned (image-only) PDF yields no lines instead of failing.
+        assert!(pdf_lines_bytes(b"%PDF-1.4 garbage").lines.is_empty());
+    }
 }

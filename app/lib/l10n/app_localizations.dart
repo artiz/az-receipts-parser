@@ -1071,6 +1071,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Category added'**
   String get categoryAdded;
+
+  /// No description provided for @sourceShared.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared'**
+  String get sourceShared;
+
+  /// No description provided for @shareNoFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the budget folder first, then share the receipt again.'**
+  String get shareNoFolder;
+
+  /// No description provided for @shareUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot use \"{name}\": share a PDF, an image or text.'**
+  String shareUnsupported(String name);
 }
 
 class _AppLocalizationsDelegate

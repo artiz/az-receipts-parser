@@ -429,5 +429,15 @@
   "categoryType": "Type",
   "typeChangeNote": "Changing the type rebuilds the income and expense rows of the overview sheet.",
   "newExpenseNote": "A new expense category gets no row of its own in the overview sheet's actual/plan blocks; the app counts it anyway.",
-  "categoryAdded": "Category added"
+  "categoryAdded": "Category added",
+  "sourceShared": "Shared",
+  "shareNoFolder": "Choose the budget folder first, then share the receipt again.",
+  "shareUnsupported": "Cannot use \"{name}\": share a PDF, an image or text.",
+  "@shareUnsupported": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

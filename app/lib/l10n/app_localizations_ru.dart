@@ -584,4 +584,16 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get categoryAdded => 'Категория добавлена';
+
+  @override
+  String get sourceShared => 'Поделились';
+
+  @override
+  String get shareNoFolder =>
+      'Сначала выберите папку бюджета, затем поделитесь чеком ещё раз.';
+
+  @override
+  String shareUnsupported(String name) {
+    return '«$name» не подходит: поделитесь PDF, картинкой или текстом.';
+  }
 }
