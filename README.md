@@ -92,7 +92,9 @@ the bookings in the file.
    to the note). *New entry* has category, description autocomplete, amount,
    note and date (category pickers list the categories alphabetically, the
    most used one is preselected); income is typed as a plain number and
-   stored negative. A new
+   stored negative. A long press on the *+ Entry* button opens a menu with
+   every way in: by hand, receipt photo, image from the gallery, statement
+   PDF. A new
    booking with the same amount as one booked within three days asks whether
    to add its details to that booking's note instead (a scanned receipt of a
    purchase typed by hand). New bookings go into a local queue and are written
