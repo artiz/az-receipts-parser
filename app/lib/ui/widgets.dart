@@ -48,6 +48,9 @@ double? parseAmount(String text) {
   return double.tryParse(t);
 }
 
+/// A note's lines on one line, for list rows ("a; b; c").
+String oneLine(String note) => note.split(RegExp(r'\r?\n')).map((l) => l.trim()).where((l) => l.isNotEmpty).join('; ');
+
 /// The icons a category can be given in the app (key as stored in the file).
 const Map<String, IconData> categoryIcons = {
   'home': Icons.home_outlined,
@@ -261,7 +264,7 @@ class EntryTile extends StatelessWidget {
         style: TextStyle(fontWeight: FontWeight.w500, fontStyle: isTransfer ? FontStyle.italic : null, color: isTransfer ? scheme.onSurfaceVariant : null),
       ),
       subtitle: Text(
-        [entry.category, if (entry.note.isNotEmpty) entry.note].join(' · '),
+        [entry.category, if (entry.note.isNotEmpty) oneLine(entry.note)].join(' · '),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),

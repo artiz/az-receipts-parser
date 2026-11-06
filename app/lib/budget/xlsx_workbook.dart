@@ -366,6 +366,89 @@ class XlsxSheet {
     return n;
   }
 
+  /// Turn text wrapping off for every cell of [col] (and the column's own
+  /// default style): each wrapped style is swapped for an unwrapped copy, so
+  /// other columns that share the style keep it. The height Excel stored
+  /// for a wrapped row is dropped unless the user set it by hand. Returns
+  /// the number of changed cells and column entries.
+  int unwrapColumn(String col) {
+    var n = 0;
+    final colIdx = XlsxRef.columnIndex(col);
+    for (final cols in _document.rootElement.findElements('cols')) {
+      for (final c in cols.findElements('col').toList()) {
+        final min = int.tryParse(c.getAttribute('min') ?? '');
+        final max = int.tryParse(c.getAttribute('max') ?? '');
+        final s = int.tryParse(c.getAttribute('style') ?? '');
+        if (min == null || max == null || s == null || colIdx < min || colIdx > max) continue;
+        final u = _workbook.unwrappedStyle(s);
+        if (u == s) continue;
+        // Split a range so only this column changes.
+        final at = cols.children.indexOf(c);
+        final parts = <XmlElement>[];
+        if (min < colIdx) parts.add(c.copy()..setAttribute('max', '${colIdx - 1}'));
+        parts.add(c.copy()
+          ..setAttribute('min', '$colIdx')
+          ..setAttribute('max', '$colIdx')
+          ..setAttribute('style', '$u'));
+        if (max > colIdx) parts.add(c.copy()..setAttribute('min', '${colIdx + 1}'));
+        cols.children.removeAt(at);
+        cols.children.insertAll(at, parts);
+        n++;
+      }
+    }
+    for (final row in _sheetData.findElements('row')) {
+      for (final c in row.findElements('c')) {
+        final ref = c.getAttribute('r');
+        if (ref == null || XlsxRef.split(ref).$1 != col) continue;
+        final s = int.tryParse(c.getAttribute('s') ?? '');
+        if (s == null) continue;
+        final u = _workbook.unwrappedStyle(s);
+        if (u == s) continue;
+        c.setAttribute('s', '$u');
+        final custom = row.getAttribute('customHeight');
+        if (custom != '1' && custom != 'true') row.removeAttribute('ht');
+        n++;
+      }
+    }
+    // The table's own column format: Excel re-applies it to a cell on edit,
+    // which would bring the wrapping back.
+    n += _unwrapTableColumn(colIdx);
+    if (n > 0) _dirty = true;
+    return n;
+  }
+
+  /// Strip wrapping from the data format (`dataDxfId`) of the table column
+  /// at [colIdx] in every table of this sheet.
+  int _unwrapTableColumn(int colIdx) {
+    var n = 0;
+    final relsPath = path.replaceFirstMapped(RegExp(r'([^/]+)$'), (m) => '_rels/${m[1]}.rels');
+    if (_workbook._archive.findFile(relsPath) == null) return 0;
+    final rels = XmlDocument.parse(_workbook._entryText(relsPath));
+    for (final rel in rels.rootElement.findElements('Relationship')) {
+      if (!(rel.getAttribute('Type') ?? '').endsWith('/table')) continue;
+      final target = rel.getAttribute('Target') ?? '';
+      final tablePath = target.startsWith('/') ? target.substring(1) : 'xl/worksheets/$target'.replaceAll('worksheets/../', '');
+      if (_workbook._archive.findFile(tablePath) == null) continue;
+      final doc = XmlDocument.parse(_workbook._entryText(tablePath));
+      final table = doc.rootElement;
+      final ref = table.getAttribute('ref') ?? '';
+      final start = RegExp(r'^([A-Z]+)').firstMatch(ref)?.group(1);
+      if (start == null) continue;
+      final index = colIdx - XlsxRef.columnIndex(start);
+      final columns = table.findAllElements('tableColumn').toList();
+      if (index < 0 || index >= columns.length) continue;
+      final column = columns[index];
+      final dxf = int.tryParse(column.getAttribute('dataDxfId') ?? '');
+      if (dxf == null) continue;
+      final u = _workbook.unwrappedDxf(dxf);
+      if (u == dxf) continue;
+      column.setAttribute('dataDxfId', '$u');
+      _workbook._replacedEntries[tablePath] = doc.toXmlString();
+      n++;
+    }
+    return n;
+  }
+
   /// Ensure column B of [rowIndex] carries the month formula the template
   /// pre-fills (rows beyond the pre-filled range need it).
   void ensureMonthFormula(int rowIndex, String formulaTemplate) {
@@ -405,6 +488,52 @@ class XlsxWorkbook {
   final Map<String, XlsxSheet> _sheets = {};
   List<String>? _sharedStrings;
   final Map<String, String> _replacedEntries = {};
+  XmlDocument? _styles;
+  bool _stylesDirty = false;
+  final Map<int, int> _unwrapped = {};
+  final Map<int, int> _unwrappedDxfs = {};
+
+  XmlDocument get _stylesDoc => _styles ??= XmlDocument.parse(_entryText('xl/styles.xml'));
+
+  /// Index of a differential format (table column / conditional format)
+  /// like [dxfId] but without text wrapping; see [unwrappedStyle].
+  int unwrappedDxf(int dxfId) {
+    final cached = _unwrappedDxfs[dxfId];
+    if (cached != null) return cached;
+    final dxfs = _stylesDoc.rootElement.findElements('dxfs').firstOrNull;
+    if (dxfs == null) return dxfId;
+    final list = dxfs.findElements('dxf').toList();
+    if (dxfId < 0 || dxfId >= list.length) return dxfId;
+    final alignment = list[dxfId].findElements('alignment').firstOrNull;
+    final wrap = alignment?.getAttribute('wrapText');
+    if (wrap == null || wrap == '0' || wrap == 'false') return _unwrappedDxfs[dxfId] = dxfId;
+    final clone = list[dxfId].copy();
+    clone.findElements('alignment').first.removeAttribute('wrapText');
+    dxfs.children.add(clone);
+    dxfs.setAttribute('count', '${list.length + 1}');
+    _stylesDirty = true;
+    return _unwrappedDxfs[dxfId] = list.length;
+  }
+
+  /// Index of a cell style like [styleIndex] but without text wrapping: the
+  /// same index when it does not wrap, else a copy appended to `cellXfs`.
+  int unwrappedStyle(int styleIndex) {
+    final cached = _unwrapped[styleIndex];
+    if (cached != null) return cached;
+    final xfs = _stylesDoc.rootElement.findElements('cellXfs').firstOrNull;
+    if (xfs == null) return styleIndex;
+    final list = xfs.findElements('xf').toList();
+    if (styleIndex < 0 || styleIndex >= list.length) return styleIndex;
+    final alignment = list[styleIndex].findElements('alignment').firstOrNull;
+    final wrap = alignment?.getAttribute('wrapText');
+    if (wrap == null || wrap == '0' || wrap == 'false') return _unwrapped[styleIndex] = styleIndex;
+    final clone = list[styleIndex].copy();
+    clone.findElements('alignment').first.removeAttribute('wrapText');
+    xfs.children.add(clone);
+    xfs.setAttribute('count', '${list.length + 1}');
+    _stylesDirty = true;
+    return _unwrapped[styleIndex] = list.length;
+  }
 
   static XlsxWorkbook open(Uint8List bytes) {
     final Archive archive;
@@ -490,7 +619,7 @@ class XlsxWorkbook {
   }
 
   /// Whether any sheet was modified since [open].
-  bool get isDirty => _sheets.values.any((s) => s._dirty) || _replacedEntries.isNotEmpty;
+  bool get isDirty => _sheets.values.any((s) => s._dirty) || _replacedEntries.isNotEmpty || _stylesDirty;
 
   /// Re-zip: untouched entries are copied as they were.
   Uint8List save() {
@@ -503,6 +632,7 @@ class XlsxWorkbook {
     _markFullCalcOnLoad();
     final wbXml = _replacedEntries['xl/workbook.xml'];
     if (wbXml != null) replaced['xl/workbook.xml'] = wbXml;
+    if (_stylesDirty) replaced['xl/styles.xml'] = _stylesDoc.toXmlString();
     final out = Archive();
     for (final f in _archive.files) {
       if (!f.isFile) continue;

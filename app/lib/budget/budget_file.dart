@@ -813,7 +813,12 @@ class BudgetFile {
     }
   }
 
-  Uint8List save() => workbook.save();
+  /// Serialise. The note column is kept unwrapped (a long item list must
+  /// not blow up the row height); a file without wrapping is left as is.
+  Uint8List save() {
+    _entriesSheet.unwrapColumn('F');
+    return workbook.save();
+  }
 
   static double _round2(double v) => (v * 100).round() / 100;
 }

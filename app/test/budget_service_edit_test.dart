@@ -72,7 +72,7 @@ void main() {
     await service.addToEntry(again, 2.5, '');
     final third = service.entries.firstWhere((x) => x.row == e.row);
     expect(third.amount, e.amount + 8.5);
-    expect(third.note, '+6 Glühwein; +2,50');
+    expect(third.note, '+6 Glühwein\n+2,50');
   });
 
   test('similar entries are found and the note merged', () async {
@@ -85,8 +85,12 @@ void main() {
     expect(similar!.description, 'Elka');
     expect(service.findSimilar(scanned.copyWith(amount: 91)), isNull);
     expect(service.findSimilar(scanned.copyWith(category: 'Kinder')), isNull);
-    await service.appendNote(similar, 'Tanne 90,00; OBI');
-    expect(service.entries.firstWhere((x) => x.description == 'Elka').note, 'Tanne 90,00; OBI');
+    // What the duplicate dialog passes: the other description, then the note, one per line.
+    await service.appendNote(similar, 'OBI\nTanne 90,00');
+    expect(service.entries.firstWhere((x) => x.description == 'Elka').note, 'OBI\nTanne 90,00');
+    final elka = service.entries.firstWhere((x) => x.description == 'Elka');
+    await service.appendNote(elka, '+2,00');
+    expect(service.entries.firstWhere((x) => x.description == 'Elka').note, 'OBI\nTanne 90,00\n+2,00');
   });
 
   test('queued entries of a year without a file are reported, not lost', () async {
