@@ -77,6 +77,20 @@ void main() {
     expect((await folder.listFiles(dir)).length, BudgetService.backupsKept, reason: 'switched off');
   });
 
+  test('year summary is computed off the UI thread, cached per year until the next sync', () async {
+    final s = service();
+    await s.sync();
+    final summary = await s.yearSummary(2026);
+    expect(summary, isNotNull);
+    expect(summary!.expenses, closeTo(s.monthExpenses(1) + s.monthExpenses(2) + s.monthExpenses(3), 0.001));
+    expect(summary.income, greaterThan(0));
+    expect(summary.byCategory['Lebensmittel'], greaterThan(0));
+    expect(identical(await s.yearSummary(2026), summary), isTrue, reason: 'cached');
+    expect(await s.yearSummary(2024), isNull, reason: 'no file');
+    await s.sync();
+    expect(identical(await s.yearSummary(2026), summary), isFalse, reason: 'recomputed after a sync');
+  });
+
   test('receipt photos go to Belege/<year>/ with a unique name', () async {
     final s = service();
     await s.sync();

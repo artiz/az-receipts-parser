@@ -83,10 +83,24 @@ class _OverviewPageState extends State<OverviewPage> {
     final level = BudgetService.limitLevelOf(file, stats.expenses);
     final years = budget.yearFiles.map((f) => f.year).toList();
     final titleStyle = Theme.of(context).appBarTheme.titleTextStyle ?? Theme.of(context).textTheme.titleLarge;
-    // Swipe left / right through the months, the year view at the end.
+    // Swipe left / right through the months, the year view at the end; in
+    // the year view a swipe moves to the neighbouring year's file.
     final sequence = [...months, 0];
     void step(int delta) {
-      final i = sequence.indexOf(yearMode ? 0 : month);
+      if (yearMode) {
+        final ys = [...years]..sort();
+        final i = ys.indexOf(year);
+        final next = (i + delta).clamp(0, ys.length - 1);
+        if (i >= 0 && next != i) {
+          setState(() {
+            _year = ys[next];
+            _month = 0;
+            _expanded.clear();
+          });
+        }
+        return;
+      }
+      final i = sequence.indexOf(month);
       final next = (i + delta).clamp(0, sequence.length - 1);
       if (next != i) setState(() => _month = sequence[next]);
     }
@@ -268,17 +282,13 @@ extension _YearView on _OverviewPageState {
         const SizedBox(height: 8),
         YearChart(months: months, monthLabel: label),
         SectionTitle(l.yearByCategory),
-        FutureBuilder<BudgetFile?>(
-          future: budget.fileForYear(year - 1),
+        FutureBuilder<YearSummary?>(
+          // The previous year is parsed once, off the UI thread (see BudgetService.yearSummary).
+          future: budget.yearSummary(year - 1),
           builder: (context, snap) {
             final prev = snap.data;
-            final prevBy = <String, double>{};
-            var prevTotal = 0.0;
-            if (prev != null) {
-              final stats = _MonthStats.from(budget.entriesForYear(year - 1, prev), prev);
-              prevBy.addAll(stats.byCategory);
-              prevTotal = stats.expenses;
-            }
+            final prevBy = prev?.byCategory ?? const <String, double>{};
+            final prevTotal = prev?.expenses ?? 0.0;
             final rows = [
               for (final c in file.expenseCategoriesByName)
                 if ((byCategory[c.name] ?? 0) != 0 || (planByCategory[c.name] ?? 0) != 0 || (prevBy[c.name] ?? 0) != 0) c.name,

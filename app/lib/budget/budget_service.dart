@@ -16,6 +16,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
@@ -33,6 +34,31 @@ enum SyncState { noFolder, idle, syncing, offline, error }
 final RegExp budgetFileName = RegExp(r'^Budget (20\d\d)\.xlsx$', caseSensitive: false);
 
 const String xlsxMime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+/// Totals of a year's expense bookings, by category and overall.
+class YearSummary {
+  const YearSummary({required this.expenses, required this.income, required this.byCategory});
+  final double expenses;
+  final double income;
+  final Map<String, double> byCategory;
+
+  static YearSummary of(BudgetFile f) {
+    var expenses = 0.0;
+    var income = 0.0;
+    final by = <String, double>{};
+    for (final e in f.entries) {
+      final cat = f.category(e.category);
+      if (cat == null) continue;
+      if (cat.isIncome) {
+        income += -e.amount;
+      } else if (cat.isExpense) {
+        expenses += e.amount;
+        by[e.category] = (by[e.category] ?? 0) + e.amount;
+      }
+    }
+    return YearSummary(expenses: expenses, income: income, byCategory: by);
+  }
+}
 
 class YearFileRef {
   const YearFileRef({required this.year, required this.entry});
@@ -93,6 +119,9 @@ class BudgetService extends ChangeNotifier {
 
   /// Other years' files read for the overview, dropped on every sync.
   final Map<int, BudgetFile> _otherYears = {};
+
+  /// Year totals computed off the UI thread, dropped on every sync.
+  final Map<int, Future<YearSummary?>> _yearSummaries = {};
 
   Future<void>? _running;
   bool _syncAgain = false;
@@ -573,6 +602,7 @@ class BudgetService extends ChangeNotifier {
     state = SyncState.syncing;
     lastError = null;
     _otherYears.clear();
+    _yearSummaries.clear();
     notifyListeners();
     try {
       yearFiles = await _listYearFiles(uri);
@@ -640,6 +670,20 @@ class BudgetService extends ChangeNotifier {
     final bytes = await folder.readFile(ref.entry.uri);
     return _otherYears[y] = BudgetFile.open(bytes, yearHint: ref.year);
   }
+
+  /// Expense totals of year [y] (file rows only), parsed in an isolate so
+  /// a large past year does not stall the UI; null without a file.
+  Future<YearSummary?> yearSummary(int y) {
+    return _yearSummaries[y] ??= () async {
+      final ref = _refForYear(y);
+      if (ref == null) return null;
+      final bytes = await folder.readFile(ref.entry.uri);
+      return _summarizeInIsolate(bytes, y);
+    }();
+  }
+
+  // A static method: the closure sent to the isolate must not capture `this`.
+  static Future<YearSummary> _summarizeInIsolate(Uint8List bytes, int y) => Isolate.run(() => YearSummary.of(BudgetFile.open(bytes, yearHint: y)));
 
   /// File entries plus queued ones for [y], oldest first.
   List<BudgetEntry> entriesForYear(int y, BudgetFile f) {
