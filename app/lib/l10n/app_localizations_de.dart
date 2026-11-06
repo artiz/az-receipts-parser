@@ -485,4 +485,90 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get templateLanguage => 'Sprache der neuen Datei';
+
+  @override
+  String get categories => 'Kategorien';
+
+  @override
+  String get editCategories => 'Kategorien bearbeiten';
+
+  @override
+  String get editCategoriesHint =>
+      'Name, Symbol, Farbe und Hinweis, gespeichert in der Datei';
+
+  @override
+  String get editCategory => 'Kategorie bearbeiten';
+
+  @override
+  String get categoryName => 'Name';
+
+  @override
+  String get categoryHintLabel => 'Hinweis';
+
+  @override
+  String get categoryIconLabel => 'Symbol';
+
+  @override
+  String get categoryColorLabel => 'Farbe';
+
+  @override
+  String get autoChoice => 'Automatisch';
+
+  @override
+  String get renameNote =>
+      'Beim Umbenennen werden auch die Buchungen und die Übersichtszeilen der Jahresdatei umbenannt.';
+
+  @override
+  String get categorySaved => 'Kategorie gespeichert';
+
+  @override
+  String get categoryNameTaken =>
+      'Eine Kategorie mit diesem Namen gibt es schon.';
+
+  @override
+  String get typeExpense => 'Ausgabe';
+
+  @override
+  String get typeIncome => 'Einnahme';
+
+  @override
+  String get typeTransfer => 'Umbuchung';
+
+  @override
+  String translateFile(String language) {
+    return 'Datei auf $language übersetzen';
+  }
+
+  @override
+  String translateFileHint(String fileLanguage, String appLanguage) {
+    return 'Datei: $fileLanguage · App: $appLanguage. Kategorien, Hinweise und Beschriftungen werden übersetzt, Buchungen umbenannt; Blattnamen bleiben.';
+  }
+
+  @override
+  String translateFileConfirm(int year, String language) {
+    return 'Budget $year.xlsx auf $language übersetzen?';
+  }
+
+  @override
+  String translateFileDone(int count) {
+    return '$count Zellen übersetzt';
+  }
+
+  @override
+  String get translate => 'Übersetzen';
+
+  @override
+  String fileLanguage(String language) {
+    return 'Sprache der Datei: $language';
+  }
+
+  @override
+  String get chartHint =>
+      'Plan grau, Ist in der Farbe der Kategorie. Tippe auf einen Balken.';
+
+  @override
+  String get actual => 'Ist';
+
+  @override
+  String get planLabel => 'Plan';
 }

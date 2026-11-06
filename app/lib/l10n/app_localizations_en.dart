@@ -483,4 +483,89 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get templateLanguage => 'Language of the new file';
+
+  @override
+  String get categories => 'Categories';
+
+  @override
+  String get editCategories => 'Edit categories';
+
+  @override
+  String get editCategoriesHint =>
+      'Name, icon, colour and hint, stored in the file';
+
+  @override
+  String get editCategory => 'Edit category';
+
+  @override
+  String get categoryName => 'Name';
+
+  @override
+  String get categoryHintLabel => 'Hint';
+
+  @override
+  String get categoryIconLabel => 'Icon';
+
+  @override
+  String get categoryColorLabel => 'Colour';
+
+  @override
+  String get autoChoice => 'Automatic';
+
+  @override
+  String get renameNote =>
+      'Renaming also renames the bookings and the overview rows of this year\'s file.';
+
+  @override
+  String get categorySaved => 'Category saved';
+
+  @override
+  String get categoryNameTaken => 'A category with this name exists already.';
+
+  @override
+  String get typeExpense => 'Expense';
+
+  @override
+  String get typeIncome => 'Income';
+
+  @override
+  String get typeTransfer => 'Transfer';
+
+  @override
+  String translateFile(String language) {
+    return 'Translate file to $language';
+  }
+
+  @override
+  String translateFileHint(String fileLanguage, String appLanguage) {
+    return 'File: $fileLanguage · App: $appLanguage. Categories, hints and labels are translated, bookings renamed; sheet names stay.';
+  }
+
+  @override
+  String translateFileConfirm(int year, String language) {
+    return 'Translate Budget $year.xlsx to $language?';
+  }
+
+  @override
+  String translateFileDone(int count) {
+    return '$count cells translated';
+  }
+
+  @override
+  String get translate => 'Translate';
+
+  @override
+  String fileLanguage(String language) {
+    return 'File language: $language';
+  }
+
+  @override
+  String get chartHint =>
+      'Plan in grey, actual in the category colour. Tap a bar.';
+
+  @override
+  String get actual => 'Actual';
+
+  @override
+  String get planLabel => 'Plan';
 }

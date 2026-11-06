@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../app.dart';
+import '../budget/budget_labels.dart';
 import '../budget/budget_service.dart';
 import '../l10n/app_localizations.dart';
 import '../ocr/engine_controller.dart';
+import 'categories_page.dart';
 import 'entry_actions.dart';
 import 'onboarding_page.dart';
 import 'widgets.dart';
@@ -53,6 +55,27 @@ class SettingsPage extends StatelessWidget {
                   title: Text(l.forgetFolder),
                   onTap: budget.forgetFolder,
                 ),
+              ],
+              if (budget.file != null) ...[
+                SectionTitle(l.categories),
+                ListTile(
+                  leading: const Icon(Icons.category_outlined),
+                  title: Text(l.editCategories),
+                  subtitle: Text('${l.categoriesCount(budget.categories.length)} · ${l.editCategoriesHint}'),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CategoriesPage())),
+                ),
+                if (budget.fileLanguageMismatch)
+                  ListTile(
+                    leading: const Icon(Icons.translate_outlined),
+                    title: Text(l.translateFile(languageDisplayName(budget.templateLanguageCode))),
+                    subtitle: Text(l.translateFileHint(languageDisplayName(budget.file!.language), languageDisplayName(budget.templateLanguageCode))),
+                    onTap: () => translateFileDialog(context, budget),
+                  )
+                else
+                  ListTile(
+                    leading: const Icon(Icons.translate_outlined),
+                    title: Text(l.fileLanguage(languageDisplayName(budget.file!.language))),
+                  ),
               ],
               SectionTitle(l.language),
               ListTile(

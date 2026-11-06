@@ -359,5 +359,70 @@
     }
   },
   "gotIt": "Got it",
-  "templateLanguage": "Language of the new file"
+  "templateLanguage": "Language of the new file",
+  "categories": "Categories",
+  "editCategories": "Edit categories",
+  "editCategoriesHint": "Name, icon, colour and hint, stored in the file",
+  "editCategory": "Edit category",
+  "categoryName": "Name",
+  "categoryHintLabel": "Hint",
+  "categoryIconLabel": "Icon",
+  "categoryColorLabel": "Colour",
+  "autoChoice": "Automatic",
+  "renameNote": "Renaming also renames the bookings and the overview rows of this year's file.",
+  "categorySaved": "Category saved",
+  "categoryNameTaken": "A category with this name exists already.",
+  "typeExpense": "Expense",
+  "typeIncome": "Income",
+  "typeTransfer": "Transfer",
+  "translateFile": "Translate file to {language}",
+  "@translateFile": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "translateFileHint": "File: {fileLanguage} · App: {appLanguage}. Categories, hints and labels are translated, bookings renamed; sheet names stay.",
+  "@translateFileHint": {
+    "placeholders": {
+      "fileLanguage": {
+        "type": "String"
+      },
+      "appLanguage": {
+        "type": "String"
+      }
+    }
+  },
+  "translateFileConfirm": "Translate Budget {year}.xlsx to {language}?",
+  "@translateFileConfirm": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "translateFileDone": "{count} cells translated",
+  "@translateFileDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "translate": "Translate",
+  "fileLanguage": "File language: {language}",
+  "@fileLanguage": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "chartHint": "Plan in grey, actual in the category colour. Tap a bar.",
+  "actual": "Actual",
+  "planLabel": "Plan"
 }

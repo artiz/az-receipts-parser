@@ -897,6 +897,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Language of the new file'**
   String get templateLanguage;
+
+  /// No description provided for @categories.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get categories;
+
+  /// No description provided for @editCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit categories'**
+  String get editCategories;
+
+  /// No description provided for @editCategoriesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, icon, colour and hint, stored in the file'**
+  String get editCategoriesHint;
+
+  /// No description provided for @editCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit category'**
+  String get editCategory;
+
+  /// No description provided for @categoryName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get categoryName;
+
+  /// No description provided for @categoryHintLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Hint'**
+  String get categoryHintLabel;
+
+  /// No description provided for @categoryIconLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Icon'**
+  String get categoryIconLabel;
+
+  /// No description provided for @categoryColorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour'**
+  String get categoryColorLabel;
+
+  /// No description provided for @autoChoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get autoChoice;
+
+  /// No description provided for @renameNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Renaming also renames the bookings and the overview rows of this year\'s file.'**
+  String get renameNote;
+
+  /// No description provided for @categorySaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Category saved'**
+  String get categorySaved;
+
+  /// No description provided for @categoryNameTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'A category with this name exists already.'**
+  String get categoryNameTaken;
+
+  /// No description provided for @typeExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense'**
+  String get typeExpense;
+
+  /// No description provided for @typeIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Income'**
+  String get typeIncome;
+
+  /// No description provided for @typeTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer'**
+  String get typeTransfer;
+
+  /// No description provided for @translateFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate file to {language}'**
+  String translateFile(String language);
+
+  /// No description provided for @translateFileHint.
+  ///
+  /// In en, this message translates to:
+  /// **'File: {fileLanguage} · App: {appLanguage}. Categories, hints and labels are translated, bookings renamed; sheet names stay.'**
+  String translateFileHint(String fileLanguage, String appLanguage);
+
+  /// No description provided for @translateFileConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate Budget {year}.xlsx to {language}?'**
+  String translateFileConfirm(int year, String language);
+
+  /// No description provided for @translateFileDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} cells translated'**
+  String translateFileDone(int count);
+
+  /// No description provided for @translate.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate'**
+  String get translate;
+
+  /// No description provided for @fileLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'File language: {language}'**
+  String fileLanguage(String language);
+
+  /// No description provided for @chartHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan in grey, actual in the category colour. Tap a bar.'**
+  String get chartHint;
+
+  /// No description provided for @actual.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual'**
+  String get actual;
+
+  /// No description provided for @planLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get planLabel;
 }
 
 class _AppLocalizationsDelegate

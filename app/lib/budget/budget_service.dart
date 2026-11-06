@@ -322,6 +322,69 @@ class BudgetService extends ChangeNotifier {
     await _withFile(year ?? currentYear, (f) => f.setSetting(label, value, note: note));
   }
 
+  /// Change a category (name, hint, icon, colour) in the loaded year's file;
+  /// queued entries follow a rename.
+  Future<void> updateCategory(BudgetCategory old, BudgetCategory updated, {int? year}) async {
+    final y = year ?? this.year ?? currentYear;
+    // Queued entries are renamed first: the sync after the write flushes them
+    // into the file, where the category already has its new name.
+    final renamed = updated.name != old.name && await _renamePending({old.name: updated.name}, y);
+    try {
+      await _withFile(y, (f) {
+        final current = f.category(old.name) ?? (throw StateError('category "${old.name}" not found'));
+        f.updateCategory(current, updated);
+      });
+    } catch (_) {
+      if (renamed) await _renamePending({updated.name: old.name}, y);
+      rethrow;
+    }
+  }
+
+  /// Translate the loaded year's file into [language] (see
+  /// [BudgetFile.translateTo]); returns the number of changed cells.
+  Future<int> translateFile(String language, {int? year}) async {
+    final y = year ?? this.year ?? currentYear;
+    final ref = _refForYear(y) ?? (throw StateError('no file for $y'));
+    // Dry run on the file as it is, to learn which categories get renamed.
+    final probe = BudgetFile.open(await folder.readFile(ref.entry.uri), yearHint: y);
+    final before = {for (final c in probe.categories) c.row!: c.name};
+    probe.translateTo(language);
+    final renames = <String, String>{};
+    for (final c in BudgetFile.open(probe.save()).categories) {
+      final old = before[c.row!];
+      if (old != null && old != c.name) renames[old] = c.name;
+    }
+    final renamed = await _renamePending(renames, y);
+    var changed = 0;
+    try {
+      await _withFile(y, (f) => changed = f.translateTo(language));
+    } catch (_) {
+      if (renamed) await _renamePending({for (final e in renames.entries) e.value: e.key}, y);
+      rethrow;
+    }
+    return changed;
+  }
+
+  /// Rename categories of the queued entries of year [y]; true when any changed.
+  Future<bool> _renamePending(Map<String, String> renames, int y) async {
+    if (renames.isEmpty) return false;
+    var any = false;
+    pending = [
+      for (final e in pending)
+        if (e.date.year == y && renames.containsKey(e.category)) () {
+          any = true;
+          return e.copyWith(category: renames[e.category]);
+        }() else e,
+    ];
+    if (!any) return false;
+    await _saveQueue();
+    notifyListeners();
+    return true;
+  }
+
+  /// The loaded file is in another language than the app.
+  bool get fileLanguageMismatch => file != null && file!.language != templateLanguageCode;
+
   Future<void> _withFile(int y, void Function(BudgetFile) change) async {
     final ref = _refForYear(y);
     if (ref == null) throw StateError('no file for $y');

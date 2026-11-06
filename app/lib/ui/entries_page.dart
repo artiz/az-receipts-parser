@@ -233,9 +233,9 @@ class _QuickTileChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = categoryColor(tile.category, Theme.of(context).brightness);
     final budget = AppScope.of(context).budget;
     final cat = budget.file?.category(tile.category);
+    final color = categoryColor(tile.category, Theme.of(context).brightness, hex: cat?.color);
     return Material(
       color: scheme.surface,
       borderRadius: BorderRadius.circular(12),

@@ -2,6 +2,7 @@
 """Build the empty yearly budget workbooks the app ships as templates.
 
     python3 tools/budget_template.py            # -> app/assets/templates/budget_{de,en,ru}.xlsx
+                                                #    and app/lib/budget/template_texts.dart
 
 The layout is the contract in README "The spreadsheet is the database":
 sheet 1 bookings (A Datum, B Monat formula, C Kategorie, D Beschreibung,
@@ -13,6 +14,11 @@ languages), the formulas use the sheet and category names of the file.
 
 Year placeholder: 2026 in the titles and in the history labels; the app
 replaces it when it creates a file for another year.
+
+The texts below are also written to app/lib/budget/template_texts.dart, which
+is what the app uses to translate a file from one template language to
+another (every label is looked up by its text and replaced by the same key's
+text in the target language), so keep the keys parallel across languages.
 """
 import os
 import sys
@@ -47,7 +53,7 @@ L = {
         ist="Ausgaben nach Kategorie (Ist)", sum_exp="Summe Ausgaben", plan="Plan", sum_plan="Summe Plan", difference="Differenz (Plan − Ist)", sum="Summe",
         chart="Ausgaben und Plan je Monat", settings_title="Einstellungen",
         settings_sub="Kategorien speisen die Auswahl in den Buchungen, Limits steuern die Hervorhebung. Die App liest dieses Blatt; weitere Einstellungen können hier ergänzt werden.",
-        cat_cols=["Kategorie", "Typ", "", "Hinweis"], types=("Ausgabe", "Einnahme", "Umbuchung"),
+        cat_cols=["Kategorie", "Typ", "", "Hinweis", "Symbol & Farbe"], types=("Ausgabe", "Einnahme", "Umbuchung"),
         setting_cols=["Einstellung", "Wert"],
         settings=[("Monatslimit 1", 3000, "Monatsausgaben über diesem Wert: gelb"), ("Monatslimit 2", 4000, "Monatsausgaben über diesem Wert: rot"),
                   ("Ausgabenlimit 1", 200, "Einzelbuchung ab diesem Betrag: hellrosa"), ("Ausgabenlimit 2", 500, "Einzelbuchung ab diesem Betrag: rosa"),
@@ -76,7 +82,7 @@ L = {
         ist="Expenses by category (actual)", sum_exp="Total expenses", plan="Plan", sum_plan="Total plan", difference="Difference (plan − actual)", sum="Total",
         chart="Expenses and plan per month", settings_title="Settings",
         settings_sub="Categories feed the selection in the entries, limits drive the highlighting. The app reads this sheet; further settings can be added here.",
-        cat_cols=["Category", "Type", "", "Hint"], types=("Expense", "Income", "Transfer"),
+        cat_cols=["Category", "Type", "", "Hint", "Icon & colour"], types=("Expense", "Income", "Transfer"),
         setting_cols=["Setting", "Value"],
         settings=[("Month limit 1", 3000, "Monthly expenses above this: amber"), ("Month limit 2", 4000, "Monthly expenses above this: red"),
                   ("Expense limit 1", 200, "Single entry from this amount: light pink"), ("Expense limit 2", 500, "Single entry from this amount: pink"),
@@ -105,7 +111,7 @@ L = {
         ist="Расходы по категориям (факт)", sum_exp="Итого расходы", plan="План", sum_plan="Итого план", difference="Разница (план − факт)", sum="Итого",
         chart="Расходы и план по месяцам", settings_title="Настройки",
         settings_sub="Категории попадают в выбор при записи, лимиты управляют подсветкой. Приложение читает этот лист; сюда можно добавлять другие настройки.",
-        cat_cols=["Категория", "Тип", "", "Подсказка"], types=("Расход", "Доход", "Перевод"),
+        cat_cols=["Категория", "Тип", "", "Подсказка", "Иконка и цвет"], types=("Расход", "Доход", "Перевод"),
         setting_cols=["Настройка", "Значение"],
         settings=[("Месячный лимит 1", 3000, "Расходы за месяц выше этого: жёлтый"), ("Месячный лимит 2", 4000, "Расходы за месяц выше этого: красный"),
                   ("Лимит записи 1", 200, "Одна запись от этой суммы: светло-розовый"), ("Лимит записи 2", 500, "Одна запись от этой суммы: розовый"),
@@ -203,20 +209,22 @@ def build(lang, out):
     ws["A2"].font = font(color=C_MID)
     for c, h in enumerate(t["cat_cols"], start=1):
         ws.cell(row=4, column=c, value=h)
-    header_row(ws, 4, 1, 4)
+    header_row(ws, 4, 1, 5)
     for i, (name, typ, hint) in enumerate(cats):
         r = 5 + i
         ws.cell(row=r, column=1, value=name).font = font(bold=True)
         ws.cell(row=r, column=2, value=t["types"][typ]).font = font()
         ws.cell(row=r, column=4, value=hint).font = font(color=C_MID)
+        ws.cell(row=r, column=5).font = font(color=C_MID)  # "home #FF2E7E", written by the app
         if i % 2 == 1:
-            for c in range(1, 5):
+            for c in range(1, 6):
                 ws.cell(row=r, column=c).fill = fill(C_BAND)
     CAT_FIRST, CAT_LAST = 5, 5 + len(cats) - 1
     ws.column_dimensions["A"].width = 24
     ws.column_dimensions["B"].width = 11
     ws.column_dimensions["C"].width = 4
     ws.column_dimensions["D"].width = 60
+    ws.column_dimensions["E"].width = 18
     ws["F4"], ws["G4"] = t["setting_cols"]
     header_row(ws, 4, 6, 7)
     names = ["MonatsLimit1", "MonatsLimit2", "AusgabenLimit1", "AusgabenLimit2", "AusgabenLimit3"]
@@ -437,10 +445,68 @@ def build(lang, out):
     wb.save(out)
 
 
+def flatten(t):
+    """Every text of a language as key -> text (lists and tuples get indexed keys)."""
+    out = {}
+    for key, val in t.items():
+        if isinstance(val, str):
+            out[key] = val
+        elif key == "settings":
+            for i, (label, _, note) in enumerate(val):
+                out[f"settings.{i}.label"], out[f"settings.{i}.note"] = label, note
+        elif key == "categories":
+            for i, (name, _, hint) in enumerate(val):
+                out[f"categories.{i}.name"], out[f"categories.{i}.hint"] = name, hint
+        else:
+            for i, v in enumerate(val):
+                out[f"{key}.{i}"] = v
+    return out
+
+
+def write_dart(path):
+    flat = {lang: flatten(L[lang]) for lang in L}
+    keys = list(flat["de"])
+    for lang in L:
+        assert list(flat[lang]) == keys, lang
+    # A text must translate to one text only, whichever key carried it. The
+    # type labels are translated by the category's parsed type, not by text
+    # ("Income" is a type and a category, "Einnahme" and "Einnahmen" in German).
+    for src in L:
+        for dst in L:
+            seen = {}
+            for k in keys:
+                if k.startswith("types."):
+                    continue
+                a, b = flat[src][k], flat[dst][k]
+                if a and a in seen and seen[a] != b:
+                    raise SystemExit(f"{src}->{dst}: '{a}' is both '{seen[a]}' and '{b}'")
+                seen[a] = b
+    def esc(v):
+        return v.replace("\\", "\\\\").replace("'", "\\'").replace("$", "\\$")
+    lines = ["// GENERATED by tools/budget_template.py, do not edit: the texts of the",
+             "// bundled templates, used to translate a file between the languages.",
+             "library;", "",
+             "/// Template language -> label key -> text. Keys are the same in every language.",
+             "const Map<String, Map<String, String>> templateTexts = {"]
+    for lang in L:
+        lines.append(f"  '{lang}': {{")
+        for k in keys:
+            lines.append(f"    '{k}': '{esc(flat[lang][k])}',")
+        lines.append("  },")
+    lines.append("};")
+    lines.append("")
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(lines))
+
+
 if __name__ == "__main__":
-    root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "app", "assets", "templates")
+    here = os.path.dirname(os.path.abspath(__file__))
+    root = os.path.join(here, "..", "app", "assets", "templates")
     os.makedirs(root, exist_ok=True)
     for lang in sys.argv[1:] or L:
         path = os.path.join(root, f"budget_{lang}.xlsx")
         build(lang, path)
         print(path, os.path.getsize(path))
+    dart = os.path.join(here, "..", "app", "lib", "budget", "template_texts.dart")
+    write_dart(dart)
+    print(dart)

@@ -37,7 +37,7 @@ same way. Category names are never hard-coded; they come from the file.
 | --- | --- |
 | `Buchungen` | Row 1 header, then `A` Datum, `B` Monat (formula), `C` Kategorie, `D` Beschreibung, `E` Betrag (€), `F` Notiz. Expenses positive, income negative. Rows are pre-formatted to 2000; the app fills the next empty one (and creates rows beyond 2000 when needed). |
 | `Übersicht` | Input rows found by their label in column `A` (`Kontostand Monatsanfang…`, `Sparkonto`, `Kreditkarte offen…`), months in `B..M`; the `Plan` block from the row labelled `Plan` to `Summe Plan`. Everything else is formulas. |
-| `Einstellungen` | Categories below the `Kategorie` header (`A` name, `B` Typ: Ausgabe / Einnahme / Umbuchung, `D` hint); label/value settings in `F`/`G` (`Monatslimit 1/2`, `Ausgabenlimit 1/2/3`). New settings may be appended below; the app reads whatever is there. |
+| `Einstellungen` | Categories below the `Kategorie` header (`A` name, `B` Typ: Ausgabe / Einnahme / Umbuchung, `D` hint, `E` icon and colour as chosen in the app, e.g. `basket #FF2E7E`); label/value settings in `F`/`G` (`Monatslimit 1/2`, `Ausgabenlimit 1/2/3`). New settings may be appended below; the app reads whatever is there. |
 | `Verlauf` | Month labels `YYYY-MM`; the app only re-targets them when it creates a new year. |
 
 The app never re-serialises the workbook. It patches individual cells in the
@@ -128,6 +128,20 @@ the bookings in the file.
    model (default `gpt-4.1-mini`). Only the statement/screenshot import uses it.
    **Settings → Language** overrides the system language (German, English,
    Russian).
+8. **Settings → Categories**: name, hint, icon (from a built-in set) and
+   colour of every category, stored in the file's `Einstellungen` sheet. A
+   rename follows into the bookings, the overview rows, the formulas that
+   quote the name (income and transfer categories) and the conditional
+   format of the entries sheet. When the file is in another language than the
+   app (say it was created before the language was changed), *Translate file*
+   turns category names and hints, type labels, settings labels and the
+   overview/history labels into the app language; bookings are renamed with
+   their categories, the user's own texts and the sheet names stay (formulas
+   refer to the sheet names, and the entries table definition to its header).
+9. **Overview**: under the Saldo a bar per expense category for the month,
+   the plan in grey with the actual amount over it in the category's colour,
+   icons on the x axis, the largest on the right; tapping a bar shows its
+   name and numbers.
 
 ## Build
 
@@ -248,9 +262,15 @@ libonnxruntime ≥ 1.17.
   the same code (categories, types, limits, input and plan rows), written to
   (entries, limits, inputs, plan, new year) and the empty-folder path of the
   service (template in the app or system language, tried once per folder,
-  clone once a file exists). After changing `tools/budget_template.py`,
-  regenerate with `python3 tools/budget_template.py` (needs openpyxl) and
-  check with a LibreOffice recalculation that no cell shows an error.
+  clone once a file exists); category edits (icon and colour in column `E`,
+  rename cascade into bookings, overview labels, quoted formulas and the
+  conditional format) and the file translation against the English template
+  and against a user-like fixture. After changing `tools/budget_template.py`,
+  regenerate with `python3 tools/budget_template.py` (needs openpyxl; it also
+  rewrites `app/lib/budget/template_texts.dart`, the dictionary the
+  translation uses) and check with a LibreOffice recalculation that no cell
+  shows an error. Note that LibreOffice trusts cached values in an xlsx, so a
+  rewritten formula is stored without one.
 * `app/test/statement_import_test.dart`: prompt and JSON-schema contract,
   sign enforcement, unknown categories, duplicate detection.
 * `app/test/receipt_parser_test.dart` and `units_test.dart`: the receipt

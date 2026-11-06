@@ -48,9 +48,92 @@ double? parseAmount(String text) {
   return double.tryParse(t);
 }
 
-/// A stable accent per category, derived from its name so new categories
-/// in the file get a colour without any code change.
-Color categoryColor(String name, Brightness brightness) {
+/// The icons a category can be given in the app (key as stored in the file).
+const Map<String, IconData> categoryIcons = {
+  'home': Icons.home_outlined,
+  'basket': Icons.shopping_basket_outlined,
+  'bag': Icons.shopping_bag_outlined,
+  'restaurant': Icons.restaurant_outlined,
+  'coffee': Icons.local_cafe_outlined,
+  'bar': Icons.local_bar_outlined,
+  'chair': Icons.chair_outlined,
+  'tools': Icons.handyman_outlined,
+  'bolt': Icons.bolt_outlined,
+  'water': Icons.water_drop_outlined,
+  'clothes': Icons.checkroom_outlined,
+  'beauty': Icons.content_cut_outlined,
+  'health': Icons.favorite_outline,
+  'medical': Icons.medical_services_outlined,
+  'school': Icons.school_outlined,
+  'book': Icons.menu_book_outlined,
+  'child': Icons.child_care_outlined,
+  'family': Icons.family_restroom_outlined,
+  'bus': Icons.directions_bus_outlined,
+  'car': Icons.directions_car_outlined,
+  'bike': Icons.pedal_bike_outlined,
+  'fuel': Icons.local_gas_station_outlined,
+  'flight': Icons.flight_takeoff_outlined,
+  'hotel': Icons.hotel_outlined,
+  'wifi': Icons.wifi_outlined,
+  'phone': Icons.smartphone_outlined,
+  'tv': Icons.live_tv_outlined,
+  'music': Icons.music_note_outlined,
+  'game': Icons.sports_esports_outlined,
+  'sport': Icons.fitness_center_outlined,
+  'work': Icons.work_outline,
+  'business': Icons.business_center_outlined,
+  'card': Icons.credit_card_outlined,
+  'bank': Icons.account_balance_outlined,
+  'savings': Icons.savings_outlined,
+  'donate': Icons.volunteer_activism_outlined,
+  'income': Icons.payments_outlined,
+  'gift': Icons.card_giftcard_outlined,
+  'celebration': Icons.celebration_outlined,
+  'pet': Icons.pets_outlined,
+  'tax': Icons.receipt_long_outlined,
+  'shield': Icons.shield_outlined,
+  'more': Icons.more_horiz,
+};
+
+/// The colours offered in the category editor.
+const List<Color> categoryPalette = [
+  Color(0xFFFF2E7E),
+  Color(0xFFD6105E),
+  Color(0xFFE0453A),
+  Color(0xFFF08A24),
+  Color(0xFFD9A400),
+  Color(0xFF8DB600),
+  Color(0xFF3BA55D),
+  Color(0xFF1FA59A),
+  Color(0xFF1E9FD6),
+  Color(0xFF3A6FE0),
+  Color(0xFF5B4FD9),
+  Color(0xFF8E4FD6),
+  Color(0xFFB23AC2),
+  Color(0xFFA0623A),
+  Color(0xFF7A7A85),
+  Color(0xFF4A5B7A),
+];
+
+Color? parseHexColor(String hex) {
+  final m = RegExp(r'^#?([0-9a-fA-F]{6})$').firstMatch(hex.trim());
+  return m == null ? null : Color(0xFF000000 | int.parse(m.group(1)!, radix: 16));
+}
+
+String hexOfColor(Color c) => '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
+
+/// The colour of a category as the file's settings say, falling back to one
+/// derived from the name.
+Color categoryColorOf(BuildContext context, String name) =>
+    categoryColor(name, Theme.of(context).brightness, hex: AppScope.of(context).budget.file?.category(name)?.color);
+
+/// A stable accent per category: the [hex] chosen in the file, else derived
+/// from the name so new categories get a colour without any code change.
+Color categoryColor(String name, Brightness brightness, {String? hex}) {
+  if (hex != null && hex.isNotEmpty) {
+    final c = parseHexColor(hex);
+    if (c != null) return c;
+  }
   const hues = [335.0, 20.0, 45.0, 90.0, 150.0, 185.0, 210.0, 250.0, 280.0, 310.0];
   var h = 0;
   for (final c in name.codeUnits) {
@@ -64,6 +147,8 @@ Color categoryColor(String name, Brightness brightness) {
 /// An icon per category, chosen by keywords in its name (German, English and
 /// Russian) so a renamed or new category in the file still gets a fitting one.
 IconData categoryIcon(BudgetCategory? c, [String? name]) {
+  final chosen = categoryIcons[c?.icon ?? ''];
+  if (chosen != null) return chosen;
   final n = normalize(name ?? c?.name ?? '');
   const rules = <(List<String>, IconData)>[
     (['wohn', 'miete', 'rent', 'home', 'housing', 'haus ', 'жиль', 'аренд'], Icons.home_outlined),
@@ -113,7 +198,7 @@ class CategoryDot extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: categoryColor(name, Theme.of(context).brightness), shape: BoxShape.circle),
+      decoration: BoxDecoration(color: categoryColorOf(context, name), shape: BoxShape.circle),
     );
   }
 }
@@ -149,7 +234,7 @@ class EntryTile extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final cat = budget.file?.category(entry.category);
     final isTransfer = cat?.isTransfer ?? false;
-    final color = categoryColor(entry.category, Theme.of(context).brightness);
+    final color = categoryColorOf(context, entry.category);
     return Container(
       decoration: BoxDecoration(
         color: zebra ? scheme.surfaceContainerLow : null,

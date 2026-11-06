@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:az_budget/budget/budget_file.dart';
 import 'package:az_budget/budget/budget_service.dart';
 import 'package:az_budget/budget/receipt_to_entry.dart';
+import 'package:az_budget/budget/xlsx_workbook.dart';
 import 'package:az_budget/storage/app_settings.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -91,6 +92,8 @@ void main() {
     expect(templateLanguage('de', 'ru'), 'de');
     expect(templateLanguage('', 'fr'), 'en');
   });
+
+  _categoryTests();
 
   group('service with an empty folder', () {
     late Directory tmp;
@@ -185,6 +188,33 @@ void main() {
       expect(plain.currentYearMissing, isFalse);
     });
 
+    test('a renamed category and a translation rename queued entries too', () async {
+      await settings.setFolder('tree', 'Budget');
+      await settings.setLocaleCode('de');
+      final folder = FakeFolder.empty();
+      final service = BudgetService(folder: folder, settings: settings, queueDir: tmp, clock: () => DateTime(2026, 4, 10), templateLoader: (lang) async => template(lang));
+      await service.sync();
+      expect(service.fileLanguageMismatch, isFalse);
+      folder.offline = true;
+      await service.addEntry(BudgetEntry(date: DateTime(2026, 4, 9), category: 'Lebensmittel', description: 'Spar', amount: 10));
+      folder.offline = false;
+      // The queue is flushed by the sync inside updateCategory before the rename
+      // is read back; a renamed file row and a renamed queued entry both end as 'Essen'.
+      final cat = service.file!.category('Lebensmittel')!;
+      await service.updateCategory(cat, cat.copyWith(name: 'Essen', icon: 'basket'), year: 2026);
+      expect(service.entries.single.category, 'Essen');
+      expect(service.file!.category('Essen')!.icon, 'basket');
+
+      await settings.setLocaleCode('en');
+      expect(service.fileLanguageMismatch, isTrue);
+      final n = await service.translateFile('en', year: 2026);
+      expect(n, greaterThan(60));
+      expect(service.file!.language, 'en');
+      expect(service.fileLanguageMismatch, isFalse);
+      expect(service.file!.category('Essen'), isNotNull, reason: 'a renamed category is not a template text and stays');
+      expect(service.file!.category('Income'), isNotNull);
+    });
+
     test('createYearFile with a chosen language, clone once a file exists', () async {
       await settings.setFolder('tree', 'Budget');
       final folder = FakeFolder.empty();
@@ -200,6 +230,119 @@ void main() {
       expect(service.year, 2027);
       expect(service.file!.language, 'en', reason: 'cloned from the English file, not the template');
       expect(service.file!.workbook.sheet('Overview')!.readRow(1)['A']?.text, 'Budget 2027');
+    });
+  });
+}
+
+void _categoryTests() {
+  group('categories: edit, rename, translate', () {
+    test('icon and colour are stored in column E, hint in D, header written when missing', () {
+      final f = BudgetFile.open(File('test/fixtures/budget_small.xlsx').readAsBytesSync());
+      final cat = f.category('Lebensmittel')!;
+      expect(cat.icon, '');
+      expect(cat.row, 6);
+      f.updateCategory(cat, cat.copyWith(icon: 'basket', color: '#FF2E7E', hint: 'Spar, Billa'));
+      final g = BudgetFile.open(f.save());
+      final c = g.category('Lebensmittel')!;
+      expect(c.icon, 'basket');
+      expect(c.color, '#FF2E7E');
+      expect(c.hint, 'Spar, Billa');
+      expect(c.legacyGroups, 'food', reason: 'column C is left alone');
+      expect(g.workbook.sheet('Einstellungen')!.readRow(6)['E']?.text, 'basket #FF2E7E');
+      expect(g.workbook.sheet('Einstellungen')!.readRow(4)['E']?.text, 'Symbol & Farbe');
+      expect(BudgetCategory.parseStyle('#ff2e7e, home'), ('home', '#FF2E7E'));
+      expect(BudgetCategory.parseStyle(null), ('', ''));
+    });
+
+    test('renaming follows into bookings, overview labels, formulas and conditional formats', () {
+      final f = BudgetFile.open(template('de'));
+      f.appendEntries([
+        BudgetEntry(date: DateTime(2026, 3, 4), category: 'Lebensmittel', description: 'Spar', amount: 12.5),
+        BudgetEntry(date: DateTime(2026, 3, 5), category: 'Einnahmen', description: 'Gehalt', amount: -2000),
+        BudgetEntry(date: DateTime(2026, 3, 6), category: 'Kreditkarte', description: 'Abrechnung', amount: 300),
+      ]);
+      var g = BudgetFile.open(f.save());
+      g.updateCategory(g.category('Lebensmittel')!, g.category('Lebensmittel')!.copyWith(name: 'Essen'));
+      g = BudgetFile.open(g.save());
+      expect(g.category('Lebensmittel'), isNull);
+      expect(g.category('Essen')!.type, CategoryType.expense);
+      expect(g.entries.first.category, 'Essen');
+      expect(g.overview.plan.keys, contains('Essen'));
+      expect(g.overview.plan.keys, isNot(contains('Lebensmittel')));
+      final overview = g.workbook.sheet('Übersicht')!;
+      expect(overview.readRow(16)['A']?.text, 'Essen'); // Ist block, 2nd category
+      expect(overview.readRow(16)['D']?.formula, contains(r'$A16'));
+
+      // Income and transfer names are quoted in the Einnahmen/Ausgaben formulas
+      // and in the conditional format of the entries sheet.
+      g.updateCategory(g.category('Einnahmen')!, g.category('Einnahmen')!.copyWith(name: 'Gehalt'));
+      g.updateCategory(g.category('Kreditkarte')!, g.category('Kreditkarte')!.copyWith(name: 'Karte'));
+      g = BudgetFile.open(g.save());
+      expect(g.category('Gehalt')!.type, CategoryType.income);
+      expect(g.entries[1].category, 'Gehalt');
+      expect(g.entries[2].category, 'Karte');
+      final inc = g.workbook.sheet('Übersicht')!.readRow(8)['D']?.formula ?? '';
+      final exp = g.workbook.sheet('Übersicht')!.readRow(9)['D']?.formula ?? '';
+      expect(inc, contains('"Gehalt"'));
+      expect(inc, isNot(contains('Einnahmen')));
+      expect(exp, contains('"<>Gehalt"'));
+      expect(exp, contains('"<>Karte"'));
+      expect(exp, isNot(contains('Kreditkarte')));
+      final sheetXml = String.fromCharCodes(g.workbook.save()).contains('Kreditkarte');
+      expect(sheetXml, isFalse, reason: 'no "Kreditkarte" left anywhere, including the conditional format');
+
+      expect(() => g.updateCategory(g.category('Essen')!, g.category('Essen')!.copyWith(name: 'Wohnen')), throwsA(isA<XlsxException>()));
+    });
+
+    test('translating a German file into English matches the English template', () {
+      final f = BudgetFile.open(template('de'));
+      f.appendEntries([BudgetEntry(date: DateTime(2026, 3, 4), category: 'Lebensmittel', description: 'Spar', amount: 12.5)]);
+      f.setSetting('Monatslimit 1', 3500);
+      var g = BudgetFile.open(f.save());
+      final changed = g.translateTo('en');
+      expect(changed, greaterThan(60));
+      g = BudgetFile.open(g.save());
+      final en = BudgetFile.open(template('en'));
+      expect(g.language, 'en');
+      expect(g.categories.map((c) => c.name), en.categories.map((c) => c.name));
+      expect(g.categories.map((c) => c.hint), en.categories.map((c) => c.hint));
+      expect(g.categories.map((c) => c.type), en.categories.map((c) => c.type));
+      expect(g.entries.single.category, 'Groceries');
+      expect(g.settings.map((s) => s.label), en.settings.map((s) => s.label));
+      expect(g.setting('Monatslimit 1'), 3500);
+      final settings = g.workbook.sheet('Einstellungen')!;
+      expect(settings.readRow(5)['B']?.text, 'Expense');
+      expect(settings.readRow(22)['B']?.text, 'Income');
+      expect(settings.readRow(1)['A']?.text, 'Settings');
+      final overview = g.workbook.sheet('Übersicht')!;
+      final enOverview = en.workbook.sheet('Overview')!;
+      for (final r in [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 31, 33, 50]) {
+        expect(overview.readRow(r)['A']?.text, enOverview.readRow(r)['A']?.text, reason: 'overview row $r');
+      }
+      expect(overview.readRow(4)['B']?.text, 'Jan');
+      expect(overview.readRow(9)['D']?.formula, contains('"<>Income"'));
+      expect(g.overview.rows.keys.first, startsWith('Balance'));
+      expect(g.workbook.sheet('Verlauf')!.readRow(4)['C']?.text, 'Cumulated');
+      expect(g.workbook.sheet('Buchungen')!.readRow(1)['A']?.text, 'Datum', reason: 'table header stays (the table definition names it)');
+      // Already English: nothing to do. Back to German: the names return.
+      expect(BudgetFile.open(g.save()).translateTo('en'), 0);
+      g.translateTo('de');
+      g = BudgetFile.open(g.save());
+      expect(g.language, 'de');
+      expect(g.entries.single.category, 'Lebensmittel');
+      expect(g.settings.first.label, 'Monatslimit 1');
+    });
+
+    test("a user's own labels survive a translation", () {
+      final f = BudgetFile.open(File('test/fixtures/budget_small.xlsx').readAsBytesSync());
+      final customHint = f.category('Wohnen')!.hint;
+      final changed = f.translateTo('ru');
+      expect(changed, greaterThan(10));
+      final g = BudgetFile.open(f.save());
+      expect(g.category('Жильё')!.hint, customHint, reason: 'hint edited by the user is not a template text');
+      expect(g.category('Жильё')!.legacyGroups, 'flat');
+      expect(g.entries.every((e) => g.category(e.category) != null), isTrue, reason: 'every booking still has its category');
+      expect(g.setting('Monatslimit 1'), 3000);
     });
   });
 }

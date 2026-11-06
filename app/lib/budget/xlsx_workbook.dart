@@ -33,7 +33,9 @@ class XlsxCell {
   final String? text;
   final String? formula;
 
-  bool get isEmpty => number == null && (text == null || text!.isEmpty);
+  /// No value and no formula (a formula without a cached value still counts
+  /// as content: openpyxl writes formulas that way).
+  bool get isEmpty => number == null && (text == null || text!.isEmpty) && formula == null;
 
   /// Text for display: numbers as-is, strings as-is.
   String? get asString => text ?? number?.toString();
@@ -212,8 +214,10 @@ class XlsxSheet {
   void clear(String ref) => _setCell(ref);
 
   /// Store a formula (without the leading '=') together with its computed
-  /// value, so readers that do not recalculate still see the number.
-  void setFormula(String ref, String formula, num cached) => _setCell(ref, number: cached, formula: formula.startsWith('=') ? formula.substring(1) : formula);
+  /// value, so readers that do not recalculate still see the number. Without
+  /// [cached] the cell has no value, which makes every reader (LibreOffice
+  /// included, which otherwise trusts cached values) compute it on load.
+  void setFormula(String ref, String formula, [num? cached]) => _setCell(ref, number: cached, formula: formula.startsWith('=') ? formula.substring(1) : formula);
 
   void _setCell(String ref, {num? number, String? text, String? formula}) {
     final (col, rowIndex) = XlsxRef.split(ref);
@@ -290,6 +294,23 @@ class XlsxSheet {
       row.children.insert(row.children.indexOf(before), cell);
     }
     return cell;
+  }
+
+  /// Replace [from] by [to] in every conditional-formatting formula of the
+  /// sheet (a rule like `$C2="Kreditkarte"` follows a renamed category).
+  int replaceInConditionalFormatting(String from, String to) {
+    var n = 0;
+    for (final cf in _document.rootElement.findElements('conditionalFormatting')) {
+      for (final f in cf.findAllElements('formula')) {
+        final text = f.innerText;
+        if (!text.contains(from)) continue;
+        f.children.clear();
+        f.children.add(XmlText(text.replaceAll(from, to)));
+        n++;
+      }
+    }
+    if (n > 0) _dirty = true;
+    return n;
   }
 
   /// Ensure column B of [rowIndex] carries the month formula the template
