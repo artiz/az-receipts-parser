@@ -61,10 +61,9 @@ All under **Set up your app** on the dashboard:
 - **Government apps / Financial features**: the financial features
   declaration applies to loans, banking, crypto and the like; a personal
   budgeting tool declares "none of the above".
-- **Store listing**: short description (80 chars), full description,
-  512×512 icon (PNG, no alpha), feature graphic 1024×500, at least two phone
-  screenshots (the home table, overview with the chart, a scanned receipt).
-  German default plus English and Russian listings if you like.
+- **Store listing**: everything is prepared in [listing/](listing/README.md):
+  icon 512×512, feature graphic 1024×500, four phone screenshots and the
+  short and full descriptions in German (default), English and Russian.
 
 ## Internal testing
 
