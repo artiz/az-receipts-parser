@@ -1215,6 +1215,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Receipt: {path}'**
   String receiptLink(String path);
+
+  /// No description provided for @yearLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get yearLabel;
+
+  /// No description provided for @yearChartHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses per month (colour = limit), plan in grey, line = cumulated saldo. Tap a month.'**
+  String get yearChartHint;
+
+  /// No description provided for @previousYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Prev. year'**
+  String get previousYear;
+
+  /// No description provided for @yearByCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'By category: actual / plan / previous year'**
+  String get yearByCategory;
 }
 
 class _AppLocalizationsDelegate

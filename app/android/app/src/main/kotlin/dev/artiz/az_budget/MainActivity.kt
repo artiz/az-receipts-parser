@@ -40,6 +40,7 @@ class MainActivity : FlutterActivity() {
 
     /** Files shared into the app, waiting for the Dart side to ask for them. */
     private val shareChannelName = "dev.artiz.az_budget/share"
+    private val widgetChannelName = "dev.artiz.az_budget/widget"
     private var shareChannel: MethodChannel? = null
     private val pendingShares = mutableListOf<Map<String, Any?>>()
 
@@ -61,6 +62,18 @@ class MainActivity : FlutterActivity() {
     private fun handleShareIntent(intent: Intent?) {
         if (intent == null) return
         val action = intent.action ?: return
+        // Launcher shortcuts and the widget's "+" arrive as actions of our own.
+        val shortcut = when (action) {
+            "dev.artiz.az_budget.SCAN" -> "scan"
+            "dev.artiz.az_budget.NEW_ENTRY" -> "entry"
+            "dev.artiz.az_budget.STATEMENT" -> "statement"
+            else -> null
+        }
+        if (shortcut != null) {
+            intent.action = Intent.ACTION_MAIN
+            deliverShares(listOf(mapOf("action" to shortcut, "name" to shortcut, "mime" to "")))
+            return
+        }
         val uris = mutableListOf<Uri>()
         when (action) {
             Intent.ACTION_SEND -> intent.getParcelableExtraCompat(Intent.EXTRA_STREAM)?.let { uris.add(it) }
@@ -89,11 +102,13 @@ class MainActivity : FlutterActivity() {
             }
             if (text != null && text.isNotBlank()) items.add(mapOf("text" to text, "mime" to "text/plain", "name" to "text"))
             if (items.isEmpty()) return@execute
-            runOnUiThread {
-                val channel = shareChannel
-                if (dartListens && channel != null) channel.invokeMethod("shared", items) else pendingShares.addAll(items)
-            }
+            runOnUiThread { deliverShares(items) }
         }
+    }
+
+    private fun deliverShares(items: List<Map<String, Any?>>) {
+        val channel = shareChannel
+        if (dartListens && channel != null) channel.invokeMethod("shared", items) else pendingShares.addAll(items)
     }
 
     private fun guessMime(name: String): String = when (name.substringAfterLast('.', "").lowercase()) {
@@ -137,6 +152,20 @@ class MainActivity : FlutterActivity() {
                     }
                     else -> result.notImplemented()
                 }
+            }
+        }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, widgetChannelName).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "update" -> {
+                    MonthWidget.store(
+                        this,
+                        call.argument<String>("title") ?: "AZ Budget",
+                        call.argument<String>("amount") ?: "",
+                        (call.argument<Number>("color") ?: 0xFF3BA55DL).toInt(),
+                    )
+                    result.success(null)
+                }
+                else -> result.notImplemented()
             }
         }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, notificationChannelName).setMethodCallHandler { call, result ->

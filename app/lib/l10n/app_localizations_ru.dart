@@ -676,4 +676,17 @@ class AppLocalizationsRu extends AppLocalizations {
   String receiptLink(String path) {
     return 'Чек: $path';
   }
+
+  @override
+  String get yearLabel => 'Год';
+
+  @override
+  String get yearChartHint =>
+      'Расходы по месяцам (цвет = лимит), план серым, линия = сальдо нарастающим итогом. Нажмите на месяц.';
+
+  @override
+  String get previousYear => 'Прошлый год';
+
+  @override
+  String get yearByCategory => 'По категориям: факт / план / прошлый год';
 }

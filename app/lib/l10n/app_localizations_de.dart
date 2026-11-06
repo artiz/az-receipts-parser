@@ -681,4 +681,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String receiptLink(String path) {
     return 'Beleg: $path';
   }
+
+  @override
+  String get yearLabel => 'Jahr';
+
+  @override
+  String get yearChartHint =>
+      'Ausgaben je Monat (Farbe = Limit), Plan grau, Linie = kumuliertes Saldo. Tippe auf einen Monat.';
+
+  @override
+  String get previousYear => 'Vorjahr';
+
+  @override
+  String get yearByCategory => 'Nach Kategorie: Ist / Plan / Vorjahr';
 }

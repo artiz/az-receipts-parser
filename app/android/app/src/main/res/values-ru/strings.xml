@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_scan">Сканировать чек</string>
+    <string name="shortcut_entry">Новая запись</string>
+    <string name="shortcut_statement">Импорт выписки</string>
+    <string name="widget_description">Расходы месяца и лимит</string>
+    <string name="widget_empty">Откройте приложение</string>
+</resources>

@@ -185,5 +185,9 @@
   "summaryIncome": "Доходы",
   "summaryExpenses": "Расходы",
   "summaryTop": "Крупнейшие категории",
-  "receiptLink": "Чек: {path}"
+  "receiptLink": "Чек: {path}",
+  "yearLabel": "Год",
+  "yearChartHint": "Расходы по месяцам (цвет = лимит), план серым, линия = сальдо нарастающим итогом. Нажмите на месяц.",
+  "previousYear": "Прошлый год",
+  "yearByCategory": "По категориям: факт / план / прошлый год"
 }

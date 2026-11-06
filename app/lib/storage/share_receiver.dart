@@ -8,9 +8,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class SharedItem {
-  const SharedItem({required this.name, required this.mime, this.path, this.text, this.error});
+  const SharedItem({required this.name, required this.mime, this.path, this.text, this.error, this.action});
   final String name;
   final String mime;
+
+  /// A launcher shortcut or widget button: 'scan', 'entry' or 'statement'.
+  final String? action;
 
   /// Local copy of a shared file (null for shared text or a failed copy).
   final String? path;
@@ -27,6 +30,7 @@ class SharedItem {
         path: m['path'] as String?,
         text: m['text'] as String?,
         error: m['error'] as String?,
+        action: m['action'] as String?,
       );
 }
 
