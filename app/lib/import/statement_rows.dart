@@ -209,7 +209,7 @@ class StatementRowClassifier {
   /// category could not be learned.
   List<ProposedEntry> propose(List<RawBooking> bookings, {List<int>? unknown}) {
     final income = _categoryNamed((c) => c.isIncome);
-    final card = _categoryNamed((c) => c.isTransfer && c.name.toLowerCase().contains('kredit')) ?? _categoryNamed((c) => c.isTransfer);
+    final card = _categoryNamed((c) => c.isTransfer && RegExp('kredit|credit|кредит').hasMatch(c.name.toLowerCase())) ?? _categoryNamed((c) => c.isTransfer);
     final bank = _categoryNamed((c) => c.name.toLowerCase().startsWith('bank'));
     final fallback = _suggest.categoriesByUse(categories.where((c) => c.isExpense).map((c) => c.name)).firstOrNull ?? categories.first.name;
     final out = <ProposedEntry>[];

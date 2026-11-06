@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 import 'app.dart';
 import 'budget/limit_notifier.dart';
@@ -12,7 +13,11 @@ import 'storage/folder_access.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final settings = await AppSettings.load();
-  final budget = BudgetService(folder: PlatformFolderAccess(), settings: settings);
+  final budget = BudgetService(
+    folder: PlatformFolderAccess(),
+    settings: settings,
+    templateLoader: (lang) async => (await rootBundle.load('assets/templates/budget_$lang.xlsx')).buffer.asUint8List(),
+  );
   // The OCR engine loads in the background; the budget syncs right away.
   final engine = EngineController()..start();
   final notifications = PlatformNotifications();

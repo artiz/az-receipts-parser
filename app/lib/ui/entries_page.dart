@@ -129,7 +129,13 @@ class _EntriesPageState extends State<EntriesPage> {
               MaterialBanner(
                 content: Text(l.yearFileMissing(budget.currentYear)),
                 leading: const Icon(Icons.calendar_month_outlined),
-                actions: [TextButton(onPressed: () => _createYear(context), child: Text(l.createYearFile(budget.currentYear)))],
+                actions: [TextButton(onPressed: () => createYearFile(context, budget), child: Text(l.createYearFile(budget.currentYear)))],
+              ),
+            if (budget.freshFileYear != null && budget.file != null)
+              MaterialBanner(
+                content: Text(l.fileCreatedNotice(budget.freshFileYear!, languageDisplayName(budget.file!.language))),
+                leading: const Icon(Icons.auto_awesome_outlined),
+                actions: [TextButton(onPressed: budget.dismissFreshFile, child: Text(l.gotIt))],
               ),
             // The quick tiles drop down over the top of the table.
             AnimatedSize(
@@ -217,18 +223,6 @@ class _EntriesPageState extends State<EntriesPage> {
   }
 
   static bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
-
-  Future<void> _createYear(BuildContext context) async {
-    final l = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final y = widget.budget.currentYear;
-    try {
-      await widget.budget.createYearFile(y);
-      messenger.showSnackBar(SnackBar(content: Text(l.yearFileCreated(y))));
-    } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(l.importFailed(e.toString()))));
-    }
-  }
 }
 
 class _QuickTileChip extends StatelessWidget {

@@ -115,5 +115,22 @@
   "delete": "Löschen",
   "deleteEntryTitle": "Buchung löschen?",
   "deleteEntryBody": "{entry} wird aus der Datei entfernt.",
-  "entryDeleted": "Buchung gelöscht"
+  "entryDeleted": "Buchung gelöscht",
+  "onboardingTitle": "Willkommen bei AZ Budget",
+  "onboardingIntro": "Dein Budget ist eine Tabelle pro Jahr in einem Ordner deiner Wahl. Die App schreibt hinein, und du kannst sie jederzeit in Excel oder Google Sheets öffnen.",
+  "onboardingStep1Title": "Ordner wählen",
+  "onboardingStep1Text": "Google Drive, Dropbox, iCloud oder lokal. Dort liegt Budget <Jahr>.xlsx und wird synchronisiert.",
+  "onboardingStep2Title": "Die Jahresdatei",
+  "onboardingStep2Text": "In einem leeren Ordner wird Budget {year}.xlsx auf {language} angelegt, mit Kategorien, Plan und Limits, die du ändern kannst. Vorhandene Dateien werden so genutzt, wie sie sind.",
+  "onboardingStep3Title": "Buchungen erfassen",
+  "onboardingStep3Text": "Tippe auf + für eine Buchung. Schnellbuchungen wiederholen häufige, die Kamera scannt einen Beleg, der PDF-Knopf importiert einen Kontoauszug.",
+  "onboardingStep4Title": "Übersicht und Limits",
+  "onboardingStep4Text": "Einnahmen, Ausgaben und Plan je Kategorie und Monat, dazu deine Kontostände. Monatslimits geben eine Ampel und eine Benachrichtigung.",
+  "onboardingStep5Title": "Optional: OpenAI-Schlüssel",
+  "onboardingStep5Text": "Nur für Händler, die die Datei noch nie gesehen hat, und für Screenshots. Alles andere funktioniert offline.",
+  "onboardingLater": "Später",
+  "howToUse": "So funktioniert die App",
+  "fileCreatedNotice": "Budget {year}.xlsx wurde in deinem Ordner angelegt ({language}). Kategorien, Plan und Limits änderst du in der Übersicht oder in der Datei.",
+  "gotIt": "Verstanden",
+  "templateLanguage": "Sprache der neuen Datei"
 }

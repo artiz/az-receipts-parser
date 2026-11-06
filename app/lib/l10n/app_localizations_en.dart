@@ -423,4 +423,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get entryDeleted => 'Entry deleted';
+
+  @override
+  String get onboardingTitle => 'Welcome to AZ Budget';
+
+  @override
+  String get onboardingIntro =>
+      'Your budget is one spreadsheet per year in a folder you choose. The app writes into it, and you can open it in Excel or Google Sheets at any time.';
+
+  @override
+  String get onboardingStep1Title => 'Choose a folder';
+
+  @override
+  String get onboardingStep1Text =>
+      'Google Drive, Dropbox, iCloud or a local folder. This is where Budget <year>.xlsx lives and syncs.';
+
+  @override
+  String get onboardingStep2Title => 'The year file';
+
+  @override
+  String onboardingStep2Text(int year, String language) {
+    return 'An empty folder gets a Budget $year.xlsx in $language, with categories, plan and limits you can change. Existing files are used as they are.';
+  }
+
+  @override
+  String get onboardingStep3Title => 'Add entries';
+
+  @override
+  String get onboardingStep3Text =>
+      'Tap + for an entry. Quick entries repeat frequent ones, the camera scans a receipt, the PDF button imports a bank statement.';
+
+  @override
+  String get onboardingStep4Title => 'Overview and limits';
+
+  @override
+  String get onboardingStep4Text =>
+      'Income, expenses and plan per category per month, plus your account inputs. Month limits give a traffic light and a notification.';
+
+  @override
+  String get onboardingStep5Title => 'Optional: OpenAI key';
+
+  @override
+  String get onboardingStep5Text =>
+      'Only used for merchants the file has never seen and for screenshots. Everything else works offline.';
+
+  @override
+  String get onboardingLater => 'Later';
+
+  @override
+  String get howToUse => 'How to use the app';
+
+  @override
+  String fileCreatedNotice(int year, String language) {
+    return 'Budget $year.xlsx was created in your folder ($language). Categories, plan and limits can be changed in Overview or in the file.';
+  }
+
+  @override
+  String get gotIt => 'Got it';
+
+  @override
+  String get templateLanguage => 'Language of the new file';
 }

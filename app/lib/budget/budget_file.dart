@@ -1,7 +1,8 @@
 /// The yearly budget workbook as a model.
 ///
-/// Layout contract (shared with the Python builder that made the files and
-/// with the user's own edits):
+/// Layout contract (shared with `tools/budget_template.py`, which builds the
+/// templates, and with the user's own edits); the sheet and label names are
+/// those of the file's language (see [BudgetLabels]), German here:
 /// * `Buchungen`: header row 1, then A Datum, B Monat (formula), C Kategorie,
 ///   D Beschreibung, E Betrag (€), F Notiz. Rows are pre-formatted to 2000.
 /// * `Einstellungen`: categories from the row after the "Kategorie" header
@@ -18,8 +19,12 @@ library;
 
 import 'dart:typed_data';
 
+import 'budget_labels.dart';
 import 'xlsx_workbook.dart';
 
+export 'budget_labels.dart';
+
+/// German sheet names (the names of the files this app started with).
 const String sheetEntries = 'Buchungen';
 const String sheetOverview = 'Übersicht';
 const String sheetSettings = 'Einstellungen';
@@ -32,9 +37,8 @@ const String monthFormula = 'IF(A{r}="","",MONTH(A{r}))';
 enum CategoryType { expense, income, transfer }
 
 CategoryType categoryTypeFrom(String? label) {
-  final l = (label ?? '').trim().toLowerCase();
-  if (l.startsWith('einnahme') || l == 'income') return CategoryType.income;
-  if (l.startsWith('umbuchung') || l == 'transfer') return CategoryType.transfer;
+  if (BudgetLabels.startsWithOneOf(label, BudgetLabels.incomeType)) return CategoryType.income;
+  if (BudgetLabels.startsWithOneOf(label, BudgetLabels.transferType)) return CategoryType.transfer;
   return CategoryType.expense;
 }
 
@@ -136,9 +140,13 @@ class OverviewInputs {
   final Map<String, (int, List<double?>)> plan;
   final int? planHeaderRow;
 
+  /// The row whose label starts with [prefix] in any language ("Kontostand"
+  /// also finds "Balance at start of month").
   (int, List<double?>)? byLabelPrefix(String prefix) {
+    final spellings = BudgetLabels.spellings(prefix, BudgetLabels.inputRows);
     for (final e in rows.entries) {
-      if (e.key.toLowerCase().startsWith(prefix.toLowerCase())) return e.value;
+      final l = e.key.toLowerCase();
+      if (spellings.any(l.startsWith)) return e.value;
     }
     return null;
   }
@@ -159,12 +167,12 @@ class BudgetFile {
 
   static BudgetFile open(Uint8List bytes, {int? yearHint}) {
     final wb = XlsxWorkbook.open(bytes);
-    if (wb.sheet(sheetEntries) == null) {
+    if (_find(wb, BudgetLabels.entriesSheet.values) == null) {
       throw XlsxException('sheet "$sheetEntries" not found: not a Budget file');
     }
     var year = yearHint ?? 0;
     if (year == 0) {
-      final title = wb.sheet(sheetOverview)?.readRow(1)['A']?.text ?? '';
+      final title = _find(wb, BudgetLabels.overviewSheet.values)?.readRow(1)['A']?.text ?? '';
       final m = RegExp(r'(20\d\d)').firstMatch(title);
       if (m != null) year = int.parse(m.group(1)!);
     }
@@ -175,8 +183,23 @@ class BudgetFile {
     return file;
   }
 
+  static XlsxSheet? _find(XlsxWorkbook wb, Iterable<String> names) {
+    for (final n in names) {
+      final s = wb.sheet(n);
+      if (s != null) return s;
+    }
+    return null;
+  }
+
+  XlsxSheet get _entriesSheet => _find(workbook, BudgetLabels.entriesSheet.values)!;
+  XlsxSheet? get _overviewSheet => _find(workbook, BudgetLabels.overviewSheet.values);
   XlsxSheet get _settingsSheet =>
-      workbook.sheet(sheetSettings) ?? workbook.sheet(sheetSettingsLegacy) ?? (throw XlsxException('sheet "$sheetSettings" not found'));
+      _find(workbook, [...BudgetLabels.settingsSheet.values, ...BudgetLabels.legacySettingsSheets]) ?? (throw XlsxException('sheet "$sheetSettings" not found'));
+  XlsxSheet? get _historySheet => _find(workbook, BudgetLabels.historySheet.values);
+
+  /// Language of the file ('de', 'en', 'ru'), from the name of its entries
+  /// sheet; German for anything unknown.
+  late final String language = BudgetLabels.languageOfSheet(BudgetLabels.entriesSheet, _entriesSheet.name) ?? 'de';
 
   BudgetCategory? category(String name) {
     for (final c in categories) {
@@ -187,9 +210,11 @@ class BudgetFile {
 
   List<BudgetCategory> get expenseCategories => categories.where((c) => c.isExpense).toList();
 
+  /// Value of the setting whose label starts with [labelPrefix], in any
+  /// language ("Monatslimit 1" also finds "Month limit 1").
   double? setting(String labelPrefix) {
     for (final s in settings) {
-      if (s.label.toLowerCase().startsWith(labelPrefix.toLowerCase())) return s.value;
+      if (BudgetLabels.settingMatches(s.label, labelPrefix)) return s.value;
     }
     return null;
   }
@@ -200,7 +225,7 @@ class BudgetFile {
     final rows = _settingsSheet.readRows();
     var headerRow = -1;
     for (final (r, cells) in rows) {
-      if ((cells['A']?.text ?? '').trim().toLowerCase() == 'kategorie') {
+      if (BudgetLabels.isOneOf(cells['A']?.text, BudgetLabels.categoryHeader)) {
         headerRow = r;
         break;
       }
@@ -228,7 +253,7 @@ class BudgetFile {
       final label = cells['F']?.text?.trim();
       if (label == null || label.isEmpty) continue;
       final value = cells['G'];
-      if (label.toLowerCase() == 'einstellung' || label.toLowerCase() == 'legende') continue;
+      if (BudgetLabels.isOneOf(label, BudgetLabels.settingsHeader) || BudgetLabels.isOneOf(label, BudgetLabels.legend)) continue;
       if (value == null) continue;
       out.add(BudgetSetting(label: label, value: value.number, row: r, note: cells['H']?.text ?? ''));
     }
@@ -237,7 +262,7 @@ class BudgetFile {
 
   List<BudgetEntry> _readEntries() {
     final out = <BudgetEntry>[];
-    for (final (r, cells) in workbook.requireSheet(sheetEntries).readRows()) {
+    for (final (r, cells) in _entriesSheet.readRows()) {
       if (r < 2) continue;
       final a = cells['A'];
       if (a == null || a.number == null) continue;
@@ -257,7 +282,7 @@ class BudgetFile {
   }
 
   OverviewInputs _readOverview() {
-    final sheet = workbook.sheet(sheetOverview);
+    final sheet = _overviewSheet;
     if (sheet == null) return OverviewInputs(rows: const {}, plan: const {}, planHeaderRow: null);
     final rows = sheet.readRows();
     final inputs = <String, (int, List<double?>)>{};
@@ -269,21 +294,20 @@ class BudgetFile {
       final label = cells['A']?.text?.trim() ?? '';
       if (label.isEmpty) continue;
       List<double?> values() => [for (var m = 1; m <= 12; m++) cells[XlsxRef.columnLetters(1 + m)]?.number];
-      if (label == 'Plan') {
+      if (BudgetLabels.isOneOf(label, BudgetLabels.plan)) {
         planHeader = r;
         inPlan = true;
         continue;
       }
       if (inPlan) {
-        if (label.startsWith('Summe')) {
+        if (BudgetLabels.startsWithOneOf(label, BudgetLabels.total)) {
           inPlan = false;
         } else {
           plan[label] = (r, values());
         }
         continue;
       }
-      final l = label.toLowerCase();
-      if (l.startsWith('kontostand') || l.startsWith('sparkonto') || l.startsWith('kreditkarte')) {
+      if (BudgetLabels.isInputRow(label)) {
         // Input rows: typed numbers or the user's own sums ("=500+232.23");
         // cell references would mean a computed row, which is not an input.
         final fs = [for (var m = 1; m <= 12; m++) cells[XlsxRef.columnLetters(1 + m)]?.formula];
@@ -302,7 +326,7 @@ class BudgetFile {
   /// Append entries as new rows after the last used one. Returns the rows
   /// they landed in.
   List<int> appendEntries(List<BudgetEntry> newEntries) {
-    final sheet = workbook.requireSheet(sheetEntries);
+    final sheet = _entriesSheet;
     var row = sheet.lastRowWithValue('A');
     if (row < 1) row = 1;
     final placed = <int>[];
@@ -326,7 +350,7 @@ class BudgetFile {
 
   /// Blank an entry row (the row stays, empty, so no other row moves).
   void clearEntryRow(int row) {
-    final sheet = workbook.requireSheet(sheetEntries);
+    final sheet = _entriesSheet;
     for (final col in ['A', 'C', 'D', 'E', 'F']) {
       sheet.clear('$col$row');
     }
@@ -347,7 +371,7 @@ class BudgetFile {
 
   /// Overwrite an existing entry row in place.
   void updateEntry(int row, BudgetEntry e) {
-    final sheet = workbook.requireSheet(sheetEntries);
+    final sheet = _entriesSheet;
     sheet.setNumber('A$row', XlsxDate.toSerial(e.date));
     sheet.setText('C$row', e.category);
     sheet.setText('D$row', e.description);
@@ -364,7 +388,7 @@ class BudgetFile {
   /// [formula] ("=500+232.23") is stored next to the computed [value] so the
   /// spreadsheet keeps the composition of the number.
   void setOverviewInput(String labelPrefix, int month, double? value, {String? formula}) {
-    final sheet = workbook.requireSheet(sheetOverview);
+    final sheet = _overviewSheet ?? (throw XlsxException('sheet "$sheetOverview" not found'));
     final target = overview.byLabelPrefix(labelPrefix) ?? (throw XlsxException('row "$labelPrefix" not found in $sheetOverview'));
     final ref = '${XlsxRef.columnLetters(1 + month)}${target.$1}';
     if (value == null) {
@@ -378,20 +402,23 @@ class BudgetFile {
 
   /// Set a plan value for a category and month.
   void setPlan(String category, int month, double value) {
-    final sheet = workbook.requireSheet(sheetOverview);
+    final sheet = _overviewSheet ?? (throw XlsxException('sheet "$sheetOverview" not found'));
     final target = overview.plan[category] ?? (throw XlsxException('plan row "$category" not found'));
     sheet.setNumber('${XlsxRef.columnLetters(1 + month)}${target.$1}', _round2(value));
   }
 
   /// Add or update a label/value setting in `Einstellungen` (columns F/G).
+  /// [label] is matched in any language; a new row gets the label in the
+  /// file's language.
   void setSetting(String label, double value, {String note = ''}) {
     final sheet = _settingsSheet;
     for (final s in settings) {
-      if (s.label.toLowerCase() == label.toLowerCase()) {
+      if (BudgetLabels.settingMatches(s.label, label, exact: true)) {
         sheet.setNumber('G${s.row}', value);
         return;
       }
     }
+    label = BudgetLabels.settingInLanguage(label, language);
     var row = settings.isEmpty ? 5 : settings.map((s) => s.row).reduce((a, b) => a > b ? a : b) + 1;
     // Never overwrite something else that sits in column F.
     while (!(sheet.readRow(row)['F']?.isEmpty ?? true)) {
@@ -405,7 +432,7 @@ class BudgetFile {
   /// Remove every entry row (keeps the pre-formatted rows and their month
   /// formulas) so the file can serve as the template of a new year.
   void clearEntries() {
-    final sheet = workbook.requireSheet(sheetEntries);
+    final sheet = _entriesSheet;
     for (final e in entries) {
       final r = e.row;
       if (r == null) continue;
@@ -418,7 +445,8 @@ class BudgetFile {
   /// Clear the monthly inputs of `Übersicht` (Kontostand, Sparkonto,
   /// Kreditkarte offen) for a fresh year.
   void clearOverviewInputs() {
-    final sheet = workbook.requireSheet(sheetOverview);
+    final sheet = _overviewSheet;
+    if (sheet == null) return;
     for (final e in overview.rows.values) {
       for (var m = 1; m <= 12; m++) {
         sheet.clear('${XlsxRef.columnLetters(1 + m)}${e.$1}');
@@ -426,14 +454,23 @@ class BudgetFile {
     }
   }
 
-  /// Replace the year in the title cells ("Budget 2026" → "Budget 2027").
+  /// Replace the year in the title cells ("Budget 2026" → "Budget 2027") and
+  /// in the month labels of the history sheet ("2026-01" → "2027-01").
   void setTitleYear(int newYear) {
-    for (final name in [sheetOverview, sheetSettings, sheetSettingsLegacy]) {
-      final sheet = workbook.sheet(name);
+    final year = RegExp(r'20\d\d');
+    for (final sheet in [_overviewSheet, _settingsSheet, _historySheet]) {
       if (sheet == null) continue;
       final a1 = sheet.readRow(1)['A']?.text;
-      if (a1 != null && RegExp(r'20\d\d').hasMatch(a1)) {
-        sheet.setText('A1', a1.replaceAll(RegExp(r'20\d\d'), '$newYear'));
+      if (a1 != null && year.hasMatch(a1)) {
+        sheet.setText('A1', a1.replaceAll(year, '$newYear'));
+      }
+    }
+    final history = _historySheet;
+    if (history != null) {
+      final monthLabel = RegExp(r'^20\d\d-\d\d$');
+      for (final (r, cells) in history.readRows()) {
+        final a = cells['A']?.text?.trim();
+        if (a != null && monthLabel.hasMatch(a)) history.setText('A$r', '$newYear${a.substring(4)}');
       }
     }
   }

@@ -422,4 +422,64 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get entryDeleted => 'Запись удалена';
+
+  @override
+  String get onboardingTitle => 'Добро пожаловать в AZ Budget';
+
+  @override
+  String get onboardingIntro =>
+      'Ваш бюджет — одна таблица на год в папке, которую вы выберете. Приложение пишет в неё, а вы в любой момент можете открыть её в Excel или Google Sheets.';
+
+  @override
+  String get onboardingStep1Title => 'Выберите папку';
+
+  @override
+  String get onboardingStep1Text =>
+      'Google Drive, Dropbox, iCloud или локальная папка. Там лежит и синхронизируется Budget <год>.xlsx.';
+
+  @override
+  String get onboardingStep2Title => 'Файл года';
+
+  @override
+  String onboardingStep2Text(int year, String language) {
+    return 'В пустой папке будет создан Budget $year.xlsx на языке «$language» с категориями, планом и лимитами, которые можно менять. Существующие файлы используются как есть.';
+  }
+
+  @override
+  String get onboardingStep3Title => 'Добавляйте записи';
+
+  @override
+  String get onboardingStep3Text =>
+      'Нажмите + для записи. Быстрые записи повторяют частые, камера сканирует чек, кнопка PDF импортирует выписку.';
+
+  @override
+  String get onboardingStep4Title => 'Обзор и лимиты';
+
+  @override
+  String get onboardingStep4Text =>
+      'Доходы, расходы и план по категориям за месяц, плюс остатки по счетам. Месячные лимиты дают светофор и уведомление.';
+
+  @override
+  String get onboardingStep5Title => 'Необязательно: ключ OpenAI';
+
+  @override
+  String get onboardingStep5Text =>
+      'Нужен только для незнакомых продавцов в выписках и для скриншотов. Всё остальное работает офлайн.';
+
+  @override
+  String get onboardingLater => 'Позже';
+
+  @override
+  String get howToUse => 'Как пользоваться приложением';
+
+  @override
+  String fileCreatedNotice(int year, String language) {
+    return 'В вашей папке создан Budget $year.xlsx ($language). Категории, план и лимиты можно менять в обзоре или в файле.';
+  }
+
+  @override
+  String get gotIt => 'Понятно';
+
+  @override
+  String get templateLanguage => 'Язык нового файла';
 }

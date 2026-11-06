@@ -24,15 +24,21 @@ statement PDF ──► docling.rs text layer (rows) ──┴► OpenAI (gpt-4.
 
 ## The spreadsheet is the database
 
-One file per year, built with the generator described below and then edited by
-hand. The app relies on this layout and on nothing else:
+One file per year. A new user gets it from a bundled template
+(`app/assets/templates/budget_{de,en,ru}.xlsx`, built by
+`tools/budget_template.py`); the layout below is the contract, shown with
+the German names. The English and Russian templates use the same layout with
+translated sheet names, labels and categories, and the reader finds every
+row by what its label means (`app/lib/budget/budget_labels.dart`), so a
+file in any of the three languages, or one with renamed sheets, reads the
+same way. Category names are never hard-coded; they come from the file.
 
 | Sheet | Contract |
 | --- | --- |
 | `Buchungen` | Row 1 header, then `A` Datum, `B` Monat (formula), `C` Kategorie, `D` Beschreibung, `E` Betrag (€), `F` Notiz. Expenses positive, income negative. Rows are pre-formatted to 2000; the app fills the next empty one (and creates rows beyond 2000 when needed). |
 | `Übersicht` | Input rows found by their label in column `A` (`Kontostand Monatsanfang…`, `Sparkonto`, `Kreditkarte offen…`), months in `B..M`; the `Plan` block from the row labelled `Plan` to `Summe Plan`. Everything else is formulas. |
 | `Einstellungen` | Categories below the `Kategorie` header (`A` name, `B` Typ: Ausgabe / Einnahme / Umbuchung, `D` hint); label/value settings in `F`/`G` (`Monatslimit 1/2`, `Ausgabenlimit 1/2/3`). New settings may be appended below; the app reads whatever is there. |
-| `Verlauf` | Not touched by the app. |
+| `Verlauf` | Month labels `YYYY-MM`; the app only re-targets them when it creates a new year. |
 
 The app never re-serialises the workbook. It patches individual cells in the
 sheet XML inside the zip (`app/lib/budget/xlsx_workbook.dart`) and copies every
@@ -62,9 +68,19 @@ the bookings in the file.
 
 ## Using the app
 
-1. **Settings → Budget folder**: pick the folder that holds `Budget <year>.xlsx`
-   (in the Drive app's folder picker choose the folder, not the file). The
-   grant is persisted; the app lists the year files and loads the current year.
+1. **Start screen**: the first launch explains the app in five steps and asks
+   for the folder (reachable again under *Settings → How to use the app*).
+   Pick the folder that holds `Budget <year>.xlsx` (in the Drive app's folder
+   picker choose the folder, not the file). The grant is persisted; the app
+   lists the year files and loads the current year. An empty folder gets a
+   `Budget <year>.xlsx` created from the template in the app language
+   (German, English or Russian, following the system language unless set in
+   Settings), with translated categories, plan block and limits
+   (3000/4000 € per month, 200/500/1000 € per entry) that you can change in
+   *Overview* or in the file. When the calendar year has no file yet, the
+   app offers to create it from the latest one (categories, settings and
+   plan copied, no bookings) or, if the folder is empty, from the template
+   with a language choice.
 2. **Entries**: the upper half of the screen holds the quick tiles (tap →
    confirm or change the amount), the lower half the bookings table with a
    search field, paged by 20 as you scroll. Tap a row to edit it (queued rows
@@ -228,6 +244,13 @@ libonnxruntime ≥ 1.17.
   tiles, autocomplete, learned categories).
 * `app/test/budget_service_test.dart`: queue + sync with a fake folder,
   including offline, restart and write-through of overview inputs.
+* `app/test/budget_template_test.dart`: every bundled template read through
+  the same code (categories, types, limits, input and plan rows), written to
+  (entries, limits, inputs, plan, new year) and the empty-folder path of the
+  service (template in the app or system language, tried once per folder,
+  clone once a file exists). After changing `tools/budget_template.py`,
+  regenerate with `python3 tools/budget_template.py` (needs openpyxl) and
+  check with a LibreOffice recalculation that no cell shows an error.
 * `app/test/statement_import_test.dart`: prompt and JSON-schema contract,
   sign enforcement, unknown categories, duplicate detection.
 * `app/test/receipt_parser_test.dart` and `units_test.dart`: the receipt

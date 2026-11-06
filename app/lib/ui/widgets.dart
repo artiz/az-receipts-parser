@@ -61,33 +61,33 @@ Color categoryColor(String name, Brightness brightness) {
   return HSLColor.fromAHSL(1, hue, dark ? 0.55 : 0.5, dark ? 0.62 : 0.42).toColor();
 }
 
-/// An icon per category, chosen by keywords in its name (German and English)
-/// so a renamed or new category in the file still gets a fitting one.
+/// An icon per category, chosen by keywords in its name (German, English and
+/// Russian) so a renamed or new category in the file still gets a fitting one.
 IconData categoryIcon(BudgetCategory? c, [String? name]) {
   final n = normalize(name ?? c?.name ?? '');
   const rules = <(List<String>, IconData)>[
-    (['wohn', 'miete', 'rent', 'home', 'haus '], Icons.home_outlined),
-    (['lebensmittel', 'grocer', 'food', 'essen', 'supermarkt'], Icons.shopping_basket_outlined),
-    (['restaurant', 'cafe', 'gastro', 'dining'], Icons.restaurant_outlined),
-    (['haushalt', 'household', 'drogerie'], Icons.chair_outlined),
-    (['kleidung', 'cloth', 'schuhe'], Icons.checkroom_outlined),
-    (['gesundheit', 'health', 'apotheke', 'arzt', 'medic'], Icons.favorite_outline),
-    (['schul', 'school', 'kurs', 'bildung', 'education', 'learn'], Icons.school_outlined),
-    (['kinder', 'kids', 'child', 'family', 'familie', 'taschengeld'], Icons.child_care_outlined),
-    (['transport', 'verkehr', 'auto', 'ticket', 'bahn', 'fuel', 'tank'], Icons.directions_bus_outlined),
-    (['freizeit', 'reise', 'travel', 'urlaub', 'leisure', 'hobby', 'sport'], Icons.flight_takeoff_outlined),
-    (['abo', 'internet', 'subscription', 'mobil', 'telefon', 'streaming'], Icons.wifi_outlined),
-    (['arbeit', 'work', 'job'], Icons.work_outline),
-    (['business', 'firma', 'unternehmen', 'geschaeft'], Icons.business_center_outlined),
-    (['kreditkarte', 'credit card', 'kredit'], Icons.credit_card_outlined),
-    (['bank', 'gebuehr', 'fee', 'zins'], Icons.account_balance_outlined),
-    (['spende', 'charity', 'donat'], Icons.volunteer_activism_outlined),
-    (['einnahme', 'income', 'gehalt', 'salary', 'lohn'], Icons.payments_outlined),
-    (['sonstig', 'other', 'misc', 'divers'], Icons.more_horiz),
-    (['geschenk', 'gift'], Icons.card_giftcard_outlined),
-    (['tier', 'pet'], Icons.pets_outlined),
-    (['steuer', 'tax'], Icons.receipt_long_outlined),
-    (['versicherung', 'insurance'], Icons.shield_outlined),
+    (['wohn', 'miete', 'rent', 'home', 'housing', 'haus ', 'жиль', 'аренд'], Icons.home_outlined),
+    (['lebensmittel', 'grocer', 'food', 'essen', 'supermarkt', 'продукт', 'еда'], Icons.shopping_basket_outlined),
+    (['restaurant', 'cafe', 'gastro', 'dining', 'ресторан', 'кафе'], Icons.restaurant_outlined),
+    (['haushalt', 'household', 'drogerie', 'быт', 'дом '], Icons.chair_outlined),
+    (['kleidung', 'cloth', 'schuhe', 'одежд', 'обувь'], Icons.checkroom_outlined),
+    (['gesundheit', 'health', 'apotheke', 'arzt', 'medic', 'здоров', 'аптек', 'врач'], Icons.favorite_outline),
+    (['schul', 'school', 'kurs', 'bildung', 'education', 'learn', 'обучен', 'школ', 'курс'], Icons.school_outlined),
+    (['kinder', 'kids', 'child', 'family', 'familie', 'taschengeld', 'дети', 'детск', 'семь'], Icons.child_care_outlined),
+    (['transport', 'verkehr', 'auto', 'ticket', 'bahn', 'fuel', 'tank', 'транспорт', 'авто', 'бензин'], Icons.directions_bus_outlined),
+    (['freizeit', 'reise', 'travel', 'urlaub', 'leisure', 'hobby', 'sport', 'отдых', 'поездк', 'путеш', 'спорт'], Icons.flight_takeoff_outlined),
+    (['abo', 'internet', 'subscription', 'mobil', 'telefon', 'streaming', 'подписк', 'интернет', 'связь'], Icons.wifi_outlined),
+    (['arbeit', 'work', 'job', 'работ'], Icons.work_outline),
+    (['business', 'firma', 'unternehmen', 'geschaeft', 'бизнес'], Icons.business_center_outlined),
+    (['kreditkarte', 'credit card', 'kredit', 'кредит'], Icons.credit_card_outlined),
+    (['bank', 'gebuehr', 'fee', 'zins', 'банк', 'комисси'], Icons.account_balance_outlined),
+    (['spende', 'charity', 'donat', 'пожертв', 'благотвор'], Icons.volunteer_activism_outlined),
+    (['einnahme', 'income', 'gehalt', 'salary', 'lohn', 'доход', 'зарплат'], Icons.payments_outlined),
+    (['sonstig', 'other', 'misc', 'divers', 'проч', 'разно'], Icons.more_horiz),
+    (['geschenk', 'gift', 'подарк'], Icons.card_giftcard_outlined),
+    (['tier', 'pet', 'питом', 'животн'], Icons.pets_outlined),
+    (['steuer', 'tax', 'налог'], Icons.receipt_long_outlined),
+    (['versicherung', 'insurance', 'страхов'], Icons.shield_outlined),
   ];
   for (final (keys, icon) in rules) {
     if (keys.any(n.contains)) return icon;

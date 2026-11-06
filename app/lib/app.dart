@@ -7,6 +7,7 @@ import 'ocr/engine_controller.dart';
 import 'storage/app_settings.dart';
 import 'theme.dart';
 import 'ui/home_page.dart';
+import 'ui/onboarding_page.dart';
 
 /// Dependency scope: budget service, settings and the OCR engine, reachable
 /// from any widget.
@@ -80,7 +81,8 @@ class _BudgetAppState extends State<BudgetApp> with WidgetsBindingObserver {
         supportedLocales: AppLocalizations.supportedLocales,
         theme: azTheme(Brightness.light),
         darkTheme: azTheme(Brightness.dark),
-        home: const HomePage(),
+        // A new user sees the start screen until a folder is chosen (or it is skipped).
+        home: widget.settings.hasFolder || widget.settings.onboardingSeen ? const HomePage() : const OnboardingPage(),
         ),
       ),
     );

@@ -322,5 +322,42 @@
         "type": "String"
       }
     }
-  }
+  },
+  "onboardingTitle": "Welcome to AZ Budget",
+  "onboardingIntro": "Your budget is one spreadsheet per year in a folder you choose. The app writes into it, and you can open it in Excel or Google Sheets at any time.",
+  "onboardingStep1Title": "Choose a folder",
+  "onboardingStep1Text": "Google Drive, Dropbox, iCloud or a local folder. This is where Budget <year>.xlsx lives and syncs.",
+  "onboardingStep2Title": "The year file",
+  "onboardingStep2Text": "An empty folder gets a Budget {year}.xlsx in {language}, with categories, plan and limits you can change. Existing files are used as they are.",
+  "@onboardingStep2Text": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingStep3Title": "Add entries",
+  "onboardingStep3Text": "Tap + for an entry. Quick entries repeat frequent ones, the camera scans a receipt, the PDF button imports a bank statement.",
+  "onboardingStep4Title": "Overview and limits",
+  "onboardingStep4Text": "Income, expenses and plan per category per month, plus your account inputs. Month limits give a traffic light and a notification.",
+  "onboardingStep5Title": "Optional: OpenAI key",
+  "onboardingStep5Text": "Only used for merchants the file has never seen and for screenshots. Everything else works offline.",
+  "onboardingLater": "Later",
+  "howToUse": "How to use the app",
+  "fileCreatedNotice": "Budget {year}.xlsx was created in your folder ({language}). Categories, plan and limits can be changed in Overview or in the file.",
+  "@fileCreatedNotice": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "gotIt": "Got it",
+  "templateLanguage": "Language of the new file"
 }

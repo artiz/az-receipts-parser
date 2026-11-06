@@ -115,5 +115,22 @@
   "delete": "Удалить",
   "deleteEntryTitle": "Удалить запись?",
   "deleteEntryBody": "{entry} будет удалена из файла.",
-  "entryDeleted": "Запись удалена"
+  "entryDeleted": "Запись удалена",
+  "onboardingTitle": "Добро пожаловать в AZ Budget",
+  "onboardingIntro": "Ваш бюджет — одна таблица на год в папке, которую вы выберете. Приложение пишет в неё, а вы в любой момент можете открыть её в Excel или Google Sheets.",
+  "onboardingStep1Title": "Выберите папку",
+  "onboardingStep1Text": "Google Drive, Dropbox, iCloud или локальная папка. Там лежит и синхронизируется Budget <год>.xlsx.",
+  "onboardingStep2Title": "Файл года",
+  "onboardingStep2Text": "В пустой папке будет создан Budget {year}.xlsx на языке «{language}» с категориями, планом и лимитами, которые можно менять. Существующие файлы используются как есть.",
+  "onboardingStep3Title": "Добавляйте записи",
+  "onboardingStep3Text": "Нажмите + для записи. Быстрые записи повторяют частые, камера сканирует чек, кнопка PDF импортирует выписку.",
+  "onboardingStep4Title": "Обзор и лимиты",
+  "onboardingStep4Text": "Доходы, расходы и план по категориям за месяц, плюс остатки по счетам. Месячные лимиты дают светофор и уведомление.",
+  "onboardingStep5Title": "Необязательно: ключ OpenAI",
+  "onboardingStep5Text": "Нужен только для незнакомых продавцов в выписках и для скриншотов. Всё остальное работает офлайн.",
+  "onboardingLater": "Позже",
+  "howToUse": "Как пользоваться приложением",
+  "fileCreatedNotice": "В вашей папке создан Budget {year}.xlsx ({language}). Категории, план и лимиты можно менять в обзоре или в файле.",
+  "gotIt": "Понятно",
+  "templateLanguage": "Язык нового файла"
 }
