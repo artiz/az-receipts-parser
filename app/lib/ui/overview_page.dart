@@ -82,14 +82,24 @@ class _OverviewPageState extends State<OverviewPage> {
     final scheme = Theme.of(context).colorScheme;
     final level = BudgetService.limitLevelOf(file, stats.expenses);
     final years = budget.yearFiles.map((f) => f.year).toList();
+    final titleStyle = Theme.of(context).appBarTheme.titleTextStyle ?? Theme.of(context).textTheme.titleLarge;
+    // Swipe left / right through the months, the year view at the end.
+    final sequence = [...months, 0];
+    void step(int delta) {
+      final i = sequence.indexOf(yearMode ? 0 : month);
+      final next = (i + delta).clamp(0, sequence.length - 1);
+      if (next != i) setState(() => _month = sequence[next]);
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(l.tabOverview),
         actions: [
+          // The menus in the title's own font: year and month read like part of the heading.
           if (years.length > 1)
             DropdownButtonHideUnderline(
               child: DropdownButton<int>(
                 value: years.contains(year) ? year : null,
+                style: titleStyle,
                 items: [for (final y in years) DropdownMenuItem(value: y, child: Text('$y'))],
                 onChanged: (y) => setState(() {
                   _year = y;
@@ -101,6 +111,7 @@ class _OverviewPageState extends State<OverviewPage> {
           DropdownButtonHideUnderline(
             child: DropdownButton<int>(
               value: yearMode ? 0 : month,
+              style: titleStyle,
               items: [
                 // Short month without the year (the year has its own menu), so the title stays visible.
                 for (final m in months) DropdownMenuItem(value: m, child: Text(DateFormat.MMM(locale.toString()).format(DateTime(year, m)))),
@@ -118,7 +129,13 @@ class _OverviewPageState extends State<OverviewPage> {
           const SizedBox(width: 4),
         ],
       ),
-      body: yearMode ? _yearBody(context, year, file, all) : ListView(
+      body: GestureDetector(
+        onHorizontalDragEnd: (d) {
+          final v = d.primaryVelocity ?? 0;
+          if (v.abs() < 250) return;
+          step(v < 0 ? 1 : -1); // swipe left: next month
+        },
+        child: yearMode ? _yearBody(context, year, file, all) : ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
         children: [
           Row(
@@ -200,6 +217,7 @@ class _OverviewPageState extends State<OverviewPage> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

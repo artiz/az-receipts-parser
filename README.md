@@ -83,9 +83,9 @@ the bookings in the file.
    plan copied, no bookings) or, if the folder is empty, from the template
    with a language choice.
 2. **Entries**: the upper half of the screen holds the quick tiles (tap →
-   confirm or change the amount; long-press a tile or a table row to pin
-   that category + description to the front of the tiles, long-press again
-   to unpin; pins are kept on the device), the lower half the bookings table with a
+   confirm or change the amount; long-press a tile, or long-press or swipe
+   right on a table row, to pin that category + description to the front of
+   the tiles, again to unpin; pins are kept on the device), the lower half the bookings table with a
    search field, paged by 20 as you scroll. Tap a row to edit it (queued rows
    and rows already in the file alike, the file row is rewritten in place);
    the **+** on a row tops it up ("+6 Glühwein": amount added, detail appended
@@ -170,7 +170,8 @@ the bookings in the file.
     saved, the items in the notes, a rounding remainder with the main one.
     The scanned file (photo or PDF) goes to `Belege/<year>/` next to the
     budget files and is linked from the note (*Settings → Data*).
-12. **Year view**: the month menu of *Overview* has a *Year* entry: twelve
+12. **Year view**: the month menu of *Overview* has a *Year* entry (swiping
+    left and right walks through the months and ends at the year): twelve
     months as bars (colour = limit, plan grey, line = cumulated saldo) and
     every category's actual / plan / previous year (from `Budget <year-1>.xlsx`).
 13. **Widget and shortcuts**: a home-screen widget shows the month's

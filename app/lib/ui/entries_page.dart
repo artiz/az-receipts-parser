@@ -190,11 +190,25 @@ class _EntriesPageState extends State<EntriesPage> {
                           }
                           final e = shown[i];
                           final dayStart = i > 0 && !_sameDay(shown[i - 1].date, e.date);
+                          final pinKey = QuickTile.tileKey(e.category, e.description);
                           return Dismissible(
                             key: ValueKey(e.pendingId ?? 'row-${e.date.year}-${e.row}'),
-                            direction: DismissDirection.endToStart,
-                            confirmDismiss: (_) => confirmDeleteEntry(context, budget, e),
+                            direction: e.description.isEmpty ? DismissDirection.endToStart : DismissDirection.horizontal,
+                            // Swipe right: pin to the quick tiles (the row stays); swipe left: delete.
+                            confirmDismiss: (dir) async {
+                              if (dir == DismissDirection.startToEnd) {
+                                await _togglePin(context, pinKey, settings.isPinnedTile(pinKey));
+                                return false;
+                              }
+                              return confirmDeleteEntry(context, budget, e);
+                            },
                             background: Container(
+                              color: scheme.primaryContainer,
+                              alignment: Alignment.centerLeft,
+                              padding: const EdgeInsets.only(left: 20),
+                              child: Icon(settings.isPinnedTile(pinKey) ? Icons.push_pin_outlined : Icons.push_pin, color: scheme.onPrimaryContainer),
+                            ),
+                            secondaryBackground: Container(
                               color: scheme.error,
                               alignment: Alignment.centerRight,
                               padding: const EdgeInsets.only(right: 20),
@@ -205,9 +219,7 @@ class _EntriesPageState extends State<EntriesPage> {
                               zebra: i.isOdd,
                               dayStart: dayStart,
                               onTap: () => editEntry(context, budget, e),
-                              onLongPress: e.description.isEmpty
-                                  ? null
-                                  : () => _togglePin(context, QuickTile.tileKey(e.category, e.description), settings.isPinnedTile(QuickTile.tileKey(e.category, e.description))),
+                              onLongPress: e.description.isEmpty ? null : () => _togglePin(context, pinKey, settings.isPinnedTile(pinKey)),
                               trailing: IconButton(
                                 tooltip: l.addToEntryShort,
                                 visualDensity: VisualDensity.compact,
