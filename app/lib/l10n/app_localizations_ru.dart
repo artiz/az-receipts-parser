@@ -596,4 +596,84 @@ class AppLocalizationsRu extends AppLocalizations {
   String shareUnsupported(String name) {
     return '«$name» не подходит: поделитесь PDF, картинкой или текстом.';
   }
+
+  @override
+  String splitReceipt(int count) {
+    return 'Разбить по категориям ($count позиций)';
+  }
+
+  @override
+  String get splitTitle => 'Разбить чек';
+
+  @override
+  String splitSave(int count) {
+    return 'Сохранить записей: $count';
+  }
+
+  @override
+  String forecastHint(String amount, int day) {
+    return 'Темп: около $amount за месяц, лимит 1 будет $day-го.';
+  }
+
+  @override
+  String forecastHintOk(String amount) {
+    return 'Темп: около $amount за месяц.';
+  }
+
+  @override
+  String get saveAsRule => 'Запомнить как правило';
+
+  @override
+  String ruleSaved(String pattern, String category) {
+    return 'Правило сохранено: «$pattern» → $category';
+  }
+
+  @override
+  String get settingsData => 'Данные';
+
+  @override
+  String get backupsTitle => 'Резервная копия перед каждой записью';
+
+  @override
+  String get backupsHint => '.backup/ в папке бюджета, хранятся пять последних';
+
+  @override
+  String get savePhotosTitle => 'Сохранять файлы чеков';
+
+  @override
+  String get savePhotosHint =>
+      'Belege/<год>/ в папке бюджета, ссылка в заметке';
+
+  @override
+  String get currencyTitle => 'Символ валюты';
+
+  @override
+  String get exportCsv => 'Экспорт записей в CSV';
+
+  @override
+  String csvExported(String name) {
+    return '$name записан в папку';
+  }
+
+  @override
+  String get shareMonth => 'Поделиться месяцем';
+
+  @override
+  String summaryTitle(String month) {
+    return 'AZ Budget · $month';
+  }
+
+  @override
+  String get summaryIncome => 'Доходы';
+
+  @override
+  String get summaryExpenses => 'Расходы';
+
+  @override
+  String get summaryTop => 'Крупнейшие категории';
+
+  @override
+  String receiptLink(String path) {
+    return 'Чек: $path';
+  }
 }

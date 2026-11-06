@@ -600,4 +600,85 @@ class AppLocalizationsDe extends AppLocalizations {
   String shareUnsupported(String name) {
     return '„$name“ kann nicht verwendet werden: teile ein PDF, ein Bild oder Text.';
   }
+
+  @override
+  String splitReceipt(int count) {
+    return 'Nach Kategorie aufteilen ($count Positionen)';
+  }
+
+  @override
+  String get splitTitle => 'Beleg aufteilen';
+
+  @override
+  String splitSave(int count) {
+    return '$count Buchungen speichern';
+  }
+
+  @override
+  String forecastHint(String amount, int day) {
+    return 'Tempo: etwa $amount im Monat, Limit 1 am $day.';
+  }
+
+  @override
+  String forecastHintOk(String amount) {
+    return 'Tempo: etwa $amount im Monat.';
+  }
+
+  @override
+  String get saveAsRule => 'Als Regel merken';
+
+  @override
+  String ruleSaved(String pattern, String category) {
+    return 'Regel gespeichert: „$pattern“ → $category';
+  }
+
+  @override
+  String get settingsData => 'Daten';
+
+  @override
+  String get backupsTitle => 'Sicherungskopie vor jedem Schreiben';
+
+  @override
+  String get backupsHint =>
+      '.backup/ im Budget-Ordner, die neuesten fünf bleiben';
+
+  @override
+  String get savePhotosTitle => 'Belegdateien aufbewahren';
+
+  @override
+  String get savePhotosHint =>
+      'Belege/<Jahr>/ im Budget-Ordner, aus der Notiz verlinkt';
+
+  @override
+  String get currencyTitle => 'Währungssymbol';
+
+  @override
+  String get exportCsv => 'Buchungen als CSV exportieren';
+
+  @override
+  String csvExported(String name) {
+    return '$name im Ordner gespeichert';
+  }
+
+  @override
+  String get shareMonth => 'Monat teilen';
+
+  @override
+  String summaryTitle(String month) {
+    return 'AZ Budget · $month';
+  }
+
+  @override
+  String get summaryIncome => 'Einnahmen';
+
+  @override
+  String get summaryExpenses => 'Ausgaben';
+
+  @override
+  String get summaryTop => 'Größte Kategorien';
+
+  @override
+  String receiptLink(String path) {
+    return 'Beleg: $path';
+  }
 }

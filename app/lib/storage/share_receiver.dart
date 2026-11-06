@@ -69,6 +69,20 @@ class PlatformShareSource implements ShareSource {
   }
 }
 
+/// Hand text to the system share sheet (a month summary).
+class PlatformShare {
+  PlatformShare._();
+  static const _channel = MethodChannel('dev.artiz.az_budget/share');
+
+  static Future<void> text({required String title, required String text}) async {
+    try {
+      await _channel.invokeMethod<void>('shareText', {'title': title, 'text': text});
+    } on MissingPluginException {
+      // No share sheet on this platform.
+    }
+  }
+}
+
 class ShareReceiver extends ChangeNotifier {
   ShareReceiver(this.source);
   final ShareSource source;

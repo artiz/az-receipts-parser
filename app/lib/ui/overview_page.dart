@@ -12,6 +12,7 @@ import '../core/expression.dart';
 import '../l10n/app_localizations.dart';
 import '../theme.dart';
 import 'entry_actions.dart';
+import '../storage/share_receiver.dart';
 import 'category_chart.dart';
 import 'widgets.dart';
 
@@ -100,7 +101,12 @@ class _OverviewPageState extends State<OverviewPage> {
               onChanged: (m) => setState(() => _month = m),
             ),
           ),
-          const SizedBox(width: 8),
+          IconButton(
+            tooltip: l.shareMonth,
+            icon: const Icon(Icons.share_outlined),
+            onPressed: () => PlatformShare.text(title: l.summaryTitle(monthName(year, month, locale)), text: _summaryText(l, file, stats, year, month, locale)),
+          ),
+          const SizedBox(width: 4),
         ],
       ),
       body: ListView(
@@ -125,7 +131,7 @@ class _OverviewPageState extends State<OverviewPage> {
                   value: euro(stats.expenses),
                   color: limitColor(context, level),
                   icon: limitIcon(level),
-                  hint: limit1 == null ? l.limitsTap : l.limitHint(euroShort(limit1), euroShort(limit2 ?? limit1)),
+                  hint: _expenseHint(l, budget, year, month, limit1, limit2),
                   onTap: () => _editLimits(context, budget, year, limit1, limit2),
                 ),
               ),
@@ -188,6 +194,38 @@ class _OverviewPageState extends State<OverviewPage> {
       ),
     );
   }
+}
+
+/// The expenses card's second line: the limits, plus the pace of the
+/// calendar month when it is the one shown.
+String _expenseHint(AppLocalizations l, BudgetService budget, int year, int month, double? limit1, double? limit2) {
+  final limits = limit1 == null ? l.limitsTap : l.limitHint(euroShort(limit1), euroShort(limit2 ?? limit1));
+  final now = DateTime.now();
+  if (year != now.year || month != now.month) return limits;
+  final f = budget.forecast();
+  if (f == null) return limits;
+  final pace = f.limit1Day != null && f.limit1Day! >= f.day ? l.forecastHint(euroShort(f.projected), f.limit1Day!) : l.forecastHintOk(euroShort(f.projected));
+  return '$limits\n$pace';
+}
+
+/// Plain text of the month for the share sheet.
+String _summaryText(AppLocalizations l, BudgetFile file, _MonthStats stats, int year, int month, Locale locale) {
+  final top = stats.byCategory.entries.where((e) => e.value > 0).toList()..sort((a, b) => b.value.compareTo(a.value));
+  final b = StringBuffer()
+    ..writeln(l.summaryTitle(monthName(year, month, locale)))
+    ..writeln('${l.summaryIncome}: ${euro(stats.income)}')
+    ..writeln('${l.summaryExpenses}: ${euro(stats.expenses)}')
+    ..writeln('${l.saldo}: ${euro(stats.saldo, showPlus: true)}');
+  if (top.isNotEmpty) {
+    b
+      ..writeln()
+      ..writeln('${l.summaryTop}:');
+    for (final e in top.take(6)) {
+      final plan = file.overview.plan[e.key]?.$2[month - 1];
+      b.writeln('• ${e.key}: ${euro(e.value)}${plan != null && plan > 0 ? ' / ${euroShort(plan)}' : ''}');
+    }
+  }
+  return b.toString().trimRight();
 }
 
 class _MonthStats {

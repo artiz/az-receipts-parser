@@ -439,5 +439,88 @@
         "type": "String"
       }
     }
+  },
+  "splitReceipt": "Split by category ({count} items)",
+  "@splitReceipt": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "splitTitle": "Split receipt",
+  "splitSave": "Save {count} bookings",
+  "@splitSave": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "forecastHint": "Pace: about {amount} this month, limit 1 on day {day}.",
+  "@forecastHint": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "forecastHintOk": "Pace: about {amount} this month.",
+  "@forecastHintOk": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "saveAsRule": "Save as rule",
+  "ruleSaved": "Rule saved: \"{pattern}\" → {category}",
+  "@ruleSaved": {
+    "placeholders": {
+      "pattern": {
+        "type": "String"
+      },
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsData": "Data",
+  "backupsTitle": "Backups before each write",
+  "backupsHint": ".backup/ in the budget folder, newest five kept",
+  "savePhotosTitle": "Keep receipt files",
+  "savePhotosHint": "Belege/<year>/ in the budget folder, linked from the note",
+  "currencyTitle": "Currency symbol",
+  "exportCsv": "Export bookings as CSV",
+  "csvExported": "{name} written to the folder",
+  "@csvExported": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shareMonth": "Share month",
+  "summaryTitle": "AZ Budget · {month}",
+  "@summaryTitle": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "summaryIncome": "Income",
+  "summaryExpenses": "Expenses",
+  "summaryTop": "Largest categories",
+  "receiptLink": "Receipt: {path}",
+  "@receiptLink": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
   }
 }

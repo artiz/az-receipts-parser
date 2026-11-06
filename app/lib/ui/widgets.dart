@@ -12,10 +12,14 @@ import '../core/expression.dart';
 import '../l10n/app_localizations.dart';
 import '../theme.dart';
 
+/// Symbol after amounts, from Settings ('€' unless changed); the file does
+/// not carry a currency.
+String moneySymbol = '€';
+
 /// "1.234,56 €" (the file's convention), sign kept.
 String euro(double amount, {bool showPlus = false}) {
   final f = NumberFormat('#,##0.00', 'de_AT');
-  final s = '${f.format(amount.abs())} €';
+  final s = '${f.format(amount.abs())} $moneySymbol';
   if (amount < 0) return '-$s';
   return showPlus ? '+$s' : s;
 }
@@ -23,7 +27,7 @@ String euro(double amount, {bool showPlus = false}) {
 /// Short form for tiles: "10 €", "35,09 €".
 String euroShort(double amount) {
   final abs = amount.abs();
-  final s = abs == abs.roundToDouble() ? '${abs.toInt()} €' : '${NumberFormat('#,##0.00', 'de_AT').format(abs)} €';
+  final s = abs == abs.roundToDouble() ? '${abs.toInt()} $moneySymbol' : '${NumberFormat('#,##0.00', 'de_AT').format(abs)} $moneySymbol';
   return amount < 0 ? '-$s' : s;
 }
 

@@ -10,6 +10,7 @@ import 'theme.dart';
 import 'ui/home_page.dart';
 import 'ui/onboarding_page.dart';
 import 'ui/scan_flow.dart';
+import 'ui/widgets.dart' show moneySymbol;
 
 /// Dependency scope: budget service, settings and the OCR engine, reachable
 /// from any widget.
@@ -125,7 +126,9 @@ class _BudgetAppState extends State<BudgetApp> with WidgetsBindingObserver {
       engine: widget.engine,
       child: ListenableBuilder(
         listenable: widget.settings,
-        builder: (context, _) => MaterialApp(
+        builder: (context, _) {
+          moneySymbol = widget.settings.currencySymbol;
+          return MaterialApp(
         navigatorKey: _navigator,
         locale: widget.settings.localeCode.isEmpty ? null : Locale(widget.settings.localeCode),
         onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
@@ -140,7 +143,8 @@ class _BudgetAppState extends State<BudgetApp> with WidgetsBindingObserver {
         darkTheme: azTheme(Brightness.dark),
         // A new user sees the start screen until a folder is chosen (or it is skipped).
         home: widget.settings.hasFolder || widget.settings.onboardingSeen ? const HomePage() : const OnboardingPage(),
-        ),
+        );
+        },
       ),
     );
   }

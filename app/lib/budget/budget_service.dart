@@ -34,6 +34,18 @@ final RegExp budgetFileName = RegExp(r'^Budget (20\d\d)\.xlsx$', caseSensitive: 
 
 const String xlsxMime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
+class MonthForecast {
+  const MonthForecast({required this.projected, required this.dailyRate, required this.limit1Day, required this.limit2Day, required this.daysInMonth, required this.day});
+  final double projected;
+  final double dailyRate;
+
+  /// Day of month when limit 1 / 2 is reached at this pace (null: not this month).
+  final int? limit1Day;
+  final int? limit2Day;
+  final int daysInMonth;
+  final int day;
+}
+
 class YearFileRef {
   const YearFileRef({required this.year, required this.entry});
   final int year;
@@ -455,10 +467,10 @@ class BudgetService extends ChangeNotifier {
     }
   }
 
-  /// Store a receipt photo as `Belege/<year>/<date>_<merchant>.jpg` next to
-  /// the budget files; returns that relative path for the note. Null when
-  /// photos are switched off or there is no folder.
-  Future<String?> storeReceiptPhoto(Uint8List jpeg, DateTime date, String merchant) async {
+  /// Store a receipt (photo or PDF) as `Belege/<year>/<date>_<merchant>.<ext>`
+  /// next to the budget files; returns that relative path for the note.
+  /// Null when receipt files are switched off or there is no folder.
+  Future<String?> storeReceiptPhoto(Uint8List bytes, DateTime date, String merchant, {String extension = 'jpg'}) async {
     if (!settings.savePhotos) return null;
     final root = settings.folderUri;
     if (root == null) return null;
@@ -467,13 +479,54 @@ class BudgetService extends ChangeNotifier {
     final m = merchant.trim().replaceAll(RegExp(r'[^\p{L}\p{N}.-]+', unicode: true), '_').replaceAll(RegExp(r'^_+|_+$'), '');
     var name = '${d}_${m.isEmpty ? 'Beleg' : m}';
     final taken = {for (final f in await folder.listFiles(dir)) f.name};
-    var candidate = '$name.jpg';
+    var candidate = '$name.$extension';
     for (var i = 2; taken.contains(candidate); i++) {
-      candidate = '${name}_$i.jpg';
+      candidate = '${name}_$i.$extension';
     }
     name = candidate;
-    await folder.createFile(dir, name, 'image/jpeg', jpeg);
+    await folder.createFile(dir, name, extension == 'pdf' ? 'application/pdf' : 'image/jpeg', bytes);
     return 'Belege/${date.year}/$name';
+  }
+
+  /// Add a rule to the loaded year's `Regeln` sheet (created when missing).
+  Future<void> addRule(BudgetRule rule, {int? year}) async {
+    await _withFile(year ?? this.year ?? currentYear, (f) => f.addRule(rule));
+  }
+
+  /// Write the loaded year's bookings as `Budget <year>.csv` into the
+  /// folder (replaced when it exists); returns the file name.
+  Future<String> exportCsv({int? year}) async {
+    final y = year ?? this.year ?? currentYear;
+    final f = await fileForYear(y) ?? (throw StateError('no file for $y'));
+    final root = settings.folderUri ?? (throw StateError('no folder'));
+    final name = 'Budget $y.csv';
+    final bytes = Uint8List.fromList(utf8.encode(f.toCsv()));
+    final existing = (await folder.listFiles(root)).where((e) => e.name == name).firstOrNull;
+    if (existing != null) {
+      await folder.writeFile(existing.uri, bytes);
+    } else {
+      await folder.createFile(root, name, 'text/csv', bytes);
+    }
+    return name;
+  }
+
+  /// Where the calendar month is heading at the current pace of spending:
+  /// the projected month total and the day each limit would be reached.
+  /// Null before the third day or without expenses.
+  MonthForecast? forecast() {
+    final now = _clock();
+    if (year != now.year || file == null) return null;
+    if (now.day < 3) return null;
+    final spent = monthExpenses(now.month);
+    if (spent <= 0) return null;
+    final days = DateTime(now.year, now.month + 1, 0).day;
+    final rate = spent / now.day;
+    int? dayFor(double? limit) {
+      if (limit == null || limit <= 0) return null;
+      final d = (limit / rate).ceil();
+      return d <= days ? (d < now.day ? now.day : d) : null;
+    }
+    return MonthForecast(projected: rate * days, dailyRate: rate, limit1Day: dayFor(monthLimit1), limit2Day: dayFor(monthLimit2), daysInMonth: days, day: now.day);
   }
 
   /// Create `Budget <newYear>.xlsx` from the latest existing file: same

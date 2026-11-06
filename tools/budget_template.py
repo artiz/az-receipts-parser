@@ -43,7 +43,7 @@ MAX_ROWS = 2000
 # --- texts per language --------------------------------------------------------------
 L = {
     "de": dict(
-        sheets=("Buchungen", "Übersicht", "Einstellungen", "Verlauf"),
+        sheets=("Buchungen", "Übersicht", "Einstellungen", "Verlauf", "Regeln"),
         months=["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
         cols=["Datum", "Monat", "Kategorie", "Beschreibung", "Betrag (€)", "Notiz"],
         title="Budget", subtitle="Alle Beträge in €. Rosa hinterlegte Zellen sind Eingaben (Kontostand, Sparkonto, Kreditkarte, Plan), alles andere wird aus den Buchungen berechnet.",
@@ -61,6 +61,8 @@ L = {
         legend="Legende", input_="Eingabe", legend_text="rosa hinterlegte Zellen sind Eingaben, alles andere sind Formeln",
         hist_title="Verlauf", hist_sub="Saldo = Einnahmen − Ausgaben je Monat. Kumuliert zeigt, was über das Jahr gespart oder von den Ersparnissen gelebt wurde.",
         hist_cols=["Monat", "Saldo", "Kumuliert"], hist_chart="Kumuliertes Saldo",
+        rules_title="Regeln", rules_sub="Beim Import von Kontoauszügen und beim Scannen: enthält der Buchungstext das Muster, bekommt die Buchung diese Kategorie (und Beschreibung, wenn angegeben). Groß-/Kleinschreibung ist egal, * steht für beliebigen Text. Die App fragt erst danach die Historie und zuletzt das Modell.",
+        rules_cols=["Muster", "Kategorie", "Beschreibung"],
         categories=[
             ("Wohnen", 0, "Miete, Energie, Versicherung, Möbel"), ("Lebensmittel", 0, "Supermarkt, Bäckerei"), ("Restaurants & Cafés", 0, "Essen außer Haus, Lieferdienste, Kantine"),
             ("Haushalt", 0, "Drogerie, Deko, Geräte, Kleinkram"), ("Kleidung", 0, ""), ("Gesundheit", 0, "Apotheke, Ärzte, Versicherung"),
@@ -72,7 +74,7 @@ L = {
         ],
     ),
     "en": dict(
-        sheets=("Entries", "Overview", "Settings", "History"),
+        sheets=("Entries", "Overview", "Settings", "History", "Rules"),
         months=["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
         cols=["Date", "Month", "Category", "Description", "Amount (€)", "Note"],
         title="Budget", subtitle="All amounts in €. Pink cells are inputs (balance, savings, credit card, plan), everything else is computed from the entries.",
@@ -90,6 +92,8 @@ L = {
         legend="Legend", input_="Input", legend_text="pink cells are inputs, everything else are formulas",
         hist_title="History", hist_sub="Saldo = income − expenses per month. Cumulated shows what was saved or taken from savings over the year.",
         hist_cols=["Month", "Saldo", "Cumulated"], hist_chart="Cumulated saldo",
+        rules_title="Rules", rules_sub="For statement imports and scans: when the booking text contains the pattern, the booking gets this category (and description, if given). Case does not matter, * stands for any text. The app asks the history only after the rules, and the model last.",
+        rules_cols=["Pattern", "Category", "Description"],
         categories=[
             ("Housing", 0, "Rent, energy, insurance, furniture"), ("Groceries", 0, "Supermarket, bakery"), ("Restaurants & Cafés", 0, "Eating out, delivery, canteen"),
             ("Household", 0, "Drugstore, decoration, appliances, small stuff"), ("Clothing", 0, ""), ("Health", 0, "Pharmacy, doctors, insurance"),
@@ -101,7 +105,7 @@ L = {
         ],
     ),
     "ru": dict(
-        sheets=("Записи", "Обзор", "Настройки", "История"),
+        sheets=("Записи", "Обзор", "Настройки", "История", "Правила"),
         months=["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"],
         cols=["Дата", "Месяц", "Категория", "Описание", "Сумма (€)", "Заметка"],
         title="Бюджет", subtitle="Все суммы в €. Розовые ячейки это ввод (остаток, сбережения, кредитка, план), остальное считается из записей.",
@@ -119,6 +123,8 @@ L = {
         legend="Легенда", input_="Ввод", legend_text="розовые ячейки это ввод, остальное формулы",
         hist_title="История", hist_sub="Сальдо = доходы − расходы за месяц. Накопительно показывает, сколько за год отложено или прожито из сбережений.",
         hist_cols=["Месяц", "Сальдо", "Накопительно"], hist_chart="Сальдо накопительно",
+        rules_title="Правила", rules_sub="При импорте выписок и сканировании: если текст операции содержит шаблон, запись получает эту категорию (и описание, если задано). Регистр не важен, * означает любой текст. История проверяется после правил, модель в последнюю очередь.",
+        rules_cols=["Шаблон", "Категория", "Описание"],
         categories=[
             ("Жильё", 0, "Аренда, энергия, страховка, мебель"), ("Продукты", 0, "Супермаркет, пекарня"), ("Рестораны и кафе", 0, "Еда вне дома, доставка, столовая"),
             ("Дом и быт", 0, "Бытовая химия, декор, техника, мелочи"), ("Одежда", 0, ""), ("Здоровье", 0, "Аптека, врачи, страховка"),
@@ -185,7 +191,7 @@ def q(name):
 
 def build(lang, out):
     t = L[lang]
-    s_entries, s_over, s_set, s_hist = t["sheets"]
+    s_entries, s_over, s_set, s_hist, s_rules = t["sheets"]
     cats = t["categories"]
     expense = [c for c in cats if c[1] == 0]
     income_name = next(c[0] for c in cats if c[1] == 1)
@@ -197,7 +203,8 @@ def build(lang, out):
     ws_over = wb.create_sheet(s_over)
     ws_cat = wb.create_sheet(s_set)
     ws_hist = wb.create_sheet(s_hist)
-    for ws, color in [(ws_book, C_DARK), (ws_over, C_PINK), (ws_cat, C_MID), (ws_hist, C_MID)]:
+    ws_rules = wb.create_sheet(s_rules)
+    for ws, color in [(ws_book, C_DARK), (ws_over, C_PINK), (ws_cat, C_MID), (ws_hist, C_MID), (ws_rules, C_MID)]:
         ws.sheet_properties.tabColor = color
         ws.sheet_view.showGridLines = False
 
@@ -439,6 +446,25 @@ def build(lang, out):
     lc.legend = None
     lc.display_blanks = "gap"
     ws.add_chart(lc, "E4")
+
+    # ---- rules ----
+    ws = ws_rules
+    ws["A1"] = t["rules_title"]
+    ws["A1"].font = font(bold=True, size=16)
+    ws["A2"] = t["rules_sub"]
+    ws["A2"].font = font(color=C_MID)
+    for c, h in enumerate(t["rules_cols"], start=1):
+        ws.cell(row=4, column=c, value=h)
+    header_row(ws, 4, 1, 3)
+    for r in range(5, 60):
+        for c in range(1, 4):
+            ws.cell(row=r, column=c).font = font()
+    dv_rule = DataValidation(type="list", formula1=f"={q(s_set)}!$A${CAT_FIRST}:$A${CAT_LAST}", allow_blank=True, showErrorMessage=True)
+    dv_rule.add("B5:B200")
+    ws.add_data_validation(dv_rule)
+    for k, v in {"A": 32, "B": 24, "C": 32}.items():
+        ws.column_dimensions[k].width = v
+    ws.freeze_panes = "A5"
 
     wb.calculation.fullCalcOnLoad = True
     wb.properties.title = f"{t['title']} {YEAR}"

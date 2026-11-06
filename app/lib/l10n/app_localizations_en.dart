@@ -597,4 +597,84 @@ class AppLocalizationsEn extends AppLocalizations {
   String shareUnsupported(String name) {
     return 'Cannot use \"$name\": share a PDF, an image or text.';
   }
+
+  @override
+  String splitReceipt(int count) {
+    return 'Split by category ($count items)';
+  }
+
+  @override
+  String get splitTitle => 'Split receipt';
+
+  @override
+  String splitSave(int count) {
+    return 'Save $count bookings';
+  }
+
+  @override
+  String forecastHint(String amount, int day) {
+    return 'Pace: about $amount this month, limit 1 on day $day.';
+  }
+
+  @override
+  String forecastHintOk(String amount) {
+    return 'Pace: about $amount this month.';
+  }
+
+  @override
+  String get saveAsRule => 'Save as rule';
+
+  @override
+  String ruleSaved(String pattern, String category) {
+    return 'Rule saved: \"$pattern\" → $category';
+  }
+
+  @override
+  String get settingsData => 'Data';
+
+  @override
+  String get backupsTitle => 'Backups before each write';
+
+  @override
+  String get backupsHint => '.backup/ in the budget folder, newest five kept';
+
+  @override
+  String get savePhotosTitle => 'Keep receipt files';
+
+  @override
+  String get savePhotosHint =>
+      'Belege/<year>/ in the budget folder, linked from the note';
+
+  @override
+  String get currencyTitle => 'Currency symbol';
+
+  @override
+  String get exportCsv => 'Export bookings as CSV';
+
+  @override
+  String csvExported(String name) {
+    return '$name written to the folder';
+  }
+
+  @override
+  String get shareMonth => 'Share month';
+
+  @override
+  String summaryTitle(String month) {
+    return 'AZ Budget · $month';
+  }
+
+  @override
+  String get summaryIncome => 'Income';
+
+  @override
+  String get summaryExpenses => 'Expenses';
+
+  @override
+  String get summaryTop => 'Largest categories';
+
+  @override
+  String receiptLink(String path) {
+    return 'Receipt: $path';
+  }
 }

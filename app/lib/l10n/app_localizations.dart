@@ -1089,6 +1089,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cannot use \"{name}\": share a PDF, an image or text.'**
   String shareUnsupported(String name);
+
+  /// No description provided for @splitReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Split by category ({count} items)'**
+  String splitReceipt(int count);
+
+  /// No description provided for @splitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Split receipt'**
+  String get splitTitle;
+
+  /// No description provided for @splitSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save {count} bookings'**
+  String splitSave(int count);
+
+  /// No description provided for @forecastHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pace: about {amount} this month, limit 1 on day {day}.'**
+  String forecastHint(String amount, int day);
+
+  /// No description provided for @forecastHintOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Pace: about {amount} this month.'**
+  String forecastHintOk(String amount);
+
+  /// No description provided for @saveAsRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as rule'**
+  String get saveAsRule;
+
+  /// No description provided for @ruleSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Rule saved: \"{pattern}\" → {category}'**
+  String ruleSaved(String pattern, String category);
+
+  /// No description provided for @settingsData.
+  ///
+  /// In en, this message translates to:
+  /// **'Data'**
+  String get settingsData;
+
+  /// No description provided for @backupsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backups before each write'**
+  String get backupsTitle;
+
+  /// No description provided for @backupsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'.backup/ in the budget folder, newest five kept'**
+  String get backupsHint;
+
+  /// No description provided for @savePhotosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep receipt files'**
+  String get savePhotosTitle;
+
+  /// No description provided for @savePhotosHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Belege/<year>/ in the budget folder, linked from the note'**
+  String get savePhotosHint;
+
+  /// No description provided for @currencyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency symbol'**
+  String get currencyTitle;
+
+  /// No description provided for @exportCsv.
+  ///
+  /// In en, this message translates to:
+  /// **'Export bookings as CSV'**
+  String get exportCsv;
+
+  /// No description provided for @csvExported.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} written to the folder'**
+  String csvExported(String name);
+
+  /// No description provided for @shareMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Share month'**
+  String get shareMonth;
+
+  /// No description provided for @summaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AZ Budget · {month}'**
+  String summaryTitle(String month);
+
+  /// No description provided for @summaryIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Income'**
+  String get summaryIncome;
+
+  /// No description provided for @summaryExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses'**
+  String get summaryExpenses;
+
+  /// No description provided for @summaryTop.
+  ///
+  /// In en, this message translates to:
+  /// **'Largest categories'**
+  String get summaryTop;
+
+  /// No description provided for @receiptLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt: {path}'**
+  String receiptLink(String path);
 }
 
 class _AppLocalizationsDelegate

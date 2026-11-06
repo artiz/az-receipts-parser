@@ -590,6 +590,62 @@ class XlsxWorkbook {
     }
   }
 
+  /// Add an empty worksheet named [name] at the end of the workbook (sheet
+  /// part, workbook entry, relationship, content type). Returns the sheet.
+  XlsxSheet addSheet(String name) {
+    final existing = _sheets[name];
+    if (existing != null) return existing;
+    var n = 1;
+    while (_archive.findFile('xl/worksheets/sheet$n.xml') != null || _replacedEntries.containsKey('xl/worksheets/sheet$n.xml')) {
+      n++;
+    }
+    final path = 'xl/worksheets/sheet$n.xml';
+    _replacedEntries[path] =
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetData/></worksheet>';
+
+    final rels = XmlDocument.parse(_entryText('xl/_rels/workbook.xml.rels'));
+    var rid = 1;
+    final ids = rels.rootElement.findElements('Relationship').map((r) => r.getAttribute('Id')).toSet();
+    while (ids.contains('rId$rid')) {
+      rid++;
+    }
+    rels.rootElement.children.add(XmlElement(XmlName('Relationship'), [
+      XmlAttribute(XmlName('Id'), 'rId$rid'),
+      XmlAttribute(XmlName('Type'), 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet'),
+      XmlAttribute(XmlName('Target'), 'worksheets/sheet$n.xml'),
+    ]));
+    _replacedEntries['xl/_rels/workbook.xml.rels'] = rels.toXmlString();
+
+    final wb = XmlDocument.parse(_entryText('xl/workbook.xml'));
+    final sheets = wb.rootElement.findElements('sheets').first;
+    var sheetId = 1;
+    for (final s in sheets.findElements('sheet')) {
+      final id = int.tryParse(s.getAttribute('sheetId') ?? '') ?? 0;
+      if (id >= sheetId) sheetId = id + 1;
+    }
+    // The relationship namespace is declared on the element itself, as
+    // openpyxl does, so it is valid whether or not the root declares it.
+    sheets.children.add(XmlElement(XmlName('sheet'), [
+      XmlAttribute(XmlName('r', 'xmlns'), 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'),
+      XmlAttribute(XmlName('name'), name),
+      XmlAttribute(XmlName('sheetId'), '$sheetId'),
+      XmlAttribute(XmlName('id', 'r'), 'rId$rid'),
+    ]));
+    _replacedEntries['xl/workbook.xml'] = wb.toXmlString();
+
+    final types = XmlDocument.parse(_entryText('[Content_Types].xml'));
+    types.rootElement.children.add(XmlElement(XmlName('Override'), [
+      XmlAttribute(XmlName('PartName'), '/$path'),
+      XmlAttribute(XmlName('ContentType'), 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml'),
+    ]));
+    _replacedEntries['[Content_Types].xml'] = types.toXmlString();
+
+    final sheet = XlsxSheet._(name, path, this);
+    sheet._dirty = true;
+    _sheets[name] = sheet;
+    return sheet;
+  }
+
   String sharedString(int index) {
     final list = _sharedStrings ??= _loadSharedStrings();
     return index >= 0 && index < list.length ? list[index] : '';
@@ -645,6 +701,13 @@ class XlsxWorkbook {
         final content = f.content as List<int>;
         out.addFile(ArchiveFile(name, content.length, content));
       }
+    }
+    // Parts that did not exist before (an added sheet).
+    final present = _archive.files.map((f) => f.name).toSet();
+    for (final e in replaced.entries) {
+      if (present.contains(e.key)) continue;
+      final data = utf8.encode(e.value);
+      out.addFile(ArchiveFile(e.key, data.length, data));
     }
     final encoded = ZipEncoder().encode(out);
     return Uint8List.fromList(encoded);

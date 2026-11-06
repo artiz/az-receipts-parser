@@ -26,7 +26,8 @@ Future<void> main() async {
     budget: budget,
     settings: settings,
     sink: notifications,
-    texts: (level, expenses, limit) => limitNotificationTexts(settings.localeCode, level, expenses, limit),
+    texts: (level, expenses, limit) => limitNotificationTexts(settings.localeCode, level, expenses, limit, symbol: settings.currencySymbol),
+    forecastTexts: (forecast, limit) => forecastNotificationTexts(settings.localeCode, forecast, limit, symbol: settings.currencySymbol),
   );
   budget.init();
   notifications.requestPermission();
