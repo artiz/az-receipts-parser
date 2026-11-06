@@ -39,6 +39,7 @@ same way. Category names are never hard-coded; they come from the file.
 | `Übersicht` | Input rows found by their label in column `A` (`Kontostand Monatsanfang…`, `Sparkonto`, `Kreditkarte offen…`), months in `B..M`; the `Plan` block from the row labelled `Plan` to `Summe Plan`. Everything else is formulas. |
 | `Einstellungen` | Categories below the `Kategorie` header (`A` name, `B` Typ: Ausgabe / Einnahme / Umbuchung, `D` hint, `E` icon and colour as chosen in the app, e.g. `basket #FF2E7E`); label/value settings in `F`/`G` (`Monatslimit 1/2`, `Ausgabenlimit 1/2/3`). New settings may be appended below; the app reads whatever is there. |
 | `Verlauf` | Month labels `YYYY-MM`; the app only re-targets them when it creates a new year. |
+| `Regeln` | Optional. Below the `Muster` header: `A` pattern (case-insensitive, `*` for anything), `B` category, `C` description. The statement import and the receipt scan check these before the learned history and before the model; "save as rule" in the import review appends here (the sheet is created in an old file). |
 
 The app never re-serialises the workbook. It patches individual cells in the
 sheet XML inside the zip (`app/lib/budget/xlsx_workbook.dart`) and copies every
@@ -82,14 +83,18 @@ the bookings in the file.
    plan copied, no bookings) or, if the folder is empty, from the template
    with a language choice.
 2. **Entries**: the upper half of the screen holds the quick tiles (tap →
-   confirm or change the amount), the lower half the bookings table with a
+   confirm or change the amount; long-press a tile, or long-press or swipe
+   right on a table row, to pin that category + description to the front of
+   the tiles, again to unpin; pins are kept on the device), the lower half the bookings table with a
    search field, paged by 20 as you scroll. Tap a row to edit it (queued rows
    and rows already in the file alike, the file row is rewritten in place);
    the **+** on a row tops it up ("+6 Glühwein": amount added, detail appended
    to the note). *New entry* has category, description autocomplete, amount,
    note and date (category pickers list the categories alphabetically, the
    most used one is preselected); income is typed as a plain number and
-   stored negative. A new
+   stored negative. A long press on the *+ Entry* button opens a menu with
+   every way in: by hand, receipt photo, image from the gallery, statement
+   PDF. A new
    booking with the same amount as one booked within three days asks whether
    to add its details to that booking's note instead (a scanned receipt of a
    purchase typed by hand). New bookings go into a local queue and are written
@@ -124,8 +129,9 @@ the bookings in the file.
    `Übersicht` (Kontostand, Sparkonto, Kreditkarte offen) editable per month;
    those accept a small formula (`=500+232,23`) that is kept in the cell.
    Tapping the expenses card edits the two month limits (written to
-   `Einstellungen`). The first time the calendar month's expenses reach
-   limit 1, and again at limit 2, the app posts a system notification.
+   `Einstellungen`). The app posts a system notification once the calendar
+   month's expenses pass 80 % of limit 1 ("reaching limit 1"), once they
+   reach limit 1, and again at limit 2.
 7. **Settings → OpenAI**: API key (stored in Android's encrypted storage) and
    model (default `gpt-4.1-mini`). Only the statement/screenshot import uses it.
    **Settings → Language** overrides the system language (German, English,
@@ -155,7 +161,30 @@ the bookings in the file.
    an image is scanned like a camera photo; text goes to the model. The same
    PDF routing applies to the PDF button on the home screen. Sharing needs
    a chosen folder; the shared copy is deleted afterwards.
-10. **Overview**: under the Saldo a bar per expense category for the month,
+10. **Writing safely**: every write re-reads the file and compares its
+    modification time right before writing; if the laptop saved in between,
+    the change is applied again to the fresh file instead of overwriting it.
+    Before each write the previous version is copied to `.backup/` in the
+    budget folder (at most once per ten minutes per year, the newest five
+    kept; *Settings → Data* switches it off).
+11. **Split a receipt**: the entry sheet of a scanned receipt offers *Split by
+    category*: give each item a category and one booking per category is
+    saved, the items in the notes, a rounding remainder with the main one.
+    The scanned file (photo or PDF) goes to `Belege/<year>/` next to the
+    budget files and is linked from the note (*Settings → Data*).
+12. **Year view**: the month menu of *Overview* has a *Year* entry. Swipes
+    walk one step at a time through "… Nov 2025, Dec 2025, Year 2025,
+    Jan 2026 …" across the year files in the folder. The view shows twelve
+    months as bars (colour = limit, plan grey, line = cumulated saldo) and
+    every category's actual / plan / previous year (from `Budget <year-1>.xlsx`).
+13. **Widget and shortcuts**: a home-screen widget shows the month's
+    expenses against limit 1 with the traffic-light colour and a "+" for a
+    booking; long-pressing the launcher icon offers scan, new booking and
+    statement import.
+14. **Settings → Data**: currency symbol (the file carries none), CSV export
+    of the loaded year into the folder; *Overview* shares a text summary of
+    the month.
+15. **Overview**: under the Saldo a bar per expense category for the month,
    the plan in grey with the actual amount over it in the category's colour,
    icons on the x axis, the largest on the right; tapping a bar shows its
    name and numbers.

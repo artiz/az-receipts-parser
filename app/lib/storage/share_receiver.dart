@@ -8,9 +8,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class SharedItem {
-  const SharedItem({required this.name, required this.mime, this.path, this.text, this.error});
+  const SharedItem({required this.name, required this.mime, this.path, this.text, this.error, this.action});
   final String name;
   final String mime;
+
+  /// A launcher shortcut or widget button: 'scan', 'entry' or 'statement'.
+  final String? action;
 
   /// Local copy of a shared file (null for shared text or a failed copy).
   final String? path;
@@ -27,6 +30,7 @@ class SharedItem {
         path: m['path'] as String?,
         text: m['text'] as String?,
         error: m['error'] as String?,
+        action: m['action'] as String?,
       );
 }
 
@@ -66,6 +70,20 @@ class PlatformShareSource implements ShareSource {
     try {
       await _channel.invokeMethod<void>('discard', {'path': p});
     } catch (_) {}
+  }
+}
+
+/// Hand text to the system share sheet (a month summary).
+class PlatformShare {
+  PlatformShare._();
+  static const _channel = MethodChannel('dev.artiz.az_budget/share');
+
+  static Future<void> text({required String title, required String text}) async {
+    try {
+      await _channel.invokeMethod<void>('shareText', {'title': title, 'text': text});
+    } on MissingPluginException {
+      // No share sheet on this platform.
+    }
   }
 }
 

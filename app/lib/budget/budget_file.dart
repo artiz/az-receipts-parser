@@ -164,6 +164,33 @@ class BudgetEntry {
   String toString() => 'BudgetEntry(${date.toIso8601String().substring(0, 10)}, $category, $description, $amount)';
 }
 
+/// A row of the `Regeln` sheet: bookings whose text contains [pattern]
+/// (case-insensitive, `*` for anything) get [category], and [description]
+/// when set. Used by the statement import and the receipt scan before the
+/// learned history and the model.
+class BudgetRule {
+  BudgetRule({required this.pattern, required this.category, this.description = '', this.row});
+  final String pattern;
+  final String category;
+  final String description;
+  final int? row;
+
+  late final RegExp _regex = RegExp(
+    normalize(pattern).split('*').map(RegExp.escape).join('.*'),
+    caseSensitive: false,
+  );
+
+  bool matches(String text) => pattern.trim().isNotEmpty && _regex.hasMatch(normalize(text));
+
+  /// The first rule of [rules] that matches [text].
+  static BudgetRule? firstMatch(Iterable<BudgetRule> rules, String text) {
+    for (final r in rules) {
+      if (r.matches(text)) return r;
+    }
+    return null;
+  }
+}
+
 /// Monthly input rows of `Übersicht` (values per month 1..12, null = empty).
 class OverviewInputs {
   OverviewInputs({required this.rows, required this.plan, required this.planHeaderRow, this.formulas = const {}});
@@ -203,6 +230,7 @@ class BudgetFile {
   List<BudgetSetting>? _settings;
   List<BudgetEntry>? _entries;
   OverviewInputs? _overview;
+  List<BudgetRule>? _rules;
 
   List<BudgetCategory> get categories => _categories ??= _readCategories();
   List<BudgetSetting> get settings => _settings ??= _readSettings();
@@ -216,6 +244,83 @@ class BudgetFile {
     _settings = null;
     _entries = null;
     _overview = null;
+    _rules = null;
+  }
+
+  /// Rules of the `Regeln` sheet, in sheet order (empty without the sheet).
+  List<BudgetRule> get rules => _rules ??= _readRules();
+
+  XlsxSheet? get _rulesSheet => _find(workbook, BudgetLabels.rulesSheet.values);
+
+  int _rulesHeaderRow(XlsxSheet sheet) {
+    for (final (r, cells) in sheet.readRows()) {
+      if (BudgetLabels.isOneOf(cells['A']?.text, BudgetLabels.rulesHeader)) return r;
+    }
+    return -1;
+  }
+
+  List<BudgetRule> _readRules() {
+    final sheet = _rulesSheet;
+    if (sheet == null) return const [];
+    final header = _rulesHeaderRow(sheet);
+    final out = <BudgetRule>[];
+    for (final (r, cells) in sheet.readRows()) {
+      if (r <= header) continue;
+      final pattern = cells['A']?.text?.trim() ?? '';
+      final category = cells['B']?.text?.trim() ?? '';
+      if (pattern.isEmpty || category.isEmpty) continue;
+      out.add(BudgetRule(pattern: pattern, category: category, description: cells['C']?.text?.trim() ?? '', row: r));
+    }
+    return out;
+  }
+
+  /// Append a rule; the sheet (title, explanation, header) is created in the
+  /// file's language when the file has none.
+  void addRule(BudgetRule rule) {
+    if (rule.pattern.trim().isEmpty || rule.category.trim().isEmpty) throw XlsxException('empty rule');
+    var sheet = _rulesSheet;
+    int header;
+    if (sheet == null) {
+      final texts = templateTexts[language]!;
+      sheet = workbook.addSheet(BudgetLabels.rulesSheet[language]!);
+      sheet.setText('A1', texts['rules_title']!);
+      sheet.setText('A2', texts['rules_sub']!);
+      for (var i = 0; i < 3; i++) {
+        sheet.setText('${XlsxRef.columnLetters(1 + i)}4', texts['rules_cols.$i']!);
+      }
+      header = 4;
+    } else {
+      header = _rulesHeaderRow(sheet);
+      if (header < 0) {
+        final texts = templateTexts[language]!;
+        for (var i = 0; i < 3; i++) {
+          sheet.setText('${XlsxRef.columnLetters(1 + i)}1', texts['rules_cols.$i']!);
+        }
+        header = 1;
+      }
+    }
+    var row = header + 1;
+    for (final r in rules) {
+      if (r.row != null && r.row! >= row) row = r.row! + 1;
+    }
+    while (!(sheet.readRow(row)['A']?.isEmpty ?? true)) {
+      row++;
+    }
+    sheet.setText('A$row', rule.pattern.trim());
+    sheet.setText('B$row', rule.category.trim());
+    if (rule.description.trim().isNotEmpty) sheet.setText('C$row', rule.description.trim());
+    _invalidate();
+  }
+
+  /// The bookings as CSV (semicolon separated, UTF-8 with BOM for Excel):
+  /// date, month, category, description, amount, note.
+  String toCsv() {
+    String q(String v) => '"${v.replaceAll('"', '""')}"';
+    final b = StringBuffer('\uFEFFDatum;Monat;Kategorie;Beschreibung;Betrag;Notiz\r\n');
+    for (final e in entries) {
+      b.write('${e.date.toIso8601String().substring(0, 10)};${e.month};${q(e.category)};${q(e.description)};${e.amount.toStringAsFixed(2)};${q(e.note)}\r\n');
+    }
+    return b.toString();
   }
 
   static BudgetFile open(Uint8List bytes, {int? yearHint}) {

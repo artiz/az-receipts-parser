@@ -28,6 +28,37 @@ class _HomePageState extends State<HomePage> {
     await saveNewEntry(context, budget, entry);
   }
 
+  /// Long press on the button: every way to add a booking, in one menu.
+  Future<void> _addMenu() async {
+    final l = AppLocalizations.of(context);
+    final navBar = MediaQuery.of(context).viewPadding.bottom;
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      useSafeArea: true,
+      builder: (ctx) => ListView(
+        shrinkWrap: true,
+        padding: EdgeInsets.only(top: 8, bottom: navBar + 8),
+        children: [
+          ListTile(leading: const Icon(Icons.edit_outlined), title: Text(l.newEntry), onTap: () => Navigator.pop(ctx, 'entry')),
+          ListTile(leading: const Icon(Icons.photo_camera_outlined), title: Text(l.scanReceipt), onTap: () => Navigator.pop(ctx, 'scan')),
+          ListTile(leading: const Icon(Icons.image_outlined), title: Text(l.importScreenshot), onTap: () => Navigator.pop(ctx, 'image')),
+          ListTile(leading: const Icon(Icons.picture_as_pdf_outlined), title: Text(l.importStatement), onTap: () => Navigator.pop(ctx, 'statement')),
+        ],
+      ),
+    );
+    if (choice == null || !mounted) return;
+    switch (choice) {
+      case 'entry':
+        await _newEntry();
+      case 'scan':
+        await scanReceipt(context);
+      case 'image':
+        await importScreenshot(context);
+      case 'statement':
+        await importStatement(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -78,7 +109,10 @@ class _HomePageState extends State<HomePage> {
           : null,
       body: IndexedStack(index: _index, children: pages),
       floatingActionButton: _index == 0
-          ? FloatingActionButton.extended(onPressed: _newEntry, icon: const Icon(Icons.add), label: Text(l.newEntry))
+          ? GestureDetector(
+              onLongPress: _addMenu,
+              child: FloatingActionButton.extended(onPressed: _newEntry, icon: const Icon(Icons.add), label: Text(l.newEntry)),
+            )
           : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,

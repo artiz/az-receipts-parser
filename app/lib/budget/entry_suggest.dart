@@ -10,13 +10,27 @@ import '../core/text_normalize.dart';
 import 'budget_file.dart';
 
 class QuickTile {
-  const QuickTile({required this.category, required this.description, required this.amount, required this.count});
+  const QuickTile({required this.category, required this.description, required this.amount, required this.count, this.pinned = false});
   final String category;
   final String description;
 
   /// The amount used last time for this (category, description).
   final double amount;
   final int count;
+
+  /// Pinned by the user: always shown, first.
+  final bool pinned;
+
+  /// Key for the pin list: category and description as written.
+  String get key => tileKey(category, description);
+
+  static String tileKey(String category, String description) => '$category\u0000${description.trim()}';
+
+  /// The same key with the description normalised, for matching bookings.
+  static String lookupKey(String key) {
+    final i = key.indexOf('\u0000');
+    return i < 0 ? key : '${key.substring(0, i)}\u0000${normalize(key.substring(i + 1)).trim()}';
+  }
 }
 
 class DescriptionSuggestion {
@@ -41,28 +55,46 @@ class EntrySuggestions {
   double _weight(BudgetEntry e) => _now.difference(e.date).inDays <= recentDays ? 1.0 : 0.25;
 
   /// Most used (category, description) pairs for the home screen.
-  List<QuickTile> quickTiles({int limit = 8, int perCategory = 3}) {
+  /// Quick tiles: the [pinned] keys (see [QuickTile.tileKey]) first, in
+  /// their order, then the most used (category, description) pairs up to
+  /// [limit] in all, at most [perCategory] learned ones per category. A
+  /// pinned pair without bookings gets amount 0 (the form asks).
+  List<QuickTile> quickTiles({int limit = 8, int perCategory = 3, List<String> pinned = const []}) {
     final score = <String, double>{};
     final count = <String, int>{};
     final last = <String, BudgetEntry>{};
     for (final e in _entries) {
       if (e.description.isEmpty || e.category.isEmpty) continue;
-      final key = '${e.category}\u0000${_norm(e.description)}';
+      final key = QuickTile.lookupKey(QuickTile.tileKey(e.category, e.description));
       score[key] = (score[key] ?? 0) + _weight(e);
       count[key] = (count[key] ?? 0) + 1;
       final prev = last[key];
       if (prev == null || !e.date.isBefore(prev.date)) last[key] = e;
     }
+    final out = <QuickTile>[];
+    final taken = <String>{};
+    for (final k in pinned) {
+      final lk = QuickTile.lookupKey(k);
+      if (!taken.add(lk)) continue;
+      final e = last[lk];
+      if (e != null) {
+        out.add(QuickTile(category: e.category, description: e.description, amount: e.amount, count: count[lk]!, pinned: true));
+      } else {
+        final parts = k.split('\u0000');
+        if (parts.length != 2 || parts[0].isEmpty || parts[1].isEmpty) continue;
+        out.add(QuickTile(category: parts[0], description: parts[1], amount: 0, count: 0, pinned: true));
+      }
+    }
     final keys = score.keys.toList()..sort((a, b) => score[b]!.compareTo(score[a]!));
     final perCat = <String, int>{};
-    final out = <QuickTile>[];
     for (final k in keys) {
+      if (out.length >= limit) break;
+      if (taken.contains(k)) continue;
       final e = last[k]!;
       final n = perCat[e.category] ?? 0;
       if (n >= perCategory) continue;
       perCat[e.category] = n + 1;
       out.add(QuickTile(category: e.category, description: e.description, amount: e.amount, count: count[k]!));
-      if (out.length >= limit) break;
     }
     return out;
   }

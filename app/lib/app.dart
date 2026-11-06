@@ -9,7 +9,10 @@ import 'storage/share_receiver.dart';
 import 'theme.dart';
 import 'ui/home_page.dart';
 import 'ui/onboarding_page.dart';
+import 'ui/entry_actions.dart';
+import 'ui/entry_sheet.dart';
 import 'ui/scan_flow.dart';
+import 'ui/widgets.dart' show moneySymbol;
 
 /// Dependency scope: budget service, settings and the OCR engine, reachable
 /// from any widget.
@@ -64,6 +67,20 @@ class _BudgetAppState extends State<BudgetApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
+  /// A launcher shortcut or the widget's "+".
+  Future<void> _runAction(BuildContext context, String action) async {
+    switch (action) {
+      case 'scan':
+        await scanReceipt(context);
+      case 'statement':
+        await importStatement(context);
+      case 'entry':
+        final entry = await showEntrySheet(context, budget: widget.budget);
+        if (entry == null || !context.mounted) return;
+        await saveNewEntry(context, widget.budget, entry);
+    }
+  }
+
   /// Route shared files one after another: images to the receipt scanner,
   /// PDFs to the PDF import, text to the model. Needs a folder with a file.
   Future<void> _onShare() async {
@@ -89,7 +106,9 @@ class _BudgetAppState extends State<BudgetApp> with WidgetsBindingObserver {
         final ctx = _navigator.currentContext;
         if (ctx == null || !ctx.mounted) return;
         try {
-          if (item.error != null || (item.path == null && item.text == null)) {
+          if (item.action != null) {
+            await _runAction(ctx, item.action!);
+          } else if (item.error != null || (item.path == null && item.text == null)) {
             ScaffoldMessenger.maybeOf(ctx)?.showSnackBar(SnackBar(content: Text(l.importFailed(item.error ?? item.name))));
           } else if (item.isText) {
             await importSharedText(ctx, item.text!);
@@ -125,7 +144,9 @@ class _BudgetAppState extends State<BudgetApp> with WidgetsBindingObserver {
       engine: widget.engine,
       child: ListenableBuilder(
         listenable: widget.settings,
-        builder: (context, _) => MaterialApp(
+        builder: (context, _) {
+          moneySymbol = widget.settings.currencySymbol;
+          return MaterialApp(
         navigatorKey: _navigator,
         locale: widget.settings.localeCode.isEmpty ? null : Locale(widget.settings.localeCode),
         onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
@@ -140,7 +161,8 @@ class _BudgetAppState extends State<BudgetApp> with WidgetsBindingObserver {
         darkTheme: azTheme(Brightness.dark),
         // A new user sees the start screen until a folder is chosen (or it is skipped).
         home: widget.settings.hasFolder || widget.settings.onboardingSeen ? const HomePage() : const OnboardingPage(),
-        ),
+        );
+        },
       ),
     );
   }

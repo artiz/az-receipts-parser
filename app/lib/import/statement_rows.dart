@@ -118,11 +118,14 @@ class ClassifiedRow {
 /// history. Rows whose category stays unknown are flagged for review (or
 /// for the model, see [StatementImporter]).
 class StatementRowClassifier {
-  StatementRowClassifier({required this.categories, required this.existing, this.ownNames = const []})
+  StatementRowClassifier({required this.categories, required this.existing, this.ownNames = const [], this.rules = const []})
       : _suggest = EntrySuggestions(existing);
 
   final List<BudgetCategory> categories;
   final List<BudgetEntry> existing;
+
+  /// The file's `Regeln`: checked before the learned history.
+  final List<BudgetRule> rules;
 
   /// Names of the account owners: transfers between them are not bookings.
   final List<String> ownNames;
@@ -198,6 +201,16 @@ class StatementRowClassifier {
     return name;
   }
 
+  /// The first rule matching the row's text, details or merchant, if its
+  /// category exists in the file.
+  BudgetRule? _rule(RawBooking b, String description) {
+    if (rules.isEmpty) return null;
+    final text = '${b.text} ${b.details.join(' ')} $description';
+    final rule = BudgetRule.firstMatch(rules, text);
+    if (rule == null || !categories.any((c) => c.name == rule.category)) return null;
+    return rule;
+  }
+
   String? _categoryNamed(bool Function(BudgetCategory) test) {
     for (final c in categories) {
       if (test(c)) return c.name;
@@ -240,13 +253,15 @@ class StatementRowClassifier {
         case RowKind.income:
           category = income ?? fallback;
         case RowKind.transfer:
-          final learned = _suggest.categoryFor(r.description);
+          final rule = _rule(b, r.description);
+          final learned = rule?.category ?? _suggest.categoryFor(r.description);
           category = learned ?? fallback;
           confidence = learned != null ? 0.8 : 0.3;
           if (learned == null) question = 'Überweisung an ${r.description}: Kategorie?';
         case RowKind.purchase:
         case RowKind.other:
-          final learned = _suggest.categoryFor(r.description) ?? _suggest.categoryFor(b.text);
+          final rule = _rule(b, r.description);
+          final learned = rule?.category ?? _suggest.categoryFor(r.description) ?? _suggest.categoryFor(b.text);
           category = learned ?? fallback;
           if (learned == null) {
             confidence = 0.3;
@@ -254,10 +269,12 @@ class StatementRowClassifier {
             unknown?.add(i);
           }
       }
+      final rule = _rule(b, r.description);
+      final description = rule != null && rule.description.isNotEmpty ? rule.description : r.description;
       final isIncomeCat = categories.any((c) => c.name == category && c.isIncome);
       final signed = isIncomeCat ? -abs : abs;
       out.add(ProposedEntry(
-        entry: BudgetEntry(date: b.date, category: category, description: r.description, amount: signed, note: r.note),
+        entry: BudgetEntry(date: b.date, category: category, description: description, amount: signed, note: r.note),
         confidence: confidence,
         question: question,
         skipReason: skip,

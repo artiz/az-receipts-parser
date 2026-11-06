@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_scan">Scan receipt</string>
+    <string name="shortcut_entry">New booking</string>
+    <string name="shortcut_statement">Import statement</string>
+    <string name="widget_description">This month\'s expenses against the limit</string>
+    <string name="widget_empty">Open the app once</string>
+</resources>

@@ -12,7 +12,11 @@ import '../core/expression.dart';
 import '../l10n/app_localizations.dart';
 import '../theme.dart';
 import 'entry_actions.dart';
+import 'package:intl/intl.dart';
+
+import '../storage/share_receiver.dart';
 import 'category_chart.dart';
+import 'year_chart.dart';
 import 'widgets.dart';
 
 class OverviewPage extends StatefulWidget {
@@ -64,12 +68,11 @@ class _OverviewPageState extends State<OverviewPage> {
     final budget = widget.budget;
     final now = DateTime.now();
     final all = budget.entriesForYear(year, file);
-    final months = all.map((e) => e.month).toSet().toList();
-    // The calendar month is always offered (a new month starts empty).
-    if (now.year == year && !months.contains(now.month)) months.add(now.month);
-    if (months.isEmpty) months.add(1);
-    months.sort();
-    final month = _month != null && months.contains(_month) ? _month! : (now.year == year ? now.month : months.last);
+    // Every month up to today's for the calendar year, all twelve for a past one.
+    final lastMonth = now.year == year ? now.month : 12;
+    final months = [for (var m = 1; m <= lastMonth; m++) m];
+    final yearMode = _month == 0;
+    final month = !yearMode && _month != null && months.contains(_month) ? _month! : (now.year == year ? now.month : months.last);
     final entries = all.where((e) => e.month == month).toList();
     final stats = _MonthStats.from(entries, file);
     final limit1 = file.setting('Monatslimit 1');
@@ -77,14 +80,44 @@ class _OverviewPageState extends State<OverviewPage> {
     final scheme = Theme.of(context).colorScheme;
     final level = BudgetService.limitLevelOf(file, stats.expenses);
     final years = budget.yearFiles.map((f) => f.year).toList();
+    final titleStyle = Theme.of(context).appBarTheme.titleTextStyle ?? Theme.of(context).textTheme.titleLarge;
+    // Swipes walk one step through "… Nov 2025, Dec 2025, Year 2025, Jan 2026 …":
+    // the months of a year, its year view, then the next year's file.
+    void go(int y, int m) => setState(() {
+          _year = y;
+          _month = m;
+          _expanded.clear();
+        });
+    void step(int delta) {
+      final ys = [...years]..sort();
+      if (delta > 0) {
+        if (yearMode) {
+          final next = ys.firstWhere((y) => y > year, orElse: () => year);
+          if (next != year) go(next, 1);
+        } else {
+          go(year, month < lastMonth ? month + 1 : 0);
+        }
+      } else {
+        if (yearMode) {
+          go(year, lastMonth);
+        } else if (month > 1) {
+          go(year, month - 1);
+        } else {
+          final prev = ys.lastWhere((y) => y < year, orElse: () => year);
+          if (prev != year) go(prev, 0);
+        }
+      }
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(l.tabOverview),
         actions: [
+          // The menus in the title's own font: year and month read like part of the heading.
           if (years.length > 1)
             DropdownButtonHideUnderline(
               child: DropdownButton<int>(
                 value: years.contains(year) ? year : null,
+                style: titleStyle,
                 items: [for (final y in years) DropdownMenuItem(value: y, child: Text('$y'))],
                 onChanged: (y) => setState(() {
                   _year = y;
@@ -95,15 +128,43 @@ class _OverviewPageState extends State<OverviewPage> {
             ),
           DropdownButtonHideUnderline(
             child: DropdownButton<int>(
-              value: month,
-              items: [for (final m in months) DropdownMenuItem(value: m, child: Text(monthName(year, m, locale)))],
+              value: yearMode ? 0 : month,
+              style: titleStyle,
+              items: [
+                // Short month without the year (the year has its own menu), so the title stays visible.
+                for (final m in months) DropdownMenuItem(value: m, child: Text(DateFormat.MMM(locale.toString()).format(DateTime(year, m)))),
+                DropdownMenuItem(value: 0, child: Text(l.yearLabel)),
+              ],
               onChanged: (m) => setState(() => _month = m),
             ),
           ),
-          const SizedBox(width: 8),
+          // Back to the calendar month, shown only while another month or year is open.
+          if (yearMode || year != now.year || month != now.month)
+            IconButton(
+              tooltip: l.currentMonth,
+              icon: const Icon(Icons.today_outlined),
+              onPressed: () => setState(() {
+                _year = null;
+                _month = null;
+                _expanded.clear();
+              }),
+            ),
+          if (!yearMode)
+            IconButton(
+              tooltip: l.shareMonth,
+              icon: const Icon(Icons.share_outlined),
+              onPressed: () => PlatformShare.text(title: l.summaryTitle(monthName(year, month, locale)), text: _summaryText(l, file, stats, year, month, locale)),
+            ),
+          const SizedBox(width: 4),
         ],
       ),
-      body: ListView(
+      body: GestureDetector(
+        onHorizontalDragEnd: (d) {
+          final v = d.primaryVelocity ?? 0;
+          if (v.abs() < 250) return;
+          step(v < 0 ? 1 : -1); // swipe left: next month
+        },
+        child: yearMode ? _yearBody(context, year, file, all) : ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
         children: [
           Row(
@@ -186,8 +247,138 @@ class _OverviewPageState extends State<OverviewPage> {
           ),
         ],
       ),
+      ),
     );
   }
+}
+
+extension _YearView on _OverviewPageState {
+  /// Twelve months at a glance: chart, totals, categories against plan and
+  /// the previous year's file.
+  Widget _yearBody(BuildContext context, int year, BudgetFile file, List<BudgetEntry> all) {
+    final l = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context);
+    final scheme = Theme.of(context).colorScheme;
+    final budget = widget.budget;
+    final months = <YearMonth>[];
+    final byCategory = <String, double>{};
+    var income = 0.0;
+    var expenses = 0.0;
+    var planYear = 0.0;
+    final planByCategory = <String, double>{};
+    for (var m = 1; m <= 12; m++) {
+      final stats = _MonthStats.from(all.where((e) => e.month == m).toList(), file);
+      final plan = stats.planTotal(file, m);
+      months.add(YearMonth(month: m, income: stats.income, expenses: stats.expenses, plan: plan, level: BudgetService.limitLevelOf(file, stats.expenses)));
+      income += stats.income;
+      expenses += stats.expenses;
+      planYear += plan;
+      for (final e in stats.byCategory.entries) {
+        byCategory[e.key] = (byCategory[e.key] ?? 0) + e.value;
+      }
+    }
+    for (final p in file.overview.plan.entries) {
+      planByCategory[p.key] = p.value.$2.fold(0.0, (s, v) => s + (v ?? 0));
+    }
+    final saldo = income - expenses;
+    String label(int m) => DateFormat.MMM(locale.toString()).format(DateTime(year, m));
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+      children: [
+        Row(
+          children: [
+            Expanded(child: _StatCard(label: l.income, value: euro(income), color: scheme.tertiary, showEdit: false)),
+            const SizedBox(width: 8),
+            Expanded(child: _StatCard(label: l.expenses, value: euro(expenses), color: scheme.primary, showEdit: false, hint: planYear > 0 ? '${l.planLabel} ${euroShort(planYear)}' : null)),
+          ],
+        ),
+        const SizedBox(height: 8),
+        _StatCard(label: l.saldo, value: euro(saldo, showPlus: true), color: saldo >= 0 ? scheme.tertiary : scheme.primary, big: true),
+        const SizedBox(height: 8),
+        YearChart(months: months, monthLabel: label),
+        SectionTitle(l.yearByCategory),
+        FutureBuilder<YearSummary?>(
+          // The previous year is parsed once, off the UI thread (see BudgetService.yearSummary).
+          future: budget.yearSummary(year - 1),
+          builder: (context, snap) {
+            final prev = snap.data;
+            final prevBy = prev?.byCategory ?? const <String, double>{};
+            final prevTotal = prev?.expenses ?? 0.0;
+            final rows = [
+              for (final c in file.expenseCategoriesByName)
+                if ((byCategory[c.name] ?? 0) != 0 || (planByCategory[c.name] ?? 0) != 0 || (prevBy[c.name] ?? 0) != 0) c.name,
+            ];
+            return Card(
+              child: Column(
+                children: [
+                  _YearRow(name: '', actual: l.actual, plan: l.planLabel, previous: prev == null ? null : l.previousYear, header: true),
+                  for (final name in rows)
+                    _YearRow(
+                      name: name,
+                      actual: euroShort(byCategory[name] ?? 0),
+                      plan: (planByCategory[name] ?? 0) > 0 ? euroShort(planByCategory[name]!) : '–',
+                      previous: prev == null ? null : euroShort(prevBy[name] ?? 0),
+                      over: (planByCategory[name] ?? 0) > 0 && (byCategory[name] ?? 0) > planByCategory[name]!,
+                    ),
+                  const Divider(),
+                  _YearRow(name: l.total, actual: euroShort(expenses), plan: planYear > 0 ? euroShort(planYear) : '–', previous: prev == null ? null : euroShort(prevTotal), bold: true),
+                ],
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _YearRow extends StatelessWidget {
+  const _YearRow({required this.name, required this.actual, required this.plan, this.previous, this.bold = false, this.header = false, this.over = false});
+  final String name;
+  final String actual;
+  final String plan;
+  final String? previous;
+  final bool bold;
+  final bool header;
+  final bool over;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final style = TextStyle(fontWeight: bold || header ? FontWeight.w700 : FontWeight.w400, fontSize: header ? 11 : 14, color: header ? scheme.onSurfaceVariant : null);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      child: Row(
+        children: [
+          if (!header && !bold) ...[CategoryDot(name: name), const SizedBox(width: 10)],
+          Expanded(child: Text(name, style: style, overflow: TextOverflow.ellipsis)),
+          SizedBox(width: 78, child: Text(actual, textAlign: TextAlign.right, style: style.copyWith(color: over ? scheme.primary : style.color))),
+          SizedBox(width: 72, child: Text(plan, textAlign: TextAlign.right, style: style.copyWith(color: header ? style.color : scheme.onSurfaceVariant))),
+          if (previous != null) SizedBox(width: 78, child: Text(previous!, textAlign: TextAlign.right, style: style.copyWith(color: header ? style.color : scheme.onSurfaceVariant))),
+        ],
+      ),
+    );
+  }
+}
+
+/// Plain text of the month for the share sheet.
+String _summaryText(AppLocalizations l, BudgetFile file, _MonthStats stats, int year, int month, Locale locale) {
+  final top = stats.byCategory.entries.where((e) => e.value > 0).toList()..sort((a, b) => b.value.compareTo(a.value));
+  final b = StringBuffer()
+    ..writeln(l.summaryTitle(monthName(year, month, locale)))
+    ..writeln('${l.summaryIncome}: ${euro(stats.income)}')
+    ..writeln('${l.summaryExpenses}: ${euro(stats.expenses)}')
+    ..writeln('${l.saldo}: ${euro(stats.saldo, showPlus: true)}');
+  if (top.isNotEmpty) {
+    b
+      ..writeln()
+      ..writeln('${l.summaryTop}:');
+    for (final e in top.take(6)) {
+      final plan = file.overview.plan[e.key]?.$2[month - 1];
+      b.writeln('• ${e.key}: ${euro(e.value)}${plan != null && plan > 0 ? ' / ${euroShort(plan)}' : ''}');
+    }
+  }
+  return b.toString().trimRight();
 }
 
 class _MonthStats {

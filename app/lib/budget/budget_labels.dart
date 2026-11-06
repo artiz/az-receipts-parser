@@ -13,6 +13,8 @@ class BudgetLabels {
   static const Map<String, String> overviewSheet = {'de': 'Übersicht', 'en': 'Overview', 'ru': 'Обзор'};
   static const Map<String, String> settingsSheet = {'de': 'Einstellungen', 'en': 'Settings', 'ru': 'Настройки'};
   static const Map<String, String> historySheet = {'de': 'Verlauf', 'en': 'History', 'ru': 'История'};
+  static const Map<String, String> rulesSheet = {'de': 'Regeln', 'en': 'Rules', 'ru': 'Правила'};
+  static const List<String> rulesHeader = ['muster', 'pattern', 'шаблон'];
 
   /// Settings sheet name of files before the rename.
   static const List<String> legacySettingsSheets = ['Kategorien'];

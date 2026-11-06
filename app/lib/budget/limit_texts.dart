@@ -7,17 +7,32 @@ import 'package:intl/intl.dart';
 
 import '../theme.dart';
 
-(String, String) limitNotificationTexts(String localeCode, LimitLevel level, double expenses, double limit) {
+(String, String) limitNotificationTexts(String localeCode, LimitLevel level, double expenses, double limit, {String symbol = '€'}) {
   final f = NumberFormat('#,##0', 'de_AT');
-  final e = '${f.format(expenses)} €';
-  final l = '${f.format(limit)} €';
+  final e = '${f.format(expenses)} $symbol';
+  final l = '${f.format(limit)} $symbol';
   final over = level == LimitLevel.over;
   switch (localeCode) {
     case 'en':
-      return (over ? 'Month limit 2 exceeded' : 'Month limit 1 reached', 'Expenses this month: $e, limit $l.');
+      return (over ? 'Limit 2 exceeded' : 'Limit 1 reached', 'Expenses this month: $e, limit $l.');
     case 'ru':
-      return (over ? 'Превышен месячный лимит 2' : 'Достигнут месячный лимит 1', 'Расходы за месяц: $e, лимит $l.');
+      return (over ? 'Лимит 2 превышен' : 'Лимит 1 достигнут', 'Расходы за месяц: $e, лимит $l.');
     default:
-      return (over ? 'Monatslimit 2 überschritten' : 'Monatslimit 1 erreicht', 'Ausgaben diesen Monat: $e, Limit $l.');
+      return (over ? 'Limit 2 überschritten' : 'Limit 1 erreicht', 'Ausgaben diesen Monat: $e, Limit $l.');
+  }
+}
+
+/// Texts of the early warning: 80 % of limit 1 spent, the limit not reached.
+(String, String) approachNotificationTexts(String localeCode, double expenses, double limit, {String symbol = '€'}) {
+  final f = NumberFormat('#,##0', 'de_AT');
+  final e = '${f.format(expenses)} $symbol';
+  final l = '${f.format(limit)} $symbol';
+  switch (localeCode) {
+    case 'en':
+      return ('Reaching limit 1', 'Expenses this month: $e of $l.');
+    case 'ru':
+      return ('Приближается лимит 1', 'Расходы за месяц: $e из $l.');
+    default:
+      return ('Limit 1 fast erreicht', 'Ausgaben diesen Monat: $e von $l.');
   }
 }

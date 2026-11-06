@@ -10,20 +10,27 @@ import 'package:flutter/services.dart';
 
 import '../budget/budget_file.dart';
 import '../budget/budget_service.dart';
+import '../budget/receipt_split.dart';
 import '../l10n/app_localizations.dart';
+import 'split_receipt_page.dart';
 import 'widgets.dart';
 
 class EntryDraft {
-  EntryDraft({this.date, this.category, this.description = '', this.amount, this.note = ''});
+  EntryDraft({this.date, this.category, this.description = '', this.amount, this.note = '', this.items = const []});
   DateTime? date;
   String? category;
   String description;
   double? amount;
   String note;
+
+  /// The receipt's items (a scan); lets the form offer a split by category.
+  List<ReceiptItemDraft> items;
 }
 
 /// Shows the form; returns the entry when saved, null when dismissed.
-Future<BudgetEntry?> showEntrySheet(BuildContext context, {required BudgetService budget, EntryDraft? draft, String? title, Future<void> Function()? onDelete}) {
+/// [onSplit] (receipt scans) enables "split": the entries, one per
+/// category, are handed to it and the sheet closes with null.
+Future<BudgetEntry?> showEntrySheet(BuildContext context, {required BudgetService budget, EntryDraft? draft, String? title, Future<void> Function()? onDelete, Future<void> Function(List<BudgetEntry>)? onSplit}) {
   // Refresh in the background while the user fills the form, so the
   // duplicate check on save sees what was added on the laptop meanwhile.
   unawaited(budget.sync());
@@ -39,13 +46,16 @@ Future<BudgetEntry?> showEntrySheet(BuildContext context, {required BudgetServic
     builder: (ctx) => AnimatedPadding(
       duration: const Duration(milliseconds: 150),
       padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-      child: EntryForm(budget: budget, draft: draft ?? EntryDraft(), title: title, bottomPadding: navBar, onDelete: onDelete),
+      child: EntryForm(budget: budget, draft: draft ?? EntryDraft(), title: title, bottomPadding: navBar, onDelete: onDelete, onSplit: onSplit),
     ),
   );
 }
 
 class EntryForm extends StatefulWidget {
-  const EntryForm({super.key, required this.budget, required this.draft, this.title, this.bottomPadding = 0, this.onDelete});
+  const EntryForm({super.key, required this.budget, required this.draft, this.title, this.bottomPadding = 0, this.onDelete, this.onSplit});
+
+  /// Receives one entry per category when the user splits a receipt.
+  final Future<void> Function(List<BudgetEntry>)? onSplit;
 
   /// When set (editing an existing entry) a delete button is shown; the
   /// callback runs after the user confirmed.
@@ -128,6 +138,22 @@ class _EntryFormState extends State<EntryForm> {
     if (ok != true || !mounted) return;
     Navigator.of(context).pop();
     await widget.onDelete!();
+  }
+
+  Future<void> _split() async {
+    final cat = _cat;
+    final amount = parseAmount(_amount.text);
+    if (cat == null || amount == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).entryIncomplete)));
+      return;
+    }
+    final entries = await Navigator.of(context).push<List<BudgetEntry>>(MaterialPageRoute(
+      fullscreenDialog: true,
+      builder: (_) => SplitReceiptPage(date: _date, description: _description.text.trim(), total: amount.abs(), items: widget.draft.items, main: cat.name),
+    ));
+    if (entries == null || !mounted) return;
+    Navigator.of(context).pop();
+    await widget.onSplit!(entries);
   }
 
   Future<void> _pickDate() async {
@@ -254,6 +280,8 @@ class _EntryFormState extends State<EntryForm> {
           ),
           const SizedBox(height: 16),
           FilledButton.icon(onPressed: _save, icon: const Icon(Icons.check), label: Text(l.save)),
+          if (widget.onSplit != null && widget.draft.items.length > 1)
+            OutlinedButton.icon(onPressed: _split, icon: const Icon(Icons.call_split), label: Text(l.splitReceipt(widget.draft.items.length))),
           if (widget.onDelete != null)
             TextButton.icon(
               onPressed: _confirmDelete,

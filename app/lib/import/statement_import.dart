@@ -56,7 +56,7 @@ class StatementImportResult {
 }
 
 class StatementImporter {
-  StatementImporter({required this.client, required this.categories, required this.existing, DateTime? now, this.ownNames = const []})
+  StatementImporter({required this.client, required this.categories, required this.existing, DateTime? now, this.ownNames = const [], this.rules = const []})
       : _now = now ?? DateTime.now(),
         _suggest = EntrySuggestions(existing, now: now);
 
@@ -66,6 +66,9 @@ class StatementImporter {
 
   /// Account owners (transfers between them are skipped).
   final List<String> ownNames;
+
+  /// The file's `Regeln`, checked before the history and the model.
+  final List<BudgetRule> rules;
   final List<BudgetCategory> categories;
 
   /// Entries already in the file (plus pending), for examples and dedupe.
@@ -181,7 +184,7 @@ class StatementImporter {
 
   Future<StatementImportResult> _importRows(String body, {required String sourceDescription, void Function(int done, int total)? onProgress}) async {
     final bookings = StatementRows.parse(body);
-    final classifier = StatementRowClassifier(categories: categories, existing: existing, ownNames: ownNames);
+    final classifier = StatementRowClassifier(categories: categories, existing: existing, ownNames: ownNames, rules: rules);
     final unknown = <int>[];
     final proposals = classifier.propose(bookings, unknown: unknown);
     var notes = '${bookings.length} rows';

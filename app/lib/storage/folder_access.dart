@@ -51,6 +51,12 @@ abstract class FolderAccess {
   Future<void> writeFile(String uri, Uint8List bytes);
   Future<String> createFile(String folderUri, String name, String mimeType, Uint8List bytes);
   Future<FileEntry?> fileInfo(String uri);
+
+  /// The folder at [path] (e.g. `['Belege', '2026']`) below [folderUri],
+  /// created when missing; returns its URI, usable with [listFiles] and
+  /// [createFile].
+  Future<String> ensureFolder(String folderUri, List<String> path);
+  Future<void> deleteFile(String uri);
 }
 
 class PlatformFolderAccess implements FolderAccess {
@@ -120,4 +126,10 @@ class PlatformFolderAccess implements FolderAccess {
     if (map == null) return null;
     return _entry({...map, 'uri': uri});
   }
+
+  @override
+  Future<String> ensureFolder(String folderUri, List<String> path) => _call<String>('ensureFolder', {'uri': folderUri, 'path': path});
+
+  @override
+  Future<void> deleteFile(String uri) => _call<Object?>('deleteFile', {'uri': uri});
 }

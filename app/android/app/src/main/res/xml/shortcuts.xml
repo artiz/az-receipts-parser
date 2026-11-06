@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press the launcher icon: straight into the scanner, the entry form or the statement import. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="scan"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_scan"
+        android:shortcutLongLabel="@string/shortcut_scan">
+        <intent
+            android:action="dev.artiz.az_budget.SCAN"
+            android:targetPackage="dev.artiz.az_budget"
+            android:targetClass="dev.artiz.az_budget.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="entry"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_entry"
+        android:shortcutLongLabel="@string/shortcut_entry">
+        <intent
+            android:action="dev.artiz.az_budget.NEW_ENTRY"
+            android:targetPackage="dev.artiz.az_budget"
+            android:targetClass="dev.artiz.az_budget.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="statement"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_statement"
+        android:shortcutLongLabel="@string/shortcut_statement">
+        <intent
+            android:action="dev.artiz.az_budget.STATEMENT"
+            android:targetPackage="dev.artiz.az_budget"
+            android:targetClass="dev.artiz.az_budget.MainActivity" />
+    </shortcut>
+</shortcuts>

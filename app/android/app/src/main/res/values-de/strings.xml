@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_scan">Beleg scannen</string>
+    <string name="shortcut_entry">Neue Buchung</string>
+    <string name="shortcut_statement">Kontoauszug importieren</string>
+    <string name="widget_description">Ausgaben des Monats gegen das Limit</string>
+    <string name="widget_empty">App einmal öffnen</string>
+</resources>

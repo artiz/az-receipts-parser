@@ -77,6 +77,42 @@ class SettingsPage extends StatelessWidget {
                     title: Text(l.fileLanguage(languageDisplayName(budget.file!.language))),
                   ),
               ],
+              SectionTitle(l.settingsData),
+              SwitchListTile(
+                secondary: const Icon(Icons.history_outlined),
+                title: Text(l.backupsTitle),
+                subtitle: Text(l.backupsHint),
+                value: settings.backups,
+                onChanged: settings.setBackups,
+              ),
+              SwitchListTile(
+                secondary: const Icon(Icons.photo_library_outlined),
+                title: Text(l.savePhotosTitle),
+                subtitle: Text(l.savePhotosHint),
+                value: settings.savePhotos,
+                onChanged: settings.setSavePhotos,
+              ),
+              ListTile(
+                leading: const Icon(Icons.euro_outlined),
+                title: Text(l.currencyTitle),
+                subtitle: Text(settings.currencySymbol),
+                onTap: () => _editText(context, title: l.currencyTitle, initial: settings.currencySymbol, onSave: settings.setCurrencySymbol),
+              ),
+              if (budget.file != null)
+                ListTile(
+                  leading: const Icon(Icons.table_view_outlined),
+                  title: Text(l.exportCsv),
+                  subtitle: Text('Budget ${budget.year}.csv'),
+                  onTap: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    try {
+                      final name = await budget.exportCsv();
+                      messenger.showSnackBar(SnackBar(content: Text(l.csvExported(name))));
+                    } catch (e) {
+                      messenger.showSnackBar(SnackBar(content: Text(l.importFailed(e.toString()))));
+                    }
+                  },
+                ),
               SectionTitle(l.language),
               ListTile(
                 leading: const Icon(Icons.translate_outlined),

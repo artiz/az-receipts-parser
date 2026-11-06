@@ -16,6 +16,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
@@ -33,6 +34,31 @@ enum SyncState { noFolder, idle, syncing, offline, error }
 final RegExp budgetFileName = RegExp(r'^Budget (20\d\d)\.xlsx$', caseSensitive: false);
 
 const String xlsxMime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+/// Totals of a year's expense bookings, by category and overall.
+class YearSummary {
+  const YearSummary({required this.expenses, required this.income, required this.byCategory});
+  final double expenses;
+  final double income;
+  final Map<String, double> byCategory;
+
+  static YearSummary of(BudgetFile f) {
+    var expenses = 0.0;
+    var income = 0.0;
+    final by = <String, double>{};
+    for (final e in f.entries) {
+      final cat = f.category(e.category);
+      if (cat == null) continue;
+      if (cat.isIncome) {
+        income += -e.amount;
+      } else if (cat.isExpense) {
+        expenses += e.amount;
+        by[e.category] = (by[e.category] ?? 0) + e.amount;
+      }
+    }
+    return YearSummary(expenses: expenses, income: income, byCategory: by);
+  }
+}
 
 class YearFileRef {
   const YearFileRef({required this.year, required this.entry});
@@ -93,6 +119,9 @@ class BudgetService extends ChangeNotifier {
 
   /// Other years' files read for the overview, dropped on every sync.
   final Map<int, BudgetFile> _otherYears = {};
+
+  /// Year totals computed off the UI thread, dropped on every sync.
+  final Map<int, Future<YearSummary?>> _yearSummaries = {};
 
   Future<void>? _running;
   bool _syncAgain = false;
@@ -396,12 +425,108 @@ class BudgetService extends ChangeNotifier {
   Future<void> _withFile(int y, void Function(BudgetFile) change) async {
     final ref = _refForYear(y);
     if (ref == null) throw StateError('no file for $y');
-    final bytes = await folder.readFile(ref.entry.uri);
-    final f = BudgetFile.open(bytes, yearHint: ref.year);
-    change(f);
-    await folder.writeFile(ref.entry.uri, f.save());
+    await _modify(ref, change);
     await sync();
   }
+
+  /// Backups taken per year in this session, to take at most one per
+  /// [backupInterval] (a burst of edits is one backup).
+  final Map<int, DateTime> _lastBackup = {};
+  static const Duration backupInterval = Duration(minutes: 10);
+  static const int backupsKept = 5;
+  static const String backupFolder = '.backup';
+
+  /// Read, change and write back a year file, the way a second editor is not
+  /// overwritten: the file's modification time is read before and compared
+  /// right before the write; a change in between (the laptop saved) throws
+  /// the work away and applies [change] to the fresh file again. A copy of
+  /// the file as it was goes to `.backup/` first (see [backupInterval]).
+  Future<void> _modify(YearFileRef ref, void Function(BudgetFile) change) async {
+    final uri = ref.entry.uri;
+    for (var attempt = 0; attempt < 4; attempt++) {
+      final before = (await folder.fileInfo(uri))?.lastModified;
+      final bytes = await folder.readFile(uri);
+      final f = BudgetFile.open(bytes, yearHint: ref.year);
+      change(f);
+      final saved = f.save();
+      final again = (await folder.fileInfo(uri))?.lastModified;
+      if (before != null && again != null && again != before) {
+        lastError = 'file changed while editing, retrying';
+        continue; // someone else wrote meanwhile: redo on their version
+      }
+      await _backup(ref, bytes);
+      await folder.writeFile(uri, saved);
+      return;
+    }
+    throw FolderAccessException('Budget ${ref.year}.xlsx keeps changing while writing; try again');
+  }
+
+  Future<void> _backup(YearFileRef ref, Uint8List bytes) async {
+    if (!settings.backups) return;
+    final root = settings.folderUri;
+    if (root == null) return;
+    final now = _clock();
+    final last = _lastBackup[ref.year];
+    if (last != null && now.difference(last) < backupInterval) return;
+    try {
+      final dir = await folder.ensureFolder(root, const [backupFolder]);
+      final stamp = now.toIso8601String().substring(0, 19).replaceAll(':', '-');
+      await folder.createFile(dir, 'Budget ${ref.year} $stamp.xlsx', xlsxMime, bytes);
+      _lastBackup[ref.year] = now;
+      // Keep the newest [backupsKept] of this year; names sort by time.
+      final prefix = 'Budget ${ref.year} ';
+      final old = [for (final f in await folder.listFiles(dir)) if (f.name.startsWith(prefix) && f.name.endsWith('.xlsx')) f]..sort((a, b) => b.name.compareTo(a.name));
+      for (final f in old.skip(backupsKept)) {
+        await folder.deleteFile(f.uri);
+      }
+    } catch (_) {
+      // A backup must never block the booking; the provider may not support folders.
+    }
+  }
+
+  /// Store a receipt (photo or PDF) as `Belege/<year>/<date>_<merchant>.<ext>`
+  /// next to the budget files; returns that relative path for the note.
+  /// Null when receipt files are switched off or there is no folder.
+  Future<String?> storeReceiptPhoto(Uint8List bytes, DateTime date, String merchant, {String extension = 'jpg'}) async {
+    if (!settings.savePhotos) return null;
+    final root = settings.folderUri;
+    if (root == null) return null;
+    final dir = await folder.ensureFolder(root, ['Belege', '${date.year}']);
+    final d = date.toIso8601String().substring(0, 10);
+    final m = merchant.trim().replaceAll(RegExp(r'[^\p{L}\p{N}.-]+', unicode: true), '_').replaceAll(RegExp(r'^_+|_+$'), '');
+    var name = '${d}_${m.isEmpty ? 'Beleg' : m}';
+    final taken = {for (final f in await folder.listFiles(dir)) f.name};
+    var candidate = '$name.$extension';
+    for (var i = 2; taken.contains(candidate); i++) {
+      candidate = '${name}_$i.$extension';
+    }
+    name = candidate;
+    await folder.createFile(dir, name, extension == 'pdf' ? 'application/pdf' : 'image/jpeg', bytes);
+    return 'Belege/${date.year}/$name';
+  }
+
+  /// Add a rule to the loaded year's `Regeln` sheet (created when missing).
+  Future<void> addRule(BudgetRule rule, {int? year}) async {
+    await _withFile(year ?? this.year ?? currentYear, (f) => f.addRule(rule));
+  }
+
+  /// Write the loaded year's bookings as `Budget <year>.csv` into the
+  /// folder (replaced when it exists); returns the file name.
+  Future<String> exportCsv({int? year}) async {
+    final y = year ?? this.year ?? currentYear;
+    final f = await fileForYear(y) ?? (throw StateError('no file for $y'));
+    final root = settings.folderUri ?? (throw StateError('no folder'));
+    final name = 'Budget $y.csv';
+    final bytes = Uint8List.fromList(utf8.encode(f.toCsv()));
+    final existing = (await folder.listFiles(root)).where((e) => e.name == name).firstOrNull;
+    if (existing != null) {
+      await folder.writeFile(existing.uri, bytes);
+    } else {
+      await folder.createFile(root, name, 'text/csv', bytes);
+    }
+    return name;
+  }
+
 
   /// Create `Budget <newYear>.xlsx` from the latest existing file: same
   /// categories, settings and plan, no bookings, empty account inputs. With
@@ -477,6 +602,7 @@ class BudgetService extends ChangeNotifier {
     state = SyncState.syncing;
     lastError = null;
     _otherYears.clear();
+    _yearSummaries.clear();
     notifyListeners();
     try {
       yearFiles = await _listYearFiles(uri);
@@ -497,10 +623,7 @@ class BudgetService extends ChangeNotifier {
       for (final entry in byYear.entries) {
         final ref = _refForYear(entry.key);
         if (ref == null) continue; // stays queued (see strandedPending) until a file for that year exists
-        final bytes = await folder.readFile(ref.entry.uri);
-        final f = BudgetFile.open(bytes, yearHint: ref.year);
-        f.appendEntries([for (final e in entry.value) e.copyWith(clearPending: true)]);
-        await folder.writeFile(ref.entry.uri, f.save());
+        await _modify(ref, (f) => f.appendEntries([for (final e in entry.value) e.copyWith(clearPending: true)]));
         final ids = entry.value.map((e) => e.pendingId).toSet();
         pending.removeWhere((e) => ids.contains(e.pendingId));
         await _saveQueue();
@@ -547,6 +670,20 @@ class BudgetService extends ChangeNotifier {
     final bytes = await folder.readFile(ref.entry.uri);
     return _otherYears[y] = BudgetFile.open(bytes, yearHint: ref.year);
   }
+
+  /// Expense totals of year [y] (file rows only), parsed in an isolate so
+  /// a large past year does not stall the UI; null without a file.
+  Future<YearSummary?> yearSummary(int y) {
+    return _yearSummaries[y] ??= () async {
+      final ref = _refForYear(y);
+      if (ref == null) return null;
+      final bytes = await folder.readFile(ref.entry.uri);
+      return _summarizeInIsolate(bytes, y);
+    }();
+  }
+
+  // A static method: the closure sent to the isolate must not capture `this`.
+  static Future<YearSummary> _summarizeInIsolate(Uint8List bytes, int y) => Isolate.run(() => YearSummary.of(BudgetFile.open(bytes, yearHint: y)));
 
   /// File entries plus queued ones for [y], oldest first.
   List<BudgetEntry> entriesForYear(int y, BudgetFile f) {

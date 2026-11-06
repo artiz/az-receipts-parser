@@ -88,6 +88,24 @@ class _ImportReviewPageState extends State<ImportReviewPage> {
       p.entry = p.entry.copyWith(category: picked, amount: amount);
       _selected[i] = true;
     });
+    // Offer to remember the choice in the file's rules sheet.
+    final pattern = p.entry.description.trim();
+    if (pattern.isEmpty || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(SnackBar(
+      content: Text('$pattern → $picked'),
+      action: SnackBarAction(
+        label: l.saveAsRule,
+        onPressed: () async {
+          try {
+            await budget.addRule(BudgetRule(pattern: pattern, category: picked));
+            messenger.showSnackBar(SnackBar(content: Text(l.ruleSaved(pattern, picked))));
+          } catch (e) {
+            messenger.showSnackBar(SnackBar(content: Text(l.importFailed(e.toString()))));
+          }
+        },
+      ),
+    ));
   }
 
   @override

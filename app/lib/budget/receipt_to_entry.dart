@@ -10,6 +10,7 @@ import '../parser/parsed_receipt.dart';
 import '../ui/entry_sheet.dart';
 import 'budget_file.dart';
 import 'entry_suggest.dart';
+import 'receipt_split.dart';
 
 /// Built-in rule keys → the file category names they usually correspond to
 /// (first match that exists in the file wins). Only a fallback for merchants
@@ -62,9 +63,11 @@ String itemsNote(ParsedReceipt r, {int maxChars = 32767}) {
 
 String _q(double q) => q == q.roundToDouble() ? q.toInt().toString() : q.toString();
 
-EntryDraft receiptToDraft(ParsedReceipt r, {required List<BudgetCategory> categories, required EntrySuggestions suggestions, Categorizer? categorizer}) {
+EntryDraft receiptToDraft(ParsedReceipt r, {required List<BudgetCategory> categories, required EntrySuggestions suggestions, Categorizer? categorizer, List<BudgetRule> rules = const []}) {
   final merchant = (r.merchant ?? r.merchantRaw ?? '').trim();
-  String? category = merchant.isEmpty ? null : suggestions.categoryFor(merchant);
+  final rule = merchant.isEmpty ? null : BudgetRule.firstMatch(rules, merchant);
+  String? category = rule != null && categories.any((c) => c.name == rule.category) ? rule.category : null;
+  category ??= merchant.isEmpty ? null : suggestions.categoryFor(merchant);
   category ??= mapRuleCategory((categorizer ?? Categorizer()).categorizeMerchant(merchant), categories);
   if (category == null) {
     final byUse = suggestions.categoriesByUse(categories.where((c) => c.isExpense).map((c) => c.name));
@@ -74,8 +77,11 @@ EntryDraft receiptToDraft(ParsedReceipt r, {required List<BudgetCategory> catego
   return EntryDraft(
     date: r.purchasedAt,
     category: category,
-    description: merchant,
+    description: rule != null && rule.description.isNotEmpty ? rule.description : merchant,
     amount: total == 0 ? null : total.abs() / 100,
     note: itemsNote(r),
+    items: [
+      for (final i in r.items) ReceiptItemDraft(name: '${i.quantity != 1 ? '${_q(i.quantity)}× ' : ''}${i.name}', amount: i.totalCents / 100),
+    ],
   );
 }

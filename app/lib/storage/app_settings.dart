@@ -4,6 +4,8 @@
 library;
 
 import 'package:flutter/foundation.dart';
+
+import '../budget/entry_suggest.dart' show QuickTile;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -23,6 +25,9 @@ class AppSettings extends ChangeNotifier {
   static const _kLocale = 'locale';
   static const _kNotified = 'limit_notified_';
   static const _kOnboarding = 'onboarding_seen';
+  static const _kBackups = 'backups';
+  static const _kSavePhotos = 'save_photos';
+  static const _kCurrency = 'currency';
 
   String? _apiKey;
 
@@ -89,6 +94,56 @@ class AppSettings extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  /// Keep a copy of the year file in `.backup/` before each write.
+  bool get backups => _prefs.getBool(_kBackups) ?? true;
+  Future<void> setBackups(bool on) async {
+    await _prefs.setBool(_kBackups, on);
+    notifyListeners();
+  }
+
+  /// Store scanned receipt photos in `Belege/<year>/` next to the file.
+  bool get savePhotos => _prefs.getBool(_kSavePhotos) ?? true;
+  Future<void> setSavePhotos(bool on) async {
+    await _prefs.setBool(_kSavePhotos, on);
+    notifyListeners();
+  }
+
+  /// Symbol shown after amounts ('€' by default; the file does not care).
+  String get currencySymbol => _prefs.getString(_kCurrency) ?? '€';
+  Future<void> setCurrencySymbol(String symbol) async {
+    final s = symbol.trim();
+    if (s.isEmpty) {
+      await _prefs.remove(_kCurrency);
+    } else {
+      await _prefs.setString(_kCurrency, s);
+    }
+    notifyListeners();
+  }
+
+  /// Quick tiles pinned by the user, in order (keys of QuickTile.tileKey).
+  List<String> get pinnedTiles => _prefs.getStringList('pinned_tiles') ?? const [];
+
+  /// Pin [key], or unpin it when a key with the same category and
+  /// description (case and accents aside) is pinned already.
+  Future<void> togglePinnedTile(String key) async {
+    final list = List<String>.of(pinnedTiles);
+    final lk = QuickTile.lookupKey(key);
+    final before = list.length;
+    list.removeWhere((k) => QuickTile.lookupKey(k) == lk);
+    if (list.length == before) list.add(key);
+    await _prefs.setStringList('pinned_tiles', list);
+    notifyListeners();
+  }
+
+  bool isPinnedTile(String key) {
+    final lk = QuickTile.lookupKey(key);
+    return pinnedTiles.any((k) => QuickTile.lookupKey(k) == lk);
+  }
+
+  /// The "reaching limit 1" notification was shown for the month.
+  bool approachNotified(int year, int month) => _prefs.getBool('approach_notified_$year-$month') ?? false;
+  Future<void> setApproachNotified(int year, int month, bool on) => _prefs.setBool('approach_notified_$year-$month', on);
 
   /// The start screen was shown (or skipped) once.
   bool get onboardingSeen => _prefs.getBool(_kOnboarding) ?? false;

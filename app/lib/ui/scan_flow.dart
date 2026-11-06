@@ -20,6 +20,7 @@ import '../import/openai_client.dart';
 import '../import/pdf_text.dart';
 import '../import/statement_import.dart';
 import '../import/statement_rows.dart';
+import '../budget/budget_file.dart';
 import '../l10n/app_localizations.dart';
 import '../ocr/ocr_types.dart';
 import '../ocr/receipt_ocr_ffi.dart';
@@ -99,10 +100,8 @@ Future<void> importPdfFile(BuildContext context, String path, {required String n
   final parsed = ReceiptParser().parse(lines);
   if (parsed.totalCents != null && parsed.merchant != null) {
     unawaited(scope.budget.sync());
-    final draft = receiptToDraft(parsed, categories: scope.budget.categories, suggestions: scope.budget.suggestions);
-    final entry = await showEntrySheet(context, budget: scope.budget, draft: draft, title: l.receiptConfirm);
-    if (entry == null || !context.mounted) return;
-    await saveNewEntry(context, scope.budget, entry);
+    final draft = receiptToDraft(parsed, categories: scope.budget.categories, suggestions: scope.budget.suggestions, rules: scope.budget.file?.rules ?? const []);
+    await _confirmReceipt(context, draft, sourcePath: path, extension: 'pdf');
     return;
   }
   await _importText(context, text, sourceDescription: name);
@@ -136,6 +135,7 @@ Future<void> _importText(BuildContext context, String text, {required String sou
     client: hasKey ? OpenAiClient(apiKey: key, model: scope.settings.openAiModel) : null,
     categories: budget.categories,
     existing: budget.entries,
+    rules: budget.file?.rules ?? const [],
   );
   final hint = ValueNotifier<String>(l.importLlmHint(scope.settings.openAiModel));
   final result = await _withProgress<StatementImportResult?>(
@@ -161,12 +161,52 @@ Future<void> _receiptFromPhoto(BuildContext context, String sourcePath) async {
     await scope.engine.ensureReady();
     final scan = await ReceiptOcr.scanFile(sourcePath);
     final parsed = ReceiptParser().parse(scan.result);
-    return receiptToDraft(parsed, categories: scope.budget.categories, suggestions: scope.budget.suggestions);
+    return receiptToDraft(parsed, categories: scope.budget.categories, suggestions: scope.budget.suggestions, rules: scope.budget.file?.rules ?? const []);
   });
   if (draft == null || !context.mounted) return;
-  final entry = await showEntrySheet(context, budget: scope.budget, draft: draft, title: l.receiptConfirm);
+  await _confirmReceipt(context, draft, sourcePath: sourcePath, extension: 'jpg');
+}
+
+/// The entry sheet for a scanned receipt: one booking, or one per category
+/// through "split". The receipt file goes to `Belege/<year>/` and its path
+/// into every note (when that setting is on).
+Future<void> _confirmReceipt(BuildContext context, EntryDraft draft, {required String sourcePath, required String extension}) async {
+  final l = AppLocalizations.of(context);
+  final scope = AppScope.of(context);
+  final budget = scope.budget;
+
+  String withReceipt(BudgetEntry e, String? link) {
+    if (link == null) return e.note;
+    final line = l.receiptLink(link);
+    return e.note.isEmpty ? line : '${e.note}\n$line';
+  }
+
+  Future<String?> store(BudgetEntry first) async {
+    try {
+      final bytes = await File(sourcePath).readAsBytes();
+      return await budget.storeReceiptPhoto(bytes, first.date, first.description, extension: extension);
+    } catch (_) {
+      return null; // the booking matters more than its attachment
+    }
+  }
+
+  final entry = await showEntrySheet(
+    context,
+    budget: budget,
+    draft: draft,
+    title: l.receiptConfirm,
+    onSplit: (entries) async {
+      final link = await store(entries.first);
+      for (final e in entries) {
+        if (!context.mounted) return;
+        await saveNewEntry(context, budget, e.copyWith(note: withReceipt(e, link)));
+      }
+    },
+  );
   if (entry == null || !context.mounted) return;
-  await saveNewEntry(context, scope.budget, entry);
+  final link = await store(entry);
+  if (!context.mounted) return;
+  await saveNewEntry(context, budget, entry.copyWith(note: withReceipt(entry, link)));
 }
 
 /// Runs [work] behind a progress dialog; errors become a snackbar and null.
