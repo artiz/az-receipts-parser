@@ -102,8 +102,9 @@ class _OverviewPageState extends State<OverviewPage> {
             child: DropdownButton<int>(
               value: yearMode ? 0 : month,
               items: [
-                for (final m in months) DropdownMenuItem(value: m, child: Text(monthName(year, m, locale))),
-                DropdownMenuItem(value: 0, child: Text('${l.yearLabel} $year')),
+                // Short month without the year (the year has its own menu), so the title stays visible.
+                for (final m in months) DropdownMenuItem(value: m, child: Text(DateFormat.MMM(locale.toString()).format(DateTime(year, m)))),
+                DropdownMenuItem(value: 0, child: Text(l.yearLabel)),
               ],
               onChanged: (m) => setState(() => _month = m),
             ),
