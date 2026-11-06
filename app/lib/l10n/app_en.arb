@@ -507,5 +507,7 @@
   "yearLabel": "Year",
   "yearChartHint": "Expenses per month (colour = limit), plan in grey, line = cumulated saldo. Tap a month.",
   "previousYear": "Prev. year",
-  "yearByCategory": "By category: actual / plan / previous year"
+  "yearByCategory": "By category: actual / plan / previous year",
+  "tilePinned": "Pinned to quick entries (long-press to unpin)",
+  "tileUnpinned": "Unpinned"
 }

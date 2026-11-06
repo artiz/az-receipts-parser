@@ -169,6 +169,20 @@ void main() {
       expect(tiles.where((t) => t.category == 'Lebensmittel').length, lessThanOrEqualTo(2));
       expect(tiles.map((t) => '${t.category}/${t.description}'), contains('Kinder/Marina'));
     });
+    test('pinned tiles come first, keep their learned amount, and a pin without bookings asks for one', () {
+      final pinned = [QuickTile.tileKey('Kinder', 'Marina'), QuickTile.tileKey('Wohnen', 'Strom')];
+      final tiles = s.quickTiles(limit: 5, perCategory: 2, pinned: pinned);
+      expect(tiles.length, 5);
+      expect(tiles[0].description, 'Marina');
+      expect(tiles[0].pinned, isTrue);
+      expect(tiles[0].amount, isNot(0), reason: 'the last amount from the file');
+      expect(tiles[1].description, 'Strom');
+      expect(tiles[1].amount, 0);
+      expect(tiles[1].category, 'Wohnen');
+      expect(tiles.skip(2).any((t) => t.pinned), isFalse);
+      expect(tiles.skip(2).any((t) => t.description == 'Marina'), isFalse, reason: 'not listed twice');
+      expect(tiles[0].key, pinned[0]);
+    });
     test('prefix autocomplete per category', () {
       final d = s.descriptions('Lebensmittel', prefix: 's');
       expect(d.first.description, 'Spar');

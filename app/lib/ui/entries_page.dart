@@ -101,7 +101,8 @@ class _EntriesPageState extends State<EntriesPage> {
           );
         }
         final all = budget.entries.reversed.toList();
-        final tiles = budget.suggestions.quickTiles(limit: 12, perCategory: 3);
+        final settings = AppScope.of(context).settings;
+        final tiles = budget.suggestions.quickTiles(limit: 12, perCategory: 3, pinned: settings.pinnedTiles);
         final shown = _filtered(all);
         final count = shown.length < _visible ? shown.length : _visible;
         final stranded = budget.strandedPending;
@@ -155,7 +156,7 @@ class _EntriesPageState extends State<EntriesPage> {
                           child: Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: [for (final t in tiles) _QuickTileChip(tile: t, onTap: () => _addFromTile(t))],
+                            children: [for (final t in tiles) _QuickTileChip(tile: t, onTap: () => _addFromTile(t), onLongPress: () => _togglePin(context, t.key, t.pinned))],
                           ),
                         ),
                       ),
@@ -204,6 +205,9 @@ class _EntriesPageState extends State<EntriesPage> {
                               zebra: i.isOdd,
                               dayStart: dayStart,
                               onTap: () => editEntry(context, budget, e),
+                              onLongPress: e.description.isEmpty
+                                  ? null
+                                  : () => _togglePin(context, QuickTile.tileKey(e.category, e.description), settings.isPinnedTile(QuickTile.tileKey(e.category, e.description))),
                               trailing: IconButton(
                                 tooltip: l.addToEntryShort,
                                 visualDensity: VisualDensity.compact,
@@ -223,12 +227,25 @@ class _EntriesPageState extends State<EntriesPage> {
   }
 
   static bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
+
+  /// Long press on a tile or a row: pin the (category, description) to the
+  /// quick tiles, or unpin it.
+  Future<void> _togglePin(BuildContext context, String key, bool pinned) async {
+    final l = AppLocalizations.of(context);
+    final settings = AppScope.of(context).settings;
+    final messenger = ScaffoldMessenger.of(context);
+    await settings.togglePinnedTile(key);
+    if (!mounted) return;
+    setState(() => _tilesOpen = _tilesOpen || !pinned);
+    messenger.showSnackBar(SnackBar(content: Text(pinned ? l.tileUnpinned : l.tilePinned), duration: const Duration(seconds: 2)));
+  }
 }
 
 class _QuickTileChip extends StatelessWidget {
-  const _QuickTileChip({required this.tile, required this.onTap});
+  const _QuickTileChip({required this.tile, required this.onTap, this.onLongPress});
   final QuickTile tile;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -241,6 +258,7 @@ class _QuickTileChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
@@ -258,7 +276,8 @@ class _QuickTileChip extends StatelessWidget {
             children: [
               Tooltip(message: tile.category, child: Icon(categoryIcon(cat, tile.category), size: 18, color: color)),
               const SizedBox(width: 8),
-              Text('${tile.description} · ${euroShort(tile.amount)}', style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text(tile.amount == 0 ? tile.description : '${tile.description} · ${euroShort(tile.amount)}', style: const TextStyle(fontWeight: FontWeight.w600)),
+              if (tile.pinned) ...[const SizedBox(width: 6), Icon(Icons.push_pin, size: 14, color: scheme.onSurfaceVariant)],
             ],
           ),
         ),

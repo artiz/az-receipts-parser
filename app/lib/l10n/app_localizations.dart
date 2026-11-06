@@ -1227,6 +1227,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'By category: actual / plan / previous year'**
   String get yearByCategory;
+
+  /// No description provided for @tilePinned.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned to quick entries (long-press to unpin)'**
+  String get tilePinned;
+
+  /// No description provided for @tileUnpinned.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpinned'**
+  String get tileUnpinned;
 }
 
 class _AppLocalizationsDelegate

@@ -224,9 +224,10 @@ Color amountColor(BuildContext context, BudgetEntry e, BudgetService budget) {
 }
 
 class EntryTile extends StatelessWidget {
-  const EntryTile({super.key, required this.entry, this.onTap, this.trailing, this.zebra = false, this.dayStart = false});
+  const EntryTile({super.key, required this.entry, this.onTap, this.onLongPress, this.trailing, this.zebra = false, this.dayStart = false});
   final BudgetEntry entry;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final Widget? trailing;
 
   /// Alternate row shading.
@@ -249,6 +250,7 @@ class EntryTile extends StatelessWidget {
       ),
       child: ListTile(
       onTap: onTap,
+      onLongPress: onLongPress,
       dense: true,
       leading: SizedBox(
         width: 44,

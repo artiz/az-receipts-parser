@@ -680,4 +680,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yearByCategory => 'By category: actual / plan / previous year';
+
+  @override
+  String get tilePinned => 'Pinned to quick entries (long-press to unpin)';
+
+  @override
+  String get tileUnpinned => 'Unpinned';
 }

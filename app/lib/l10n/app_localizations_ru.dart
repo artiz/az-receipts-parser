@@ -679,4 +679,11 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get yearByCategory => 'По категориям: факт / план / прошлый год';
+
+  @override
+  String get tilePinned =>
+      'Закреплено в быстрых записях (долгое нажатие открепляет)';
+
+  @override
+  String get tileUnpinned => 'Откреплено';
 }

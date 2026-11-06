@@ -4,6 +4,8 @@
 library;
 
 import 'package:flutter/foundation.dart';
+
+import '../budget/entry_suggest.dart' show QuickTile;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -117,6 +119,26 @@ class AppSettings extends ChangeNotifier {
       await _prefs.setString(_kCurrency, s);
     }
     notifyListeners();
+  }
+
+  /// Quick tiles pinned by the user, in order (keys of QuickTile.tileKey).
+  List<String> get pinnedTiles => _prefs.getStringList('pinned_tiles') ?? const [];
+
+  /// Pin [key], or unpin it when a key with the same category and
+  /// description (case and accents aside) is pinned already.
+  Future<void> togglePinnedTile(String key) async {
+    final list = List<String>.of(pinnedTiles);
+    final lk = QuickTile.lookupKey(key);
+    final before = list.length;
+    list.removeWhere((k) => QuickTile.lookupKey(k) == lk);
+    if (list.length == before) list.add(key);
+    await _prefs.setStringList('pinned_tiles', list);
+    notifyListeners();
+  }
+
+  bool isPinnedTile(String key) {
+    final lk = QuickTile.lookupKey(key);
+    return pinnedTiles.any((k) => QuickTile.lookupKey(k) == lk);
   }
 
   /// The "reaching limit 1" notification was shown for the month.

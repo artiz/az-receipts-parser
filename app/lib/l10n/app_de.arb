@@ -187,5 +187,7 @@
   "yearLabel": "Jahr",
   "yearChartHint": "Ausgaben je Monat (Farbe = Limit), Plan grau, Linie = kumuliertes Saldo. Tippe auf einen Monat.",
   "previousYear": "Vorjahr",
-  "yearByCategory": "Nach Kategorie: Ist / Plan / Vorjahr"
+  "yearByCategory": "Nach Kategorie: Ist / Plan / Vorjahr",
+  "tilePinned": "An Schnellbuchungen angeheftet (lange drücken zum Lösen)",
+  "tileUnpinned": "Gelöst"
 }

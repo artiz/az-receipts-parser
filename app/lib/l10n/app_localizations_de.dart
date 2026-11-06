@@ -684,4 +684,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get yearByCategory => 'Nach Kategorie: Ist / Plan / Vorjahr';
+
+  @override
+  String get tilePinned =>
+      'An Schnellbuchungen angeheftet (lange drücken zum Lösen)';
+
+  @override
+  String get tileUnpinned => 'Gelöst';
 }
