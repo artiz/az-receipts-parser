@@ -8,6 +8,8 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Bundle
+import java.io.File
 import androidx.core.app.NotificationCompat
 import android.net.Uri
 import android.provider.DocumentsContract
@@ -36,8 +38,99 @@ class MainActivity : FlutterActivity() {
     private val notificationChannelName = "dev.artiz.az_budget/notifications"
     private val limitsChannelId = "limits"
 
+    /** Files shared into the app, waiting for the Dart side to ask for them. */
+    private val shareChannelName = "dev.artiz.az_budget/share"
+    private var shareChannel: MethodChannel? = null
+    private val pendingShares = mutableListOf<Map<String, Any?>>()
+
+    /** The Dart side has asked for pending shares once, so it listens from now on. */
+    private var dartListens = false
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (savedInstanceState == null) handleShareIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleShareIntent(intent)
+    }
+
+    /** Copies every shared stream into the cache and hands the list to Dart (or queues it). */
+    private fun handleShareIntent(intent: Intent?) {
+        if (intent == null) return
+        val action = intent.action ?: return
+        val uris = mutableListOf<Uri>()
+        when (action) {
+            Intent.ACTION_SEND -> intent.getParcelableExtraCompat(Intent.EXTRA_STREAM)?.let { uris.add(it) }
+            Intent.ACTION_SEND_MULTIPLE -> intent.getParcelableArrayListExtraCompat(Intent.EXTRA_STREAM)?.let { uris.addAll(it) }
+            Intent.ACTION_VIEW -> intent.data?.let { uris.add(it) }
+            else -> return
+        }
+        val text = if (action == Intent.ACTION_SEND && uris.isEmpty()) intent.getStringExtra(Intent.EXTRA_TEXT) else null
+        // Consumed: a recreated activity must not share the same files again.
+        intent.action = Intent.ACTION_MAIN
+        intent.removeExtra(Intent.EXTRA_STREAM)
+        intent.removeExtra(Intent.EXTRA_TEXT)
+        executor.execute {
+            val items = mutableListOf<Map<String, Any?>>()
+            for (uri in uris) {
+                try {
+                    val name = displayName(uri).ifEmpty { "shared" }
+                    val mime = contentResolver.getType(uri) ?: guessMime(name)
+                    val dir = File(cacheDir, "shared").apply { mkdirs() }
+                    val target = File(dir, "${System.currentTimeMillis()}_${name.replace(Regex("[^A-Za-z0-9._-]"), "_")}")
+                    contentResolver.openInputStream(uri)?.use { input -> target.outputStream().use { input.copyTo(it) } }
+                    items.add(mapOf("path" to target.absolutePath, "mime" to mime, "name" to name))
+                } catch (e: Exception) {
+                    items.add(mapOf("error" to (e.message ?: e.toString()), "name" to uri.toString()))
+                }
+            }
+            if (text != null && text.isNotBlank()) items.add(mapOf("text" to text, "mime" to "text/plain", "name" to "text"))
+            if (items.isEmpty()) return@execute
+            runOnUiThread {
+                val channel = shareChannel
+                if (dartListens && channel != null) channel.invokeMethod("shared", items) else pendingShares.addAll(items)
+            }
+        }
+    }
+
+    private fun guessMime(name: String): String = when (name.substringAfterLast('.', "").lowercase()) {
+        "pdf" -> "application/pdf"
+        "jpg", "jpeg" -> "image/jpeg"
+        "png" -> "image/png"
+        "webp" -> "image/webp"
+        "txt" -> "text/plain"
+        else -> "application/octet-stream"
+    }
+
+    @Suppress("DEPRECATION")
+    private fun Intent.getParcelableExtraCompat(key: String): Uri? =
+        if (Build.VERSION.SDK_INT >= 33) getParcelableExtra(key, Uri::class.java) else getParcelableExtra(key)
+
+    @Suppress("DEPRECATION")
+    private fun Intent.getParcelableArrayListExtraCompat(key: String): ArrayList<Uri>? =
+        if (Build.VERSION.SDK_INT >= 33) getParcelableArrayListExtra(key, Uri::class.java) else getParcelableArrayListExtra(key)
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        shareChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, shareChannelName).also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "getPending" -> {
+                        dartListens = true
+                        result.success(pendingShares.toList())
+                        pendingShares.clear()
+                    }
+                    "discard" -> {
+                        call.argument<String>("path")?.let { File(it).delete() }
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+        }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, notificationChannelName).setMethodCallHandler { call, result ->
             when (call.method) {
                 "requestPermission" -> {

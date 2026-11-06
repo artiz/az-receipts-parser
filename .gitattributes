@@ -7,3 +7,4 @@
 *.png  binary
 *.onnx binary
 *.xlsx binary
+*.pdf  binary

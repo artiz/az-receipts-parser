@@ -588,4 +588,16 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get categoryAdded => 'Kategorie hinzugefügt';
+
+  @override
+  String get sourceShared => 'Geteilt';
+
+  @override
+  String get shareNoFolder =>
+      'Wähle zuerst den Budget-Ordner, dann teile den Beleg noch einmal.';
+
+  @override
+  String shareUnsupported(String name) {
+    return '„$name“ kann nicht verwendet werden: teile ein PDF, ein Bild oder Text.';
+  }
 }

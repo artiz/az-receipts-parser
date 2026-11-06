@@ -585,4 +585,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get categoryAdded => 'Category added';
+
+  @override
+  String get sourceShared => 'Shared';
+
+  @override
+  String get shareNoFolder =>
+      'Choose the budget folder first, then share the receipt again.';
+
+  @override
+  String shareUnsupported(String name) {
+    return 'Cannot use \"$name\": share a PDF, an image or text.';
+  }
 }

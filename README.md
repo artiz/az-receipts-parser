@@ -147,7 +147,15 @@ the bookings in the file.
    overview/history labels into the app language; bookings are renamed with
    their categories, the user's own texts and the sheet names stay (formulas
    refer to the sheet names, and the entries table definition to its header).
-9. **Overview**: under the Saldo a bar per expense category for the month,
+9. **Share into the app**: AZ Budget is a share target for PDFs, images and
+   text ("Share" in a shop's app, Gmail, the gallery, or "Open with" on a
+   downloaded file). A shop's digital receipt (PDF e-bon) is read from its
+   text layer with positions and goes through the same parser as a photo,
+   straight to the entry sheet; a bank statement PDF goes to the review list;
+   an image is scanned like a camera photo; text goes to the model. The same
+   PDF routing applies to the PDF button on the home screen. Sharing needs
+   a chosen folder; the shared copy is deleted afterwards.
+10. **Overview**: under the Saldo a bar per expense category for the month,
    the plan in grey with the actual amount over it in the category's colour,
    icons on the x axis, the largest on the right; tapping a bar shows its
    name and numbers.
@@ -217,7 +225,7 @@ build (Dart AOT + Gradle) is the slow part; for day-to-day work use `--run`,
 which is a debug build with hot reload, and build the release APK only to
 install it.
 
-### Host CLI (fixtures, debugging, statement text)
+### Host CLI (fixtures, debugging, statement text, e-receipts)
 
 ```bash
 cd rust/receipt_ocr && cargo build --release
@@ -233,8 +241,15 @@ rust/receipt_ocr/target/release/receipt-ocr \
 rust/receipt_ocr/target/release/receipt-ocr --pdf-text Kontoauszug.pdf
 ```
 
-The last one prints the statement as the app's import sees it (one printed
-row per line, columns separated by two spaces), without any model.
+```bash
+rust/receipt_ocr/target/release/receipt-ocr --pdf-lines ebon.pdf --pretty > samples/golden/ebon.ocr.json
+```
+
+`--pdf-text` prints a statement as the app's import sees it (one printed row
+per line, columns separated by two spaces); `--pdf-lines` prints a PDF's
+text layer in the scan JSON format (lines with boxes), which is how a
+digital receipt reaches the receipt parser and how its golden fixture is
+made. Neither needs a model.
 `--models` is any directory with the four files from `download_models.sh`; a
 host `libonnxruntime.so` is e.g. `onnxruntime/capi/libonnxruntime.so.*` from the
 `onnxruntime` PyPI wheel (`onnxruntime.dll` on Windows).
@@ -283,8 +298,11 @@ libonnxruntime ≥ 1.17.
 * `app/test/statement_import_test.dart`: prompt and JSON-schema contract,
   sign enforcement, unknown categories, duplicate detection.
 * `app/test/receipt_parser_test.dart` and `units_test.dart`: the receipt
-  parser against every fixture in `samples/golden`, money parsing, row
-  grouping, RKSV QR, categoriser.
+  parser against every fixture in `samples/golden` (photos, plus
+  `billa_ebon`, a synthetic digital receipt PDF read through
+  `receipt-ocr --pdf-lines`, where quantity lines sit above their item),
+  money parsing, row grouping, RKSV QR, categoriser.
+* `app/test/share_receiver_test.dart`: the queue of shared files.
 * `cargo test` in `rust/receipt_ocr` covers the C ABI contract.
 
 ```bash

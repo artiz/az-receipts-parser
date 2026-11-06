@@ -15,7 +15,8 @@ use receipt_ocr::{init, scan_path, Config};
 fn usage() -> ! {
     eprintln!(
         "usage: receipt-ocr [--models DIR] [--ort-lib PATH] [--max-side N] [--no-orientation] \
-         [--min-confidence F] [--out-dir DIR] [--pretty] IMAGE..."
+         [--min-confidence F] [--out-dir DIR] [--pretty] IMAGE...\n       \
+         receipt-ocr --pdf-text FILE.pdf | --pdf-lines FILE.pdf [--pretty]"
     );
     std::process::exit(2)
 }
@@ -26,6 +27,7 @@ fn main() -> ExitCode {
     let mut pretty = false;
     let mut images: Vec<String> = Vec::new();
     let mut pdf_text: Option<String> = None;
+    let mut pdf_lines: Option<String> = None;
 
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
@@ -48,6 +50,7 @@ fn main() -> ExitCode {
             "--out-dir" => out_dir = Some(PathBuf::from(args.next().unwrap_or_else(|| usage()))),
             "--pretty" => pretty = true,
             "--pdf-text" => pdf_text = Some(args.next().unwrap_or_else(|| usage())),
+            "--pdf-lines" => pdf_lines = Some(args.next().unwrap_or_else(|| usage())),
             "-h" | "--help" => usage(),
             s if s.starts_with('-') => usage(),
             _ => images.push(a),
@@ -58,6 +61,24 @@ fn main() -> ExitCode {
         return match receipt_ocr::pdf_text_path(&path) {
             Ok(text) => {
                 println!("{text}");
+                ExitCode::SUCCESS
+            }
+            Err(e) => {
+                eprintln!("receipt-ocr: {e}");
+                ExitCode::FAILURE
+            }
+        };
+    }
+    // Text layer of a PDF as the scan JSON (a digital receipt through the receipt parser).
+    if let Some(path) = pdf_lines {
+        return match receipt_ocr::pdf_lines_path(&path) {
+            Ok(result) => {
+                let json = if pretty {
+                    serde_json::to_string_pretty(&result)
+                } else {
+                    serde_json::to_string(&result)
+                };
+                println!("{}", json.unwrap_or_default());
                 ExitCode::SUCCESS
             }
             Err(e) => {

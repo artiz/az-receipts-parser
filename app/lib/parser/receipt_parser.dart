@@ -388,17 +388,33 @@ class ReceiptParser {
       }
     }
     ParsedItem? last;
+    // A quantity line whose product does not match the previous item: Billa
+    // prints "2 x 1.79" above the item it belongs to, most shops below.
+    ({double quantity, int unitCents})? pendingQty;
+    ParsedItem? pendingFor;
+    void applyQty(ParsedItem item, ({double quantity, int unitCents}) q) {
+      item.quantity = q.quantity;
+      item.unitCents = q.unitCents;
+    }
+
+    bool matches(ParsedItem item, ({double quantity, int unitCents}) q) => (item.totalCents - (q.quantity * q.unitCents).round()).abs() <= 1;
+
     for (var i = start; i < end; i++) {
       final row = rows[i];
       final text = row.text;
       final n = normalize(text);
       final price = _priceTail(row);
 
-      // Quantity line: "= 2 x 1,89" / "2 Stk x 0,99" → attach to previous item.
+      // Quantity line: "= 2 x 1,89" / "2 Stk x 0,99" → the previous item when
+      // the product matches it, else kept for the next one.
       final q = parseQuantityLine(text);
-      if (q != null && last != null && (price == null || RegExp(r'^[=\s]*\d').hasMatch(text))) {
-        last.quantity = q.quantity;
-        last.unitCents = q.unitCents;
+      if (q != null && (last != null || pendingQty == null) && (price == null || RegExp(r'^[=\s]*\d').hasMatch(text))) {
+        if (last != null && matches(last, q)) {
+          applyQty(last, q);
+        } else {
+          pendingQty = q;
+          pendingFor = last;
+        }
         continue;
       }
 
@@ -444,7 +460,21 @@ class ReceiptParser {
       );
       r.items.add(item);
       last = item;
+      final pq = pendingQty;
+      if (pq != null) {
+        final pf = pendingFor;
+        if (matches(item, pq)) {
+          applyQty(item, pq);
+        } else if (pf != null) {
+          applyQty(pf, pq); // neither matches: the shop prints it below, as before
+        }
+        pendingQty = null;
+        pendingFor = null;
+      }
     }
+    final pq = pendingQty;
+    final pf = pendingFor;
+    if (pq != null && pf != null) applyQty(pf, pq);
     // Drop a trailing pseudo-item that equals the total when there are >1 items.
     if (r.items.length > 1 && r.totalCents != null && r.items.last.totalCents == r.totalCents) {
       final n = normalize(r.items.last.name);

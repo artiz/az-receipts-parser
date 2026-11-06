@@ -9,6 +9,7 @@ import 'ocr/engine_controller.dart';
 import 'storage/app_notifications.dart';
 import 'storage/app_settings.dart';
 import 'storage/folder_access.dart';
+import 'storage/share_receiver.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,5 +30,7 @@ Future<void> main() async {
   );
   budget.init();
   notifications.requestPermission();
-  runApp(BudgetApp(budget: budget, settings: settings, engine: engine));
+  final shares = ShareReceiver(PlatformShareSource());
+  shares.init();
+  runApp(BudgetApp(budget: budget, settings: settings, engine: engine, shares: shares));
 }

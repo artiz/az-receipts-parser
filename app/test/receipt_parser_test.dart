@@ -29,6 +29,21 @@ class Expected {
 }
 
 final expected = <String, Expected>{
+  // A shop's digital receipt (PDF text layer, see samples/receipts/billa_ebon.pdf):
+  // "2 x 1.79" is printed above the item it belongs to.
+  'billa_ebon': Expected(
+    merchant: 'BILLA',
+    date: DateTime(2026, 11, 3, 17, 54),
+    totalCents: 2633,
+    payment: PaymentMethod.card,
+    category: 'groceries',
+    addressContains: '1220 WIEN',
+    items: [
+      ('Mango', 179), ('EXTREM AKTION', -80), ('Mango', 179), ('EXTREM AKTION', -80), ('Mango', 179), ('EXTREM AKTION', -80),
+      ('Trauben', 199), ('Erdäpfel', 249), ('Zucchini', 199), ('Kirschpap', 299), ('Mohnstrudel', 429), ('Kokos', 358), ('SKYR', 238), ('Sauerrahm', 99), ('Eier', 266),
+    ],
+    vatRates: [10, 4.9],
+  ),
   'dm_wien': Expected(
     merchant: 'dm',
     date: DateTime(2026, 11, 2, 14, 50),
