@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 Uint8List fixture(String name) => File('test/fixtures/$name').readAsBytesSync();
 
 void main() {
+  unwrapTests();
   group('xlsx dates', () {
     test('serial round trip', () {
       expect(XlsxDate.toSerial(DateTime(2026, 1, 1)), 46023);
@@ -192,3 +193,47 @@ bool _sameBytes(List<int> a, List<int> b) {
   }
   return true;
 }
+
+/// wrapText of every cell style in a saved workbook, by xf index.
+Map<int, bool> _wrapByStyle(Uint8List bytes) {
+  final styles = String.fromCharCodes(ZipDecoder().decodeBytes(bytes).findFile('xl/styles.xml')!.content as List<int>);
+  final xfs = RegExp(r'<cellXfs[^>]*>(.*?)</cellXfs>', dotAll: true).firstMatch(styles)!.group(1)!;
+  final out = <int, bool>{};
+  var i = 0;
+  for (final m in RegExp(r'<xf\b[^>]*?(?:/>|>.*?</xf>)', dotAll: true).allMatches(xfs)) {
+    out[i++] = RegExp(r'wrapText="(1|true)"').hasMatch(m[0]!);
+  }
+  return out;
+}
+
+void unwrapTests() {
+  group('note column unwrapped on save', () {
+    test('wrapped F cells and the column default get an unwrapped style, D keeps wrapping, auto heights dropped', () {
+      final f = BudgetFile.open(fixture('budget_small_wrap.xlsx'));
+      f.appendEntries([BudgetEntry(date: DateTime(2026, 4, 10), category: 'Lebensmittel', description: 'Spar', amount: 5, note: 'a; b; c')]);
+      final bytes = f.save();
+      final wrap = _wrapByStyle(bytes);
+      final sheet = String.fromCharCodes(ZipDecoder().decodeBytes(bytes).findFile('xl/worksheets/sheet1.xml')!.content as List<int>);
+      int styleOf(String ref) => int.parse(RegExp('<c r="$ref" s="(\\d+)"').firstMatch(sheet)!.group(1)!);
+      for (final ref in ['F2', 'F5', 'F37']) {
+        expect(wrap[styleOf(ref)], isFalse, reason: '$ref unwrapped');
+      }
+      expect(wrap[styleOf('D5')], isTrue, reason: 'other columns keep their wrapping');
+      final colF = RegExp(r'<col [^>]*min="6"[^>]*/>').firstMatch(sheet)![0]!;
+      expect(wrap[int.parse(RegExp(r'style="(\d+)"').firstMatch(colF)!.group(1)!)], isFalse, reason: 'column default unwrapped');
+      expect(RegExp(r'<row r="5"[^>]*>').firstMatch(sheet)![0], isNot(contains('ht=')), reason: 'auto height dropped');
+      expect(RegExp(r'<row r="6"[^>]*>').firstMatch(sheet)![0], contains('ht="45"'), reason: 'hand-set height kept');
+      expect(wrap.length, greaterThan(51), reason: 'unwrapped copies appended, shared styles untouched');
+      // Re-reading the result works and a second save changes nothing more.
+      final g = BudgetFile.open(bytes);
+      expect(g.entries.last.note, 'a; b; c');
+      expect(_wrapByStyle(g.save()).length, wrap.length);
+      // A file without wrapping is left alone (no styles.xml rewrite).
+      final plain = BudgetFile.open(fixture('budget_small.xlsx'));
+      plain.appendEntries([BudgetEntry(date: DateTime(2026, 4, 10), category: 'Lebensmittel', description: 'Spar', amount: 5)]);
+      expect(ZipDecoder().decodeBytes(plain.save()).findFile('xl/styles.xml')!.content, fixtureEntry('budget_small.xlsx', 'xl/styles.xml'));
+    });
+  });
+}
+
+List<int> fixtureEntry(String name, String path) => ZipDecoder().decodeBytes(fixture(name)).findFile(path)!.content as List<int>;
