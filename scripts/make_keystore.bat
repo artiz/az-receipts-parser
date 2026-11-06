@@ -38,20 +38,30 @@ set /p "NAME=Your name or company for the certificate [AZ Budget]: "
 if "%NAME%"=="" set "NAME=AZ Budget"
 
 "%KEYTOOL%" -genkeypair -v -keystore "%KS%" -alias upload -keyalg RSA -keysize 2048 -validity 10000 ^
-  -storepass "%PASS%" -keypass "%PASS%" -dname "CN=%NAME%" || exit /b 1
+  -storepass "%PASS%" -keypass "%PASS%" -dname "CN=%NAME%"
+rem keytool's exit code is not trusted (some launchers return nonzero after a
+rem successful store): the keystore file is what counts.
+if not exist "%KS%" (
+  echo keytool did not create %KS%
+  exit /b 1
+)
 
 rem Gradle reads the path with forward slashes fine; backslashes would be escapes.
-set "KSF=%KS:\=/%"
-(
-  echo storeFile=%KSF%
-  echo storePassword=%PASS%
-  echo keyAlias=upload
-  echo keyPassword=%PASS%
-) > "%PROPS%"
+set "KSF=!KS:\=/!"
+rem Written line by line with delayed expansion, so a password with & ^ ( ) or
+rem quotes cannot break the command.
+> "%PROPS%" echo storeFile=!KSF!
+>> "%PROPS%" echo storePassword=!PASS!
+>> "%PROPS%" echo keyAlias=upload
+>> "%PROPS%" echo keyPassword=!PASS!
+if not exist "%PROPS%" (
+  echo could not write %PROPS%
+  exit /b 1
+)
 
 echo.
 echo Keystore: %KS%
 echo Written:  %PROPS%  ^(ignored by git^)
-echo Release builds and bundles are now signed with the upload key.
+echo Release builds and bundles are now signed with the upload key: scripts\build_android.bat --bundle
 echo BACK UP the keystore and the password now.
 endlocal
