@@ -138,6 +138,17 @@ class _OverviewPageState extends State<OverviewPage> {
               onChanged: (m) => setState(() => _month = m),
             ),
           ),
+          // Back to the calendar month, shown only while another month or year is open.
+          if (yearMode || year != now.year || month != now.month)
+            IconButton(
+              tooltip: l.currentMonth,
+              icon: const Icon(Icons.today_outlined),
+              onPressed: () => setState(() {
+                _year = null;
+                _month = null;
+                _expanded.clear();
+              }),
+            ),
           if (!yearMode)
             IconButton(
               tooltip: l.shareMonth,

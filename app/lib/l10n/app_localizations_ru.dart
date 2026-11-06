@@ -686,4 +686,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get tileUnpinned => 'Откреплено';
+
+  @override
+  String get currentMonth => 'Текущий месяц';
 }

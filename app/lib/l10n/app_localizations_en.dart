@@ -686,4 +686,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tileUnpinned => 'Unpinned';
+
+  @override
+  String get currentMonth => 'Current month';
 }

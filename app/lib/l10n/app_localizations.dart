@@ -1239,6 +1239,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unpinned'**
   String get tileUnpinned;
+
+  /// No description provided for @currentMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Current month'**
+  String get currentMonth;
 }
 
 class _AppLocalizationsDelegate

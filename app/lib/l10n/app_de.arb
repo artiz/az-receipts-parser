@@ -189,5 +189,6 @@
   "previousYear": "Vorjahr",
   "yearByCategory": "Nach Kategorie: Ist / Plan / Vorjahr",
   "tilePinned": "An Schnellbuchungen angeheftet (lange drücken zum Lösen)",
-  "tileUnpinned": "Gelöst"
+  "tileUnpinned": "Gelöst",
+  "currentMonth": "Aktueller Monat"
 }

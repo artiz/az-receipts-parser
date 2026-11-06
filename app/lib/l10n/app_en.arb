@@ -509,5 +509,6 @@
   "previousYear": "Prev. year",
   "yearByCategory": "By category: actual / plan / previous year",
   "tilePinned": "Pinned to quick entries (long-press to unpin)",
-  "tileUnpinned": "Unpinned"
+  "tileUnpinned": "Unpinned",
+  "currentMonth": "Current month"
 }
