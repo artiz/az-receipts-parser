@@ -68,11 +68,9 @@ class _OverviewPageState extends State<OverviewPage> {
     final budget = widget.budget;
     final now = DateTime.now();
     final all = budget.entriesForYear(year, file);
-    final months = all.map((e) => e.month).toSet().toList();
-    // The calendar month is always offered (a new month starts empty).
-    if (now.year == year && !months.contains(now.month)) months.add(now.month);
-    if (months.isEmpty) months.add(1);
-    months.sort();
+    // Every month up to today's for the calendar year, all twelve for a past one.
+    final lastMonth = now.year == year ? now.month : 12;
+    final months = [for (var m = 1; m <= lastMonth; m++) m];
     final yearMode = _month == 0;
     final month = !yearMode && _month != null && months.contains(_month) ? _month! : (now.year == year ? now.month : months.last);
     final entries = all.where((e) => e.month == month).toList();
@@ -83,39 +81,32 @@ class _OverviewPageState extends State<OverviewPage> {
     final level = BudgetService.limitLevelOf(file, stats.expenses);
     final years = budget.yearFiles.map((f) => f.year).toList();
     final titleStyle = Theme.of(context).appBarTheme.titleTextStyle ?? Theme.of(context).textTheme.titleLarge;
-    // Swipe left / right through the months, the year view at the end; in
-    // the year view a swipe moves to the neighbouring year's file.
-    final sequence = [...months, 0];
+    // Swipes walk one step through "… Nov 2025, Dec 2025, Year 2025, Jan 2026 …":
+    // the months of a year, its year view, then the next year's file.
+    void go(int y, int m) => setState(() {
+          _year = y;
+          _month = m;
+          _expanded.clear();
+        });
     void step(int delta) {
-      if (yearMode) {
-        final ys = [...years]..sort();
-        final i = ys.indexOf(year);
-        final next = (i + delta).clamp(0, ys.length - 1);
-        if (i >= 0 && next != i) {
-          setState(() {
-            _year = ys[next];
-            _month = 0;
-            _expanded.clear();
-          });
+      final ys = [...years]..sort();
+      if (delta > 0) {
+        if (yearMode) {
+          final next = ys.firstWhere((y) => y > year, orElse: () => year);
+          if (next != year) go(next, 1);
+        } else {
+          go(year, month < lastMonth ? month + 1 : 0);
         }
-        return;
-      }
-      final i = sequence.indexOf(month);
-      if (i + delta < 0) {
-        // Before the first month: the previous year's year view, when it has a file.
-        final ys = [...years]..sort();
-        final prev = ys.lastWhere((y) => y < year, orElse: () => year);
-        if (prev != year) {
-          setState(() {
-            _year = prev;
-            _month = 0;
-            _expanded.clear();
-          });
+      } else {
+        if (yearMode) {
+          go(year, lastMonth);
+        } else if (month > 1) {
+          go(year, month - 1);
+        } else {
+          final prev = ys.lastWhere((y) => y < year, orElse: () => year);
+          if (prev != year) go(prev, 0);
         }
-        return;
       }
-      final next = (i + delta).clamp(0, sequence.length - 1);
-      if (next != i) setState(() => _month = sequence[next]);
     }
     return Scaffold(
       appBar: AppBar(

@@ -172,8 +172,9 @@ the bookings in the file.
     saved, the items in the notes, a rounding remainder with the main one.
     The scanned file (photo or PDF) goes to `Belege/<year>/` next to the
     budget files and is linked from the note (*Settings → Data*).
-12. **Year view**: the month menu of *Overview* has a *Year* entry (swiping
-    left and right walks through the months and ends at the year): twelve
+12. **Year view**: the month menu of *Overview* has a *Year* entry. Swipes
+    walk one step at a time through "… Nov 2025, Dec 2025, Year 2025,
+    Jan 2026 …" across the year files in the folder. The view shows twelve
     months as bars (colour = limit, plan grey, line = cumulated saldo) and
     every category's actual / plan / previous year (from `Budget <year-1>.xlsx`).
 13. **Widget and shortcuts**: a home-screen widget shows the month's
