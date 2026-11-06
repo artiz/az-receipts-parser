@@ -127,6 +127,14 @@ class MainActivity : FlutterActivity() {
                         call.argument<String>("path")?.let { File(it).delete() }
                         result.success(null)
                     }
+                    "shareText" -> {
+                        val send = Intent(Intent.ACTION_SEND)
+                            .setType("text/plain")
+                            .putExtra(Intent.EXTRA_SUBJECT, call.argument<String>("title") ?: "")
+                            .putExtra(Intent.EXTRA_TEXT, call.argument<String>("text") ?: "")
+                        startActivity(Intent.createChooser(send, call.argument<String>("title") ?: ""))
+                        result.success(null)
+                    }
                     else -> result.notImplemented()
                 }
             }
@@ -172,6 +180,13 @@ class MainActivity : FlutterActivity() {
                     )
                 }
                 "fileInfo" -> background(result) { fileInfo(Uri.parse(call.argument<String>("uri")!!)) }
+                "ensureFolder" -> background(result) {
+                    ensureFolder(Uri.parse(call.argument<String>("uri")!!), call.argument<List<String>>("path") ?: emptyList()).toString()
+                }
+                "deleteFile" -> background(result) {
+                    DocumentsContract.deleteDocument(contentResolver, Uri.parse(call.argument<String>("uri")!!))
+                    null
+                }
                 else -> result.notImplemented()
             }
         }
@@ -293,8 +308,37 @@ class MainActivity : FlutterActivity() {
         return uri.lastPathSegment ?: ""
     }
 
+    /** Document id of a folder: the tree root, or a sub-folder document built from the tree. */
+    private fun folderDocId(uri: Uri): String =
+        if (DocumentsContract.isDocumentUri(this, uri)) DocumentsContract.getDocumentId(uri) else DocumentsContract.getTreeDocumentId(uri)
+
+    /** The sub-folder at [path] below [folder], created where missing. */
+    private fun ensureFolder(folder: Uri, path: List<String>): Uri {
+        var current = DocumentsContract.buildDocumentUriUsingTree(folder, folderDocId(folder))
+        for (name in path) {
+            val children = DocumentsContract.buildChildDocumentsUriUsingTree(current, DocumentsContract.getDocumentId(current))
+            var found: Uri? = null
+            contentResolver.query(
+                children,
+                arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME, DocumentsContract.Document.COLUMN_MIME_TYPE),
+                null, null, null,
+            )?.use { c ->
+                while (c.moveToNext()) {
+                    if (c.getString(1) == name && c.getString(2) == DocumentsContract.Document.MIME_TYPE_DIR) {
+                        found = DocumentsContract.buildDocumentUriUsingTree(current, c.getString(0))
+                        break
+                    }
+                }
+            }
+            current = found
+                ?: DocumentsContract.createDocument(contentResolver, current, DocumentsContract.Document.MIME_TYPE_DIR, name)
+                ?: throw IllegalStateException("cannot create folder $name")
+        }
+        return current
+    }
+
     private fun listFiles(tree: Uri): List<Map<String, Any?>> {
-        val parentId = DocumentsContract.getTreeDocumentId(tree)
+        val parentId = folderDocId(tree)
         val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, parentId)
         val out = ArrayList<Map<String, Any?>>()
         val cols = arrayOf(
@@ -350,8 +394,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun createFile(tree: Uri, name: String, mimeType: String, bytes: ByteArray): String {
-        val parentId = DocumentsContract.getTreeDocumentId(tree)
-        val parent = DocumentsContract.buildDocumentUriUsingTree(tree, parentId)
+        val parent = DocumentsContract.buildDocumentUriUsingTree(tree, folderDocId(tree))
         val created = DocumentsContract.createDocument(contentResolver, parent, mimeType, name)
             ?: throw IllegalStateException("cannot create $name")
         writeFile(created, bytes)

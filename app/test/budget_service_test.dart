@@ -13,7 +13,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 class FakeFolder implements FolderAccess {
   FakeFolder(Uint8List bytes)
       : files = {'f1': bytes},
-        names = {'f1': 'Budget 2026.xlsx'};
+        names = {'f1': 'Budget 2026.xlsx'} {
+    modified['f1'] = DateTime(2025, 12, 31);
+  }
 
   /// A fresh folder, as a new user's.
   FakeFolder.empty()
@@ -21,9 +23,21 @@ class FakeFolder implements FolderAccess {
         names = {};
   final Map<String, Uint8List> files;
   final Map<String, String> names;
+
+  /// uri → parent folder uri ('tree' for the root).
+  final Map<String, String> parents = {};
+  final Map<String, DateTime> modified = {};
   bool offline = false;
   int writes = 0;
   String? createdName;
+  final deleted = <String>[];
+  var _created = 0;
+
+  /// Runs once, right after the next read handed its bytes out: the test
+  /// plays the laptop saving the file while the app is editing its copy.
+  void Function(String uri)? onAfterRead;
+  var _tick = 0;
+  DateTime _now() => DateTime(2026, 1, 1).add(Duration(seconds: _tick++));
 
   void _check() {
     if (offline) throw FolderAccessException('offline');
@@ -38,13 +52,20 @@ class FakeFolder implements FolderAccess {
   @override
   Future<List<FileEntry>> listFiles(String folderUri) async {
     _check();
-    return [for (final e in files.entries) FileEntry(uri: e.key, name: names[e.key]!, size: e.value.length)];
+    return [
+      for (final e in files.entries)
+        if ((parents[e.key] ?? 'tree') == folderUri) FileEntry(uri: e.key, name: names[e.key]!, size: e.value.length, lastModified: modified[e.key]),
+    ];
   }
 
   @override
   Future<Uint8List> readFile(String uri) async {
     _check();
-    return files[uri]!;
+    final bytes = files[uri]!;
+    final hook = onAfterRead;
+    onAfterRead = null;
+    hook?.call(uri);
+    return bytes;
   }
 
   @override
@@ -52,18 +73,54 @@ class FakeFolder implements FolderAccess {
     _check();
     writes++;
     files[uri] = bytes;
+    modified[uri] = _now();
+  }
+
+  /// The laptop saves the file: content and modification time change.
+  void externalWrite(String uri, Uint8List bytes) {
+    files[uri] = bytes;
+    modified[uri] = _now();
   }
 
   @override
   Future<String> createFile(String folderUri, String name, String mimeType, Uint8List bytes) async {
     _check();
-    final uri = 'f${files.length + 1}';
+    final uri = 'f${++_created + 1}';
     files[uri] = bytes;
     names[uri] = createdName ?? name;
+    parents[uri] = folderUri;
+    modified[uri] = _now();
     return uri;
   }
+
   @override
-  Future<FileEntry?> fileInfo(String uri) async => null;
+  Future<FileEntry?> fileInfo(String uri) async {
+    _check();
+    final b = files[uri];
+    if (b == null) return null;
+    return FileEntry(uri: uri, name: names[uri] ?? '', size: b.length, lastModified: modified[uri]);
+  }
+
+  @override
+  Future<String> ensureFolder(String folderUri, List<String> path) async {
+    _check();
+    var current = folderUri;
+    for (final p in path) {
+      current = '$current/$p';
+      folders.add(current);
+    }
+    return current;
+  }
+
+  final Set<String> folders = {};
+
+  @override
+  Future<void> deleteFile(String uri) async {
+    _check();
+    files.remove(uri);
+    names.remove(uri);
+    deleted.add(uri);
+  }
 }
 
 void main() {

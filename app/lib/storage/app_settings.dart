@@ -23,6 +23,10 @@ class AppSettings extends ChangeNotifier {
   static const _kLocale = 'locale';
   static const _kNotified = 'limit_notified_';
   static const _kOnboarding = 'onboarding_seen';
+  static const _kBackups = 'backups';
+  static const _kSavePhotos = 'save_photos';
+  static const _kCurrency = 'currency';
+  static const _kForecastNotified = 'forecast_notified_';
 
   String? _apiKey;
 
@@ -89,6 +93,36 @@ class AppSettings extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  /// Keep a copy of the year file in `.backup/` before each write.
+  bool get backups => _prefs.getBool(_kBackups) ?? true;
+  Future<void> setBackups(bool on) async {
+    await _prefs.setBool(_kBackups, on);
+    notifyListeners();
+  }
+
+  /// Store scanned receipt photos in `Belege/<year>/` next to the file.
+  bool get savePhotos => _prefs.getBool(_kSavePhotos) ?? true;
+  Future<void> setSavePhotos(bool on) async {
+    await _prefs.setBool(_kSavePhotos, on);
+    notifyListeners();
+  }
+
+  /// Symbol shown after amounts ('€' by default; the file does not care).
+  String get currencySymbol => _prefs.getString(_kCurrency) ?? '€';
+  Future<void> setCurrencySymbol(String symbol) async {
+    final s = symbol.trim();
+    if (s.isEmpty) {
+      await _prefs.remove(_kCurrency);
+    } else {
+      await _prefs.setString(_kCurrency, s);
+    }
+    notifyListeners();
+  }
+
+  /// The month's forecast notification was shown.
+  bool forecastNotified(int year, int month) => _prefs.getBool('$_kForecastNotified$year-$month') ?? false;
+  Future<void> setForecastNotified(int year, int month, bool on) => _prefs.setBool('$_kForecastNotified$year-$month', on);
 
   /// The start screen was shown (or skipped) once.
   bool get onboardingSeen => _prefs.getBool(_kOnboarding) ?? false;
