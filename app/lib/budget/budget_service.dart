@@ -40,11 +40,35 @@ class YearFileRef {
   final FileEntry entry;
 }
 
+/// Loads the bundled empty workbook for a template language.
+typedef TemplateLoader = Future<Uint8List> Function(String language);
+
 class BudgetService extends ChangeNotifier {
-  BudgetService({required this.folder, required this.settings, this.queueDir, DateTime Function()? clock}) : _clock = clock ?? DateTime.now;
+  BudgetService({
+    required this.folder,
+    required this.settings,
+    this.queueDir,
+    DateTime Function()? clock,
+    this.templateLoader,
+    String Function()? systemLanguage,
+  })  : _clock = clock ?? DateTime.now,
+        _systemLanguage = systemLanguage ?? (() => PlatformDispatcher.instance.locale.languageCode);
 
   final FolderAccess folder;
   final AppSettings settings;
+
+  /// Bundled templates (`assets/templates/budget_<lang>.xlsx`); without one
+  /// a new year can only be cloned from an existing file.
+  final TemplateLoader? templateLoader;
+  final String Function() _systemLanguage;
+
+  /// Year of a file the app just created from a template, until the user
+  /// dismisses the hint about it.
+  int? freshFileYear;
+
+  /// Folder for which creating the first file from a template was tried, so
+  /// a failing folder is not hammered on every sync.
+  String? _templateTriedFolder;
 
   /// Where the pending queue is stored (app support dir by default).
   final Directory? queueDir;
@@ -95,6 +119,9 @@ class BudgetService extends ChangeNotifier {
 
   List<BudgetCategory> get categories => file?.categories ?? const [];
 
+  /// Categories in alphabetical order, for lists and pickers.
+  List<BudgetCategory> get categoriesByName => file?.categoriesByName ?? const [];
+
   EntrySuggestions get suggestions => EntrySuggestions(entries, now: _clock());
 
   double? get monthLimit1 => file?.setting('Monatslimit 1');
@@ -106,7 +133,7 @@ class BudgetService extends ChangeNotifier {
     if (f == null) return const [];
     final out = <double>[];
     for (final s in f.settings) {
-      if (s.label.toLowerCase().startsWith('ausgabenlimit') && s.value != null) out.add(s.value!);
+      if (BudgetLabels.settingMatches(s.label, 'ausgabenlimit') && s.value != null) out.add(s.value!);
     }
     out.sort();
     return out;
@@ -146,8 +173,16 @@ class BudgetService extends ChangeNotifier {
   }
 
   /// True when the calendar year has no file yet (and one could be created
-  /// from the latest file).
-  bool get currentYearMissing => settings.hasFolder && yearFiles.isNotEmpty && _refForYear(_clock().year) == null;
+  /// from the latest file or a template).
+  bool get currentYearMissing => settings.hasFolder && state != SyncState.syncing && _refForYear(_clock().year) == null && (yearFiles.isNotEmpty || templateLoader != null);
+
+  /// Language a new template file gets: the app language, else the system's.
+  String get templateLanguageCode => templateLanguage(settings.localeCode, _systemLanguage());
+
+  void dismissFreshFile() {
+    freshFileYear = null;
+    notifyListeners();
+  }
 
   int get currentYear => _clock().year;
 
@@ -290,6 +325,74 @@ class BudgetService extends ChangeNotifier {
     await _withFile(year ?? currentYear, (f) => f.setSetting(label, value, note: note));
   }
 
+  /// Change a category (name, hint, icon, colour) in the loaded year's file;
+  /// queued entries follow a rename.
+  Future<void> updateCategory(BudgetCategory old, BudgetCategory updated, {int? year}) async {
+    final y = year ?? this.year ?? currentYear;
+    // Queued entries are renamed first: the sync after the write flushes them
+    // into the file, where the category already has its new name.
+    final renamed = updated.name != old.name && await _renamePending({old.name: updated.name}, y);
+    try {
+      await _withFile(y, (f) {
+        final current = f.category(old.name) ?? (throw StateError('category "${old.name}" not found'));
+        f.updateCategory(current, updated);
+      });
+    } catch (_) {
+      if (renamed) await _renamePending({updated.name: old.name}, y);
+      rethrow;
+    }
+  }
+
+  /// Add a category to the loaded year's file (see [BudgetFile.addCategory]).
+  Future<void> addCategory(BudgetCategory c, {int? year}) async {
+    await _withFile(year ?? this.year ?? currentYear, (f) => f.addCategory(c));
+  }
+
+  /// Translate the loaded year's file into [language] (see
+  /// [BudgetFile.translateTo]); returns the number of changed cells.
+  Future<int> translateFile(String language, {int? year}) async {
+    final y = year ?? this.year ?? currentYear;
+    final ref = _refForYear(y) ?? (throw StateError('no file for $y'));
+    // Dry run on the file as it is, to learn which categories get renamed.
+    final probe = BudgetFile.open(await folder.readFile(ref.entry.uri), yearHint: y);
+    final before = {for (final c in probe.categories) c.row!: c.name};
+    probe.translateTo(language);
+    final renames = <String, String>{};
+    for (final c in BudgetFile.open(probe.save()).categories) {
+      final old = before[c.row!];
+      if (old != null && old != c.name) renames[old] = c.name;
+    }
+    final renamed = await _renamePending(renames, y);
+    var changed = 0;
+    try {
+      await _withFile(y, (f) => changed = f.translateTo(language));
+    } catch (_) {
+      if (renamed) await _renamePending({for (final e in renames.entries) e.value: e.key}, y);
+      rethrow;
+    }
+    return changed;
+  }
+
+  /// Rename categories of the queued entries of year [y]; true when any changed.
+  Future<bool> _renamePending(Map<String, String> renames, int y) async {
+    if (renames.isEmpty) return false;
+    var any = false;
+    pending = [
+      for (final e in pending)
+        if (e.date.year == y && renames.containsKey(e.category)) () {
+          any = true;
+          return e.copyWith(category: renames[e.category]);
+        }() else e,
+    ];
+    if (!any) return false;
+    await _saveQueue();
+    notifyListeners();
+    return true;
+  }
+
+  /// The loaded file is in another language than the app.
+  bool get fileLanguageMismatch => file != null && file!.language != templateLanguageCode;
+
   Future<void> _withFile(int y, void Function(BudgetFile) change) async {
     final ref = _refForYear(y);
     if (ref == null) throw StateError('no file for $y');
@@ -301,21 +404,42 @@ class BudgetService extends ChangeNotifier {
   }
 
   /// Create `Budget <newYear>.xlsx` from the latest existing file: same
-  /// categories, settings and plan, no bookings, empty account inputs.
-  Future<void> createYearFile(int newYear) async {
+  /// categories, settings and plan, no bookings, empty account inputs. With
+  /// no file in the folder, from the bundled template in [language] (the
+  /// app language by default).
+  Future<void> createYearFile(int newYear, {String? language}) async {
     final uri = settings.folderUri;
     if (uri == null) throw StateError('no folder');
     if (_refForYear(newYear) != null) return;
-    if (yearFiles.isEmpty) throw StateError('no file to copy from');
-    final source = yearFiles.first;
-    final bytes = await folder.readFile(source.entry.uri);
-    final f = BudgetFile.open(bytes, yearHint: source.year);
-    f.clearEntries();
-    f.clearOverviewInputs();
-    f.setTitleYear(newYear);
-    await folder.createFile(uri, 'Budget $newYear.xlsx', xlsxMime, f.save());
+    if (yearFiles.isEmpty) {
+      await _createFromTemplate(uri, newYear, language ?? templateLanguageCode);
+    } else {
+      final source = yearFiles.first;
+      final bytes = await folder.readFile(source.entry.uri);
+      final f = BudgetFile.open(bytes, yearHint: source.year);
+      f.clearEntries();
+      f.clearOverviewInputs();
+      f.setTitleYear(newYear);
+      await folder.createFile(uri, 'Budget $newYear.xlsx', xlsxMime, f.save());
+    }
     _yearPinned = false;
     await sync();
+  }
+
+  Future<void> _createFromTemplate(String folderUri, int newYear, String language) async {
+    final load = templateLoader ?? (throw StateError('no file to copy from and no template'));
+    final f = BudgetFile.open(await load(language));
+    f.setTitleYear(newYear);
+    await folder.createFile(folderUri, 'Budget $newYear.xlsx', xlsxMime, f.save());
+    freshFileYear = newYear;
+  }
+
+  Future<List<YearFileRef>> _listYearFiles(String uri) async {
+    final files = await folder.listFiles(uri);
+    return [
+      for (final f in files)
+        if (budgetFileName.hasMatch(f.name)) YearFileRef(year: int.parse(budgetFileName.firstMatch(f.name)!.group(1)!), entry: f),
+    ]..sort((a, b) => b.year.compareTo(a.year));
   }
 
   // --- sync -------------------------------------------------------------------------
@@ -355,11 +479,15 @@ class BudgetService extends ChangeNotifier {
     _otherYears.clear();
     notifyListeners();
     try {
-      final files = await folder.listFiles(uri);
-      yearFiles = [
-        for (final f in files)
-          if (budgetFileName.hasMatch(f.name)) YearFileRef(year: int.parse(budgetFileName.firstMatch(f.name)!.group(1)!), entry: f),
-      ]..sort((a, b) => b.year.compareTo(a.year));
+      yearFiles = await _listYearFiles(uri);
+
+      // A new user: the folder has no budget file yet, so the current year
+      // starts from the template in the app language (once per folder).
+      if (yearFiles.isEmpty && templateLoader != null && _templateTriedFolder != uri) {
+        _templateTriedFolder = uri;
+        await _createFromTemplate(uri, currentYear, templateLanguageCode);
+        yearFiles = await _listYearFiles(uri);
+      }
 
       // Flush the queue, grouped by the year each entry belongs to.
       final byYear = <int, List<BudgetEntry>>{};

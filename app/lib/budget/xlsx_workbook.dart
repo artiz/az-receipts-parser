@@ -33,7 +33,9 @@ class XlsxCell {
   final String? text;
   final String? formula;
 
-  bool get isEmpty => number == null && (text == null || text!.isEmpty);
+  /// No value and no formula (a formula without a cached value still counts
+  /// as content: openpyxl writes formulas that way).
+  bool get isEmpty => number == null && (text == null || text!.isEmpty) && formula == null;
 
   /// Text for display: numbers as-is, strings as-is.
   String? get asString => text ?? number?.toString();
@@ -212,8 +214,10 @@ class XlsxSheet {
   void clear(String ref) => _setCell(ref);
 
   /// Store a formula (without the leading '=') together with its computed
-  /// value, so readers that do not recalculate still see the number.
-  void setFormula(String ref, String formula, num cached) => _setCell(ref, number: cached, formula: formula.startsWith('=') ? formula.substring(1) : formula);
+  /// value, so readers that do not recalculate still see the number. Without
+  /// [cached] the cell has no value, which makes every reader (LibreOffice
+  /// included, which otherwise trusts cached values) compute it on load.
+  void setFormula(String ref, String formula, [num? cached]) => _setCell(ref, number: cached, formula: formula.startsWith('=') ? formula.substring(1) : formula);
 
   void _setCell(String ref, {num? number, String? text, String? formula}) {
     final (col, rowIndex) = XlsxRef.split(ref);
@@ -290,6 +294,76 @@ class XlsxSheet {
       row.children.insert(row.children.indexOf(before), cell);
     }
     return cell;
+  }
+
+  /// Replace [from] by [to] in every conditional-formatting formula of the
+  /// sheet (a rule like `$C2="Kreditkarte"` follows a renamed category).
+  int replaceInConditionalFormatting(String from, String to) {
+    var n = 0;
+    for (final cf in _document.rootElement.findElements('conditionalFormatting')) {
+      for (final f in cf.findAllElements('formula')) {
+        final text = f.innerText;
+        if (!text.contains(from)) continue;
+        f.children.clear();
+        f.children.add(XmlText(text.replaceAll(from, to)));
+        n++;
+      }
+    }
+    if (n > 0) _dirty = true;
+    return n;
+  }
+
+  /// Copy every conditional-formatting block whose formula contains [from]
+  /// (e.g. `"Kreditkarte"`) with [to] in its place, so a new transfer
+  /// category gets the same look as the existing one. Returns the count.
+  int cloneConditionalFormatting(String from, String to) {
+    var n = 0;
+    final root = _document.rootElement;
+    for (final cf in root.findElements('conditionalFormatting').toList()) {
+      if (!cf.findAllElements('formula').any((f) => f.innerText.contains(from))) continue;
+      final copy = cf.copy();
+      for (final f in copy.findAllElements('formula')) {
+        final text = f.innerText;
+        f.children.clear();
+        f.children.add(XmlText(text.replaceAll(from, to)));
+      }
+      root.children.insert(root.children.indexOf(cf) + 1, copy);
+      n++;
+    }
+    if (n > 0) _dirty = true;
+    return n;
+  }
+
+  /// Remove every conditional-formatting block whose formula contains [text].
+  int removeConditionalFormatting(String text) {
+    var n = 0;
+    final root = _document.rootElement;
+    for (final cf in root.findElements('conditionalFormatting').toList()) {
+      if (!cf.findAllElements('formula').any((f) => f.innerText.contains(text))) continue;
+      root.children.remove(cf);
+      n++;
+    }
+    if (n > 0) _dirty = true;
+    return n;
+  }
+
+  /// Grow every list validation of the form `$A$5:$A$22` to end at
+  /// [lastRow] (the category dropdown follows an added category).
+  int extendListValidations(int lastRow) {
+    var n = 0;
+    final range = RegExp(r'(\$A\$\d+:\$A\$)(\d+)');
+    for (final dv in _document.rootElement.findAllElements('dataValidation')) {
+      for (final f in dv.findElements('formula1')) {
+        final text = f.innerText;
+        final m = range.firstMatch(text);
+        if (m == null || int.parse(m.group(2)!) >= lastRow) continue;
+        f.children.clear();
+        f.children.add(XmlText(text.replaceFirst(range, '${m.group(1)}$lastRow')));
+        n++;
+      }
+    }
+    if (n > 0) _dirty = true;
+    return n;
   }
 
   /// Ensure column B of [rowIndex] carries the month formula the template

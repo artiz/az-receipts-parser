@@ -22,6 +22,7 @@ class AppSettings extends ChangeNotifier {
   static const _kLastSync = 'last_sync';
   static const _kLocale = 'locale';
   static const _kNotified = 'limit_notified_';
+  static const _kOnboarding = 'onboarding_seen';
 
   String? _apiKey;
 
@@ -86,6 +87,14 @@ class AppSettings extends ChangeNotifier {
     } else {
       await _prefs.setString(_kLocale, code);
     }
+    notifyListeners();
+  }
+
+  /// The start screen was shown (or skipped) once.
+  bool get onboardingSeen => _prefs.getBool(_kOnboarding) ?? false;
+
+  Future<void> setOnboardingSeen(bool seen) async {
+    await _prefs.setBool(_kOnboarding, seen);
     notifyListeners();
   }
 

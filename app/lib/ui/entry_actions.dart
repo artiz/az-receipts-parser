@@ -150,3 +150,32 @@ Future<void> addToEntryDialog(BuildContext context, BudgetService budget, Budget
     messenger.showSnackBar(SnackBar(content: Text(l.importFailed(err.toString()))));
   }
 }
+
+/// Create the calendar year's file: cloned from the latest file in the
+/// folder, or from the template in the app language when the folder is
+/// empty (then the language can be chosen).
+Future<void> createYearFile(BuildContext context, BudgetService budget) async {
+  final l = AppLocalizations.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+  final y = budget.currentYear;
+  String? language;
+  if (budget.yearFiles.isEmpty) {
+    language = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(l.templateLanguage),
+        children: [
+          for (final code in BudgetLabels.languages)
+            SimpleDialogOption(onPressed: () => Navigator.pop(ctx, code), child: Text(languageDisplayName(code))),
+        ],
+      ),
+    );
+    if (language == null) return;
+  }
+  try {
+    await budget.createYearFile(y, language: language);
+    if (language == null) messenger.showSnackBar(SnackBar(content: Text(l.yearFileCreated(y))));
+  } catch (e) {
+    messenger.showSnackBar(SnackBar(content: Text(l.importFailed(e.toString()))));
+  }
+}

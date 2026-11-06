@@ -12,6 +12,7 @@ import '../core/expression.dart';
 import '../l10n/app_localizations.dart';
 import '../theme.dart';
 import 'entry_actions.dart';
+import 'category_chart.dart';
 import 'widgets.dart';
 
 class OverviewPage extends StatefulWidget {
@@ -145,11 +146,13 @@ class _OverviewPageState extends State<OverviewPage> {
             color: stats.saldo >= 0 ? scheme.tertiary : scheme.primary,
             big: true,
           ),
+          const SizedBox(height: 8),
+          CategoryChart(bars: CategoryChart.barsFor(file, stats.byCategory, month)),
           SectionTitle(l.byCategory),
           Card(
             child: Column(
               children: [
-                for (final c in file.expenseCategories)
+                for (final c in file.expenseCategoriesByName)
                   if ((stats.byCategory[c.name] ?? 0) != 0 || (file.overview.plan[c.name]?.$2[month - 1] ?? 0) != 0)
                     _CategoryRow(
                       name: c.name,

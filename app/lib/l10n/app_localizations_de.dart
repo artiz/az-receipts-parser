@@ -22,7 +22,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tabSettings => 'Einstellungen';
 
   @override
-  String get newEntry => 'Neue Buchung';
+  String get newEntry => 'Buchung';
 
   @override
   String get scanReceipt => 'Beleg scannen';
@@ -425,4 +425,167 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get entryDeleted => 'Buchung gelöscht';
+
+  @override
+  String get onboardingTitle => 'Willkommen bei AZ Budget';
+
+  @override
+  String get onboardingIntro =>
+      'Dein Budget ist eine Tabelle pro Jahr in einem Ordner deiner Wahl. Die App schreibt hinein, und du kannst sie jederzeit in Excel oder Google Sheets öffnen.';
+
+  @override
+  String get onboardingStep1Title => 'Ordner wählen';
+
+  @override
+  String get onboardingStep1Text =>
+      'Google Drive, Dropbox, iCloud oder lokal. Dort liegt Budget <Jahr>.xlsx und wird synchronisiert.';
+
+  @override
+  String get onboardingStep2Title => 'Die Jahresdatei';
+
+  @override
+  String onboardingStep2Text(int year, String language) {
+    return 'In einem leeren Ordner wird Budget $year.xlsx auf $language angelegt, mit Kategorien, Plan und Limits, die du ändern kannst. Vorhandene Dateien werden so genutzt, wie sie sind.';
+  }
+
+  @override
+  String get onboardingStep3Title => 'Buchungen erfassen';
+
+  @override
+  String get onboardingStep3Text =>
+      'Tippe auf + für eine Buchung. Schnellbuchungen wiederholen häufige, die Kamera scannt einen Beleg, der PDF-Knopf importiert einen Kontoauszug.';
+
+  @override
+  String get onboardingStep4Title => 'Übersicht und Limits';
+
+  @override
+  String get onboardingStep4Text =>
+      'Einnahmen, Ausgaben und Plan je Kategorie und Monat, dazu deine Kontostände. Monatslimits geben eine Ampel und eine Benachrichtigung.';
+
+  @override
+  String get onboardingStep5Title => 'Optional: OpenAI-Schlüssel';
+
+  @override
+  String get onboardingStep5Text =>
+      'Nur für Händler, die die Datei noch nie gesehen hat, und für Screenshots. Alles andere funktioniert offline.';
+
+  @override
+  String get onboardingLater => 'Später';
+
+  @override
+  String get howToUse => 'So funktioniert die App';
+
+  @override
+  String fileCreatedNotice(int year, String language) {
+    return 'Budget $year.xlsx wurde in deinem Ordner angelegt ($language). Kategorien, Plan und Limits änderst du in der Übersicht oder in der Datei.';
+  }
+
+  @override
+  String get gotIt => 'Verstanden';
+
+  @override
+  String get templateLanguage => 'Sprache der neuen Datei';
+
+  @override
+  String get categories => 'Kategorien';
+
+  @override
+  String get editCategories => 'Kategorien bearbeiten';
+
+  @override
+  String get editCategoriesHint =>
+      'Name, Symbol, Farbe und Hinweis, gespeichert in der Datei';
+
+  @override
+  String get editCategory => 'Kategorie bearbeiten';
+
+  @override
+  String get categoryName => 'Name';
+
+  @override
+  String get categoryHintLabel => 'Hinweis';
+
+  @override
+  String get categoryIconLabel => 'Symbol';
+
+  @override
+  String get categoryColorLabel => 'Farbe';
+
+  @override
+  String get autoChoice => 'Automatisch';
+
+  @override
+  String get renameNote =>
+      'Beim Umbenennen werden auch die Buchungen und die Übersichtszeilen der Jahresdatei umbenannt.';
+
+  @override
+  String get categorySaved => 'Kategorie gespeichert';
+
+  @override
+  String get categoryNameTaken =>
+      'Eine Kategorie mit diesem Namen gibt es schon.';
+
+  @override
+  String get typeExpense => 'Ausgabe';
+
+  @override
+  String get typeIncome => 'Einnahme';
+
+  @override
+  String get typeTransfer => 'Umbuchung';
+
+  @override
+  String translateFile(String language) {
+    return 'Datei auf $language übersetzen';
+  }
+
+  @override
+  String translateFileHint(String fileLanguage, String appLanguage) {
+    return 'Datei: $fileLanguage · App: $appLanguage. Kategorien, Hinweise und Beschriftungen werden übersetzt, Buchungen umbenannt; Blattnamen bleiben.';
+  }
+
+  @override
+  String translateFileConfirm(int year, String language) {
+    return 'Budget $year.xlsx auf $language übersetzen?';
+  }
+
+  @override
+  String translateFileDone(int count) {
+    return '$count Zellen übersetzt';
+  }
+
+  @override
+  String get translate => 'Übersetzen';
+
+  @override
+  String fileLanguage(String language) {
+    return 'Sprache der Datei: $language';
+  }
+
+  @override
+  String get chartHint =>
+      'Plan grau, Ist in der Farbe der Kategorie. Tippe auf einen Balken.';
+
+  @override
+  String get actual => 'Ist';
+
+  @override
+  String get planLabel => 'Plan';
+
+  @override
+  String get addCategory => 'Kategorie hinzufügen';
+
+  @override
+  String get categoryType => 'Typ';
+
+  @override
+  String get typeChangeNote =>
+      'Ein geänderter Typ baut die Einnahmen- und Ausgaben-Zeilen der Übersicht neu auf.';
+
+  @override
+  String get newExpenseNote =>
+      'Eine neue Ausgabenkategorie bekommt in der Übersicht der Tabelle keine eigene Ist/Plan-Zeile; die App zählt sie trotzdem.';
+
+  @override
+  String get categoryAdded => 'Kategorie hinzugefügt';
 }

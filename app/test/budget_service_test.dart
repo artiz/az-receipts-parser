@@ -11,9 +11,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// An in-memory folder with the fixture as "Budget 2026.xlsx"; can be
 /// switched offline to simulate a Drive provider without network.
 class FakeFolder implements FolderAccess {
-  FakeFolder(Uint8List bytes) : files = {'f1': bytes};
+  FakeFolder(Uint8List bytes)
+      : files = {'f1': bytes},
+        names = {'f1': 'Budget 2026.xlsx'};
+
+  /// A fresh folder, as a new user's.
+  FakeFolder.empty()
+      : files = {},
+        names = {};
   final Map<String, Uint8List> files;
-  final Map<String, String> names = {'f1': 'Budget 2026.xlsx'};
+  final Map<String, String> names;
   bool offline = false;
   int writes = 0;
   String? createdName;

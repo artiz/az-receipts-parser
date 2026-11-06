@@ -127,7 +127,7 @@ abstract class AppLocalizations {
   /// No description provided for @newEntry.
   ///
   /// In en, this message translates to:
-  /// **'New entry'**
+  /// **'Entry'**
   String get newEntry;
 
   /// No description provided for @scanReceipt.
@@ -795,6 +795,282 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Entry deleted'**
   String get entryDeleted;
+
+  /// No description provided for @onboardingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to AZ Budget'**
+  String get onboardingTitle;
+
+  /// No description provided for @onboardingIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Your budget is one spreadsheet per year in a folder you choose. The app writes into it, and you can open it in Excel or Google Sheets at any time.'**
+  String get onboardingIntro;
+
+  /// No description provided for @onboardingStep1Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a folder'**
+  String get onboardingStep1Title;
+
+  /// No description provided for @onboardingStep1Text.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Drive, Dropbox, iCloud or a local folder. This is where Budget <year>.xlsx lives and syncs.'**
+  String get onboardingStep1Text;
+
+  /// No description provided for @onboardingStep2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'The year file'**
+  String get onboardingStep2Title;
+
+  /// No description provided for @onboardingStep2Text.
+  ///
+  /// In en, this message translates to:
+  /// **'An empty folder gets a Budget {year}.xlsx in {language}, with categories, plan and limits you can change. Existing files are used as they are.'**
+  String onboardingStep2Text(int year, String language);
+
+  /// No description provided for @onboardingStep3Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add entries'**
+  String get onboardingStep3Title;
+
+  /// No description provided for @onboardingStep3Text.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap + for an entry. Quick entries repeat frequent ones, the camera scans a receipt, the PDF button imports a bank statement.'**
+  String get onboardingStep3Text;
+
+  /// No description provided for @onboardingStep4Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview and limits'**
+  String get onboardingStep4Title;
+
+  /// No description provided for @onboardingStep4Text.
+  ///
+  /// In en, this message translates to:
+  /// **'Income, expenses and plan per category per month, plus your account inputs. Month limits give a traffic light and a notification.'**
+  String get onboardingStep4Text;
+
+  /// No description provided for @onboardingStep5Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional: OpenAI key'**
+  String get onboardingStep5Title;
+
+  /// No description provided for @onboardingStep5Text.
+  ///
+  /// In en, this message translates to:
+  /// **'Only used for merchants the file has never seen and for screenshots. Everything else works offline.'**
+  String get onboardingStep5Text;
+
+  /// No description provided for @onboardingLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get onboardingLater;
+
+  /// No description provided for @howToUse.
+  ///
+  /// In en, this message translates to:
+  /// **'How to use the app'**
+  String get howToUse;
+
+  /// No description provided for @fileCreatedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget {year}.xlsx was created in your folder ({language}). Categories, plan and limits can be changed in Overview or in the file.'**
+  String fileCreatedNotice(int year, String language);
+
+  /// No description provided for @gotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get gotIt;
+
+  /// No description provided for @templateLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Language of the new file'**
+  String get templateLanguage;
+
+  /// No description provided for @categories.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get categories;
+
+  /// No description provided for @editCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit categories'**
+  String get editCategories;
+
+  /// No description provided for @editCategoriesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, icon, colour and hint, stored in the file'**
+  String get editCategoriesHint;
+
+  /// No description provided for @editCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit category'**
+  String get editCategory;
+
+  /// No description provided for @categoryName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get categoryName;
+
+  /// No description provided for @categoryHintLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Hint'**
+  String get categoryHintLabel;
+
+  /// No description provided for @categoryIconLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Icon'**
+  String get categoryIconLabel;
+
+  /// No description provided for @categoryColorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour'**
+  String get categoryColorLabel;
+
+  /// No description provided for @autoChoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get autoChoice;
+
+  /// No description provided for @renameNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Renaming also renames the bookings and the overview rows of this year\'s file.'**
+  String get renameNote;
+
+  /// No description provided for @categorySaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Category saved'**
+  String get categorySaved;
+
+  /// No description provided for @categoryNameTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'A category with this name exists already.'**
+  String get categoryNameTaken;
+
+  /// No description provided for @typeExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense'**
+  String get typeExpense;
+
+  /// No description provided for @typeIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Income'**
+  String get typeIncome;
+
+  /// No description provided for @typeTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer'**
+  String get typeTransfer;
+
+  /// No description provided for @translateFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate file to {language}'**
+  String translateFile(String language);
+
+  /// No description provided for @translateFileHint.
+  ///
+  /// In en, this message translates to:
+  /// **'File: {fileLanguage} · App: {appLanguage}. Categories, hints and labels are translated, bookings renamed; sheet names stay.'**
+  String translateFileHint(String fileLanguage, String appLanguage);
+
+  /// No description provided for @translateFileConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate Budget {year}.xlsx to {language}?'**
+  String translateFileConfirm(int year, String language);
+
+  /// No description provided for @translateFileDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} cells translated'**
+  String translateFileDone(int count);
+
+  /// No description provided for @translate.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate'**
+  String get translate;
+
+  /// No description provided for @fileLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'File language: {language}'**
+  String fileLanguage(String language);
+
+  /// No description provided for @chartHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan in grey, actual in the category colour. Tap a bar.'**
+  String get chartHint;
+
+  /// No description provided for @actual.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual'**
+  String get actual;
+
+  /// No description provided for @planLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get planLabel;
+
+  /// No description provided for @addCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Add category'**
+  String get addCategory;
+
+  /// No description provided for @categoryType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get categoryType;
+
+  /// No description provided for @typeChangeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing the type rebuilds the income and expense rows of the overview sheet.'**
+  String get typeChangeNote;
+
+  /// No description provided for @newExpenseNote.
+  ///
+  /// In en, this message translates to:
+  /// **'A new expense category gets no row of its own in the overview sheet\'s actual/plan blocks; the app counts it anyway.'**
+  String get newExpenseNote;
+
+  /// No description provided for @categoryAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Category added'**
+  String get categoryAdded;
 }
 
 class _AppLocalizationsDelegate

@@ -4,7 +4,7 @@
   "tabEntries": "Entries",
   "tabOverview": "Overview",
   "tabSettings": "Settings",
-  "newEntry": "New entry",
+  "newEntry": "Entry",
   "scanReceipt": "Scan receipt",
   "importScreenshot": "Import screenshot",
   "importStatement": "Import statement (PDF)",
@@ -322,5 +322,112 @@
         "type": "String"
       }
     }
-  }
+  },
+  "onboardingTitle": "Welcome to AZ Budget",
+  "onboardingIntro": "Your budget is one spreadsheet per year in a folder you choose. The app writes into it, and you can open it in Excel or Google Sheets at any time.",
+  "onboardingStep1Title": "Choose a folder",
+  "onboardingStep1Text": "Google Drive, Dropbox, iCloud or a local folder. This is where Budget <year>.xlsx lives and syncs.",
+  "onboardingStep2Title": "The year file",
+  "onboardingStep2Text": "An empty folder gets a Budget {year}.xlsx in {language}, with categories, plan and limits you can change. Existing files are used as they are.",
+  "@onboardingStep2Text": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingStep3Title": "Add entries",
+  "onboardingStep3Text": "Tap + for an entry. Quick entries repeat frequent ones, the camera scans a receipt, the PDF button imports a bank statement.",
+  "onboardingStep4Title": "Overview and limits",
+  "onboardingStep4Text": "Income, expenses and plan per category per month, plus your account inputs. Month limits give a traffic light and a notification.",
+  "onboardingStep5Title": "Optional: OpenAI key",
+  "onboardingStep5Text": "Only used for merchants the file has never seen and for screenshots. Everything else works offline.",
+  "onboardingLater": "Later",
+  "howToUse": "How to use the app",
+  "fileCreatedNotice": "Budget {year}.xlsx was created in your folder ({language}). Categories, plan and limits can be changed in Overview or in the file.",
+  "@fileCreatedNotice": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "gotIt": "Got it",
+  "templateLanguage": "Language of the new file",
+  "categories": "Categories",
+  "editCategories": "Edit categories",
+  "editCategoriesHint": "Name, icon, colour and hint, stored in the file",
+  "editCategory": "Edit category",
+  "categoryName": "Name",
+  "categoryHintLabel": "Hint",
+  "categoryIconLabel": "Icon",
+  "categoryColorLabel": "Colour",
+  "autoChoice": "Automatic",
+  "renameNote": "Renaming also renames the bookings and the overview rows of this year's file.",
+  "categorySaved": "Category saved",
+  "categoryNameTaken": "A category with this name exists already.",
+  "typeExpense": "Expense",
+  "typeIncome": "Income",
+  "typeTransfer": "Transfer",
+  "translateFile": "Translate file to {language}",
+  "@translateFile": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "translateFileHint": "File: {fileLanguage} · App: {appLanguage}. Categories, hints and labels are translated, bookings renamed; sheet names stay.",
+  "@translateFileHint": {
+    "placeholders": {
+      "fileLanguage": {
+        "type": "String"
+      },
+      "appLanguage": {
+        "type": "String"
+      }
+    }
+  },
+  "translateFileConfirm": "Translate Budget {year}.xlsx to {language}?",
+  "@translateFileConfirm": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "translateFileDone": "{count} cells translated",
+  "@translateFileDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "translate": "Translate",
+  "fileLanguage": "File language: {language}",
+  "@fileLanguage": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "chartHint": "Plan in grey, actual in the category colour. Tap a bar.",
+  "actual": "Actual",
+  "planLabel": "Plan",
+  "addCategory": "Add category",
+  "categoryType": "Type",
+  "typeChangeNote": "Changing the type rebuilds the income and expense rows of the overview sheet.",
+  "newExpenseNote": "A new expense category gets no row of its own in the overview sheet's actual/plan blocks; the app counts it anyway.",
+  "categoryAdded": "Category added"
 }

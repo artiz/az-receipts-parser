@@ -24,15 +24,21 @@ statement PDF ──► docling.rs text layer (rows) ──┴► OpenAI (gpt-4.
 
 ## The spreadsheet is the database
 
-One file per year, built with the generator described below and then edited by
-hand. The app relies on this layout and on nothing else:
+One file per year. A new user gets it from a bundled template
+(`app/assets/templates/budget_{de,en,ru}.xlsx`, built by
+`tools/budget_template.py`); the layout below is the contract, shown with
+the German names. The English and Russian templates use the same layout with
+translated sheet names, labels and categories, and the reader finds every
+row by what its label means (`app/lib/budget/budget_labels.dart`), so a
+file in any of the three languages, or one with renamed sheets, reads the
+same way. Category names are never hard-coded; they come from the file.
 
 | Sheet | Contract |
 | --- | --- |
 | `Buchungen` | Row 1 header, then `A` Datum, `B` Monat (formula), `C` Kategorie, `D` Beschreibung, `E` Betrag (€), `F` Notiz. Expenses positive, income negative. Rows are pre-formatted to 2000; the app fills the next empty one (and creates rows beyond 2000 when needed). |
 | `Übersicht` | Input rows found by their label in column `A` (`Kontostand Monatsanfang…`, `Sparkonto`, `Kreditkarte offen…`), months in `B..M`; the `Plan` block from the row labelled `Plan` to `Summe Plan`. Everything else is formulas. |
-| `Einstellungen` | Categories below the `Kategorie` header (`A` name, `B` Typ: Ausgabe / Einnahme / Umbuchung, `D` hint); label/value settings in `F`/`G` (`Monatslimit 1/2`, `Ausgabenlimit 1/2/3`). New settings may be appended below; the app reads whatever is there. |
-| `Verlauf` | Not touched by the app. |
+| `Einstellungen` | Categories below the `Kategorie` header (`A` name, `B` Typ: Ausgabe / Einnahme / Umbuchung, `D` hint, `E` icon and colour as chosen in the app, e.g. `basket #FF2E7E`); label/value settings in `F`/`G` (`Monatslimit 1/2`, `Ausgabenlimit 1/2/3`). New settings may be appended below; the app reads whatever is there. |
+| `Verlauf` | Month labels `YYYY-MM`; the app only re-targets them when it creates a new year. |
 
 The app never re-serialises the workbook. It patches individual cells in the
 sheet XML inside the zip (`app/lib/budget/xlsx_workbook.dart`) and copies every
@@ -62,16 +68,28 @@ the bookings in the file.
 
 ## Using the app
 
-1. **Settings → Budget folder**: pick the folder that holds `Budget <year>.xlsx`
-   (in the Drive app's folder picker choose the folder, not the file). The
-   grant is persisted; the app lists the year files and loads the current year.
+1. **Start screen**: the first launch explains the app in five steps and asks
+   for the folder (reachable again under *Settings → How to use the app*).
+   Pick the folder that holds `Budget <year>.xlsx` (in the Drive app's folder
+   picker choose the folder, not the file). The grant is persisted; the app
+   lists the year files and loads the current year. An empty folder gets a
+   `Budget <year>.xlsx` created from the template in the app language
+   (German, English or Russian, following the system language unless set in
+   Settings), with translated categories, plan block and limits
+   (3000/4000 € per month, 200/500/1000 € per entry) that you can change in
+   *Overview* or in the file. When the calendar year has no file yet, the
+   app offers to create it from the latest one (categories, settings and
+   plan copied, no bookings) or, if the folder is empty, from the template
+   with a language choice.
 2. **Entries**: the upper half of the screen holds the quick tiles (tap →
    confirm or change the amount), the lower half the bookings table with a
    search field, paged by 20 as you scroll. Tap a row to edit it (queued rows
    and rows already in the file alike, the file row is rewritten in place);
    the **+** on a row tops it up ("+6 Glühwein": amount added, detail appended
    to the note). *New entry* has category, description autocomplete, amount,
-   note and date; income is typed as a plain number and stored negative. A new
+   note and date (category pickers list the categories alphabetically, the
+   most used one is preselected); income is typed as a plain number and
+   stored negative. A new
    booking with the same amount as one booked within three days asks whether
    to add its details to that booking's note instead (a scanned receipt of a
    purchase typed by hand). New bookings go into a local queue and are written
@@ -90,11 +108,15 @@ the bookings in the file.
 4. **Picture button**: a banking-app screenshot from the gallery → OCR →
    OpenAI → review list.
 5. **PDF button**: a bank statement → docling.rs text layer (rebuilt as rows:
-   text, value date, amount) → OpenAI → review list. Rows whose amount and date
-   match an existing booking are marked *already booked* and unticked; rows the
-   model is unsure about show its question and alternative categories, tap the
-   category to decide. Cash withdrawals and transfers between own accounts are
-   skipped. Nothing is written before *Add n*.
+   text, value date, amount) → the rows are read deterministically: date and
+   amount exactly as printed, merchant from the row or its detail line,
+   card bills as Kreditkarte transfers, cash withdrawals and own transfers
+   skipped. The category comes from the file's own history for that merchant;
+   only merchants the file has never seen go to OpenAI, in one small request
+   for their category. Without an API key those rows are simply flagged for
+   you to pick. Rows whose amount and date match an existing booking are
+   marked *already booked* and unticked. Nothing is written before *Add n*.
+   Free text (screenshots) still goes to the model as a whole.
 6. **Overview**: income, expenses with a traffic light against
    `Monatslimit 1/2` (green, amber from limit 1, red from limit 2; the same
    icon sits in the top bar of the home screen), saldo, per-category actual
@@ -108,6 +130,27 @@ the bookings in the file.
    model (default `gpt-4.1-mini`). Only the statement/screenshot import uses it.
    **Settings → Language** overrides the system language (German, English,
    Russian).
+8. **Settings → Categories**: name, type, hint, icon (from a built-in set)
+   and colour of every category, stored in the file's `Einstellungen` sheet,
+   plus *Add category* (several income categories, several credit cards). A
+   rename follows into the bookings, the overview rows, the formulas that
+   quote the name (income and transfer categories) and the conditional
+   format of the entries sheet. A changed or added type rebuilds the
+   overview's `Einnahmen` row (sum over every income category) and
+   `Ausgaben` row (everything but income and transfer categories), blanks or
+   restores the category's row in the actual block, extends the category
+   dropdown of the entries sheet and clones the grey-italic format of
+   transfer rows. A new *expense* category gets no row of its own in the
+   sheet's actual/plan blocks (the app counts it anyway). When the file is in another language than the
+   app (say it was created before the language was changed), *Translate file*
+   turns category names and hints, type labels, settings labels and the
+   overview/history labels into the app language; bookings are renamed with
+   their categories, the user's own texts and the sheet names stay (formulas
+   refer to the sheet names, and the entries table definition to its header).
+9. **Overview**: under the Saldo a bar per expense category for the month,
+   the plan in grey with the actual amount over it in the category's colour,
+   icons on the x axis, the largest on the right; tapping a bar shows its
+   name and numbers.
 
 ## Build
 
@@ -224,6 +267,19 @@ libonnxruntime ≥ 1.17.
   tiles, autocomplete, learned categories).
 * `app/test/budget_service_test.dart`: queue + sync with a fake folder,
   including offline, restart and write-through of overview inputs.
+* `app/test/budget_template_test.dart`: every bundled template read through
+  the same code (categories, types, limits, input and plan rows), written to
+  (entries, limits, inputs, plan, new year) and the empty-folder path of the
+  service (template in the app or system language, tried once per folder,
+  clone once a file exists); category edits (icon and colour in column `E`,
+  rename cascade into bookings, overview labels, quoted formulas and the
+  conditional format) and the file translation against the English template
+  and against a user-like fixture. After changing `tools/budget_template.py`,
+  regenerate with `python3 tools/budget_template.py` (needs openpyxl; it also
+  rewrites `app/lib/budget/template_texts.dart`, the dictionary the
+  translation uses) and check with a LibreOffice recalculation that no cell
+  shows an error. Note that LibreOffice trusts cached values in an xlsx, so a
+  rewritten formula is stored without one.
 * `app/test/statement_import_test.dart`: prompt and JSON-schema contract,
   sign enforcement, unknown categories, duplicate detection.
 * `app/test/receipt_parser_test.dart` and `units_test.dart`: the receipt

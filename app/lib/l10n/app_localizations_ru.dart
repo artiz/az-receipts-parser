@@ -22,7 +22,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get tabSettings => 'Настройки';
 
   @override
-  String get newEntry => 'Новая запись';
+  String get newEntry => 'Запись';
 
   @override
   String get scanReceipt => 'Сканировать чек';
@@ -422,4 +422,166 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get entryDeleted => 'Запись удалена';
+
+  @override
+  String get onboardingTitle => 'Добро пожаловать в AZ Budget';
+
+  @override
+  String get onboardingIntro =>
+      'Ваш бюджет — одна таблица на год в папке, которую вы выберете. Приложение пишет в неё, а вы в любой момент можете открыть её в Excel или Google Sheets.';
+
+  @override
+  String get onboardingStep1Title => 'Выберите папку';
+
+  @override
+  String get onboardingStep1Text =>
+      'Google Drive, Dropbox, iCloud или локальная папка. Там лежит и синхронизируется Budget <год>.xlsx.';
+
+  @override
+  String get onboardingStep2Title => 'Файл года';
+
+  @override
+  String onboardingStep2Text(int year, String language) {
+    return 'В пустой папке будет создан Budget $year.xlsx на языке «$language» с категориями, планом и лимитами, которые можно менять. Существующие файлы используются как есть.';
+  }
+
+  @override
+  String get onboardingStep3Title => 'Добавляйте записи';
+
+  @override
+  String get onboardingStep3Text =>
+      'Нажмите + для записи. Быстрые записи повторяют частые, камера сканирует чек, кнопка PDF импортирует выписку.';
+
+  @override
+  String get onboardingStep4Title => 'Обзор и лимиты';
+
+  @override
+  String get onboardingStep4Text =>
+      'Доходы, расходы и план по категориям за месяц, плюс остатки по счетам. Месячные лимиты дают светофор и уведомление.';
+
+  @override
+  String get onboardingStep5Title => 'Необязательно: ключ OpenAI';
+
+  @override
+  String get onboardingStep5Text =>
+      'Нужен только для незнакомых продавцов в выписках и для скриншотов. Всё остальное работает офлайн.';
+
+  @override
+  String get onboardingLater => 'Позже';
+
+  @override
+  String get howToUse => 'Как пользоваться приложением';
+
+  @override
+  String fileCreatedNotice(int year, String language) {
+    return 'В вашей папке создан Budget $year.xlsx ($language). Категории, план и лимиты можно менять в обзоре или в файле.';
+  }
+
+  @override
+  String get gotIt => 'Понятно';
+
+  @override
+  String get templateLanguage => 'Язык нового файла';
+
+  @override
+  String get categories => 'Категории';
+
+  @override
+  String get editCategories => 'Редактировать категории';
+
+  @override
+  String get editCategoriesHint =>
+      'Название, иконка, цвет и подсказка, хранятся в файле';
+
+  @override
+  String get editCategory => 'Категория';
+
+  @override
+  String get categoryName => 'Название';
+
+  @override
+  String get categoryHintLabel => 'Подсказка';
+
+  @override
+  String get categoryIconLabel => 'Иконка';
+
+  @override
+  String get categoryColorLabel => 'Цвет';
+
+  @override
+  String get autoChoice => 'Автоматически';
+
+  @override
+  String get renameNote =>
+      'При переименовании записи и строки обзора в файле года тоже переименуются.';
+
+  @override
+  String get categorySaved => 'Категория сохранена';
+
+  @override
+  String get categoryNameTaken => 'Категория с таким названием уже есть.';
+
+  @override
+  String get typeExpense => 'Расход';
+
+  @override
+  String get typeIncome => 'Доход';
+
+  @override
+  String get typeTransfer => 'Перевод';
+
+  @override
+  String translateFile(String language) {
+    return 'Перевести файл на $language';
+  }
+
+  @override
+  String translateFileHint(String fileLanguage, String appLanguage) {
+    return 'Файл: $fileLanguage · Приложение: $appLanguage. Категории, подсказки и подписи переводятся, записи переименовываются; имена листов остаются.';
+  }
+
+  @override
+  String translateFileConfirm(int year, String language) {
+    return 'Перевести Budget $year.xlsx на $language?';
+  }
+
+  @override
+  String translateFileDone(int count) {
+    return 'Переведено ячеек: $count';
+  }
+
+  @override
+  String get translate => 'Перевести';
+
+  @override
+  String fileLanguage(String language) {
+    return 'Язык файла: $language';
+  }
+
+  @override
+  String get chartHint =>
+      'План серым, факт цветом категории. Нажмите на столбец.';
+
+  @override
+  String get actual => 'Факт';
+
+  @override
+  String get planLabel => 'План';
+
+  @override
+  String get addCategory => 'Добавить категорию';
+
+  @override
+  String get categoryType => 'Тип';
+
+  @override
+  String get typeChangeNote =>
+      'Смена типа перестраивает строки доходов и расходов на листе обзора.';
+
+  @override
+  String get newExpenseNote =>
+      'Новая расходная категория не получает своей строки факт/план на листе обзора; приложение её всё равно считает.';
+
+  @override
+  String get categoryAdded => 'Категория добавлена';
 }
