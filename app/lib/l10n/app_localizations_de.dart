@@ -22,7 +22,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tabSettings => 'Einstellungen';
 
   @override
-  String get newEntry => 'Neue Buchung';
+  String get newEntry => 'Buchung';
 
   @override
   String get scanReceipt => 'Beleg scannen';

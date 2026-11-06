@@ -22,7 +22,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get tabSettings => 'Настройки';
 
   @override
-  String get newEntry => 'Новая запись';
+  String get newEntry => 'Запись';
 
   @override
   String get scanReceipt => 'Сканировать чек';

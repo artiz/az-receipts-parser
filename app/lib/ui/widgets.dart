@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../app.dart';
 import '../budget/budget_file.dart';
 import '../budget/budget_service.dart';
+import '../core/text_normalize.dart';
 import '../core/expression.dart';
 import '../l10n/app_localizations.dart';
 import '../theme.dart';
@@ -60,15 +61,45 @@ Color categoryColor(String name, Brightness brightness) {
   return HSLColor.fromAHSL(1, hue, dark ? 0.55 : 0.5, dark ? 0.62 : 0.42).toColor();
 }
 
-IconData categoryIcon(BudgetCategory? c) {
+/// An icon per category, chosen by keywords in its name (German and English)
+/// so a renamed or new category in the file still gets a fitting one.
+IconData categoryIcon(BudgetCategory? c, [String? name]) {
+  final n = normalize(name ?? c?.name ?? '');
+  const rules = <(List<String>, IconData)>[
+    (['wohn', 'miete', 'rent', 'home', 'haus '], Icons.home_outlined),
+    (['lebensmittel', 'grocer', 'food', 'essen', 'supermarkt'], Icons.shopping_basket_outlined),
+    (['restaurant', 'cafe', 'gastro', 'dining'], Icons.restaurant_outlined),
+    (['haushalt', 'household', 'drogerie'], Icons.chair_outlined),
+    (['kleidung', 'cloth', 'schuhe'], Icons.checkroom_outlined),
+    (['gesundheit', 'health', 'apotheke', 'arzt', 'medic'], Icons.favorite_outline),
+    (['schul', 'school', 'kurs', 'bildung', 'education', 'learn'], Icons.school_outlined),
+    (['kinder', 'kids', 'child', 'family', 'familie', 'taschengeld'], Icons.child_care_outlined),
+    (['transport', 'verkehr', 'auto', 'ticket', 'bahn', 'fuel', 'tank'], Icons.directions_bus_outlined),
+    (['freizeit', 'reise', 'travel', 'urlaub', 'leisure', 'hobby', 'sport'], Icons.flight_takeoff_outlined),
+    (['abo', 'internet', 'subscription', 'mobil', 'telefon', 'streaming'], Icons.wifi_outlined),
+    (['arbeit', 'work', 'job'], Icons.work_outline),
+    (['business', 'firma', 'unternehmen', 'geschaeft'], Icons.business_center_outlined),
+    (['kreditkarte', 'credit card', 'kredit'], Icons.credit_card_outlined),
+    (['bank', 'gebuehr', 'fee', 'zins'], Icons.account_balance_outlined),
+    (['spende', 'charity', 'donat'], Icons.volunteer_activism_outlined),
+    (['einnahme', 'income', 'gehalt', 'salary', 'lohn'], Icons.payments_outlined),
+    (['sonstig', 'other', 'misc', 'divers'], Icons.more_horiz),
+    (['geschenk', 'gift'], Icons.card_giftcard_outlined),
+    (['tier', 'pet'], Icons.pets_outlined),
+    (['steuer', 'tax'], Icons.receipt_long_outlined),
+    (['versicherung', 'insurance'], Icons.shield_outlined),
+  ];
+  for (final (keys, icon) in rules) {
+    if (keys.any(n.contains)) return icon;
+  }
   if (c == null) return Icons.label_outline;
   switch (c.type) {
     case CategoryType.income:
-      return Icons.south_west;
+      return Icons.payments_outlined;
     case CategoryType.transfer:
       return Icons.swap_horiz;
     case CategoryType.expense:
-      return Icons.north_east;
+      return Icons.label_outline;
   }
 }
 
@@ -101,10 +132,16 @@ Color amountColor(BuildContext context, BudgetEntry e, BudgetService budget) {
 }
 
 class EntryTile extends StatelessWidget {
-  const EntryTile({super.key, required this.entry, this.onTap, this.trailing});
+  const EntryTile({super.key, required this.entry, this.onTap, this.trailing, this.zebra = false, this.dayStart = false});
   final BudgetEntry entry;
   final VoidCallback? onTap;
   final Widget? trailing;
+
+  /// Alternate row shading.
+  final bool zebra;
+
+  /// First row of a day: a heavier line above it.
+  final bool dayStart;
 
   @override
   Widget build(BuildContext context) {
@@ -112,17 +149,23 @@ class EntryTile extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final cat = budget.file?.category(entry.category);
     final isTransfer = cat?.isTransfer ?? false;
-    return ListTile(
+    final color = categoryColor(entry.category, Theme.of(context).brightness);
+    return Container(
+      decoration: BoxDecoration(
+        color: zebra ? scheme.surfaceContainerLow : null,
+        border: dayStart ? Border(top: BorderSide(color: scheme.outline, width: 2)) : null,
+      ),
+      child: ListTile(
       onTap: onTap,
       dense: true,
       leading: SizedBox(
-        width: 40,
+        width: 44,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(dateDm(entry.date), style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 4),
-            CategoryDot(name: entry.category),
+            const SizedBox(height: 2),
+            Icon(categoryIcon(cat, entry.category), size: 16, color: color),
           ],
         ),
       ),
@@ -153,14 +196,18 @@ class EntryTile extends StatelessWidget {
           ?trailing,
         ],
       ),
+      ),
     );
   }
 }
 
 class SyncStatusBar extends StatelessWidget {
-  const SyncStatusBar({super.key, required this.budget, this.onTap});
+  const SyncStatusBar({super.key, required this.budget, this.onTap, this.leading});
   final BudgetService budget;
   final VoidCallback? onTap;
+
+  /// Left side of the bar (e.g. the quick-entries toggle).
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) {
@@ -172,31 +219,27 @@ class SyncStatusBar extends StatelessWidget {
         final (icon, text, color) = switch (budget.state) {
           SyncState.noFolder => (Icons.folder_off_outlined, l.syncNoFolder, scheme.primary),
           SyncState.syncing => (Icons.sync, l.syncSyncing, scheme.onSurfaceVariant),
-          SyncState.idle => (Icons.cloud_done_outlined, l.syncIdle(budget.year ?? 0), scheme.onSurfaceVariant),
+          SyncState.idle => (Icons.cloud_done_outlined, l.syncIdle(budget.year ?? 0), scheme.tertiary),
           SyncState.offline => (Icons.cloud_off_outlined, l.syncOffline(budget.pending.length), scheme.primary),
           SyncState.error => (Icons.error_outline, budget.lastError ?? l.syncError, scheme.error),
         };
         return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
+          padding: const EdgeInsets.fromLTRB(12, 4, 8, 4),
           child: Row(
             children: [
-              Expanded(
-                child: InkWell(
-                  onTap: onTap,
-                  child: Row(
-                    children: [
-                      Icon(icon, size: 16, color: color),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(text, style: TextStyle(fontSize: 12, color: color), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                    ],
-                  ),
-                ),
-              ),
-              if (budget.pending.isNotEmpty && budget.state != SyncState.offline)
+              ?leading,
+              const Spacer(),
+              if (budget.pending.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.only(right: 6),
                   child: Text(l.pendingCount(budget.pending.length), style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
                 ),
+              IconButton(
+                tooltip: text,
+                visualDensity: VisualDensity.compact,
+                icon: Icon(icon, size: 20, color: color),
+                onPressed: onTap,
+              ),
               if (budget.yearFiles.isNotEmpty)
                 DropdownButtonHideUnderline(
                   child: DropdownButton<int>(

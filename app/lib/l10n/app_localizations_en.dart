@@ -22,7 +22,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabSettings => 'Settings';
 
   @override
-  String get newEntry => 'New entry';
+  String get newEntry => 'Entry';
 
   @override
   String get scanReceipt => 'Scan receipt';

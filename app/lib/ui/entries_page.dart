@@ -1,9 +1,10 @@
-/// Home: the upper half holds the quick tiles learned from the file, the
-/// lower half the bookings table with a search field, paged as you scroll.
+/// Home: the bookings table over the full height, with the quick tiles
+/// learned from the file in a panel that drops down from the status line.
 library;
 
 import 'package:flutter/material.dart';
 
+import '../app.dart';
 import '../budget/budget_file.dart';
 import '../budget/budget_service.dart';
 import '../budget/entry_suggest.dart';
@@ -28,6 +29,7 @@ class _EntriesPageState extends State<EntriesPage> {
   final _scroll = ScrollController();
   int _visible = _pageSize;
   bool _loadingMore = false;
+  bool _tilesOpen = false;
 
   @override
   void initState() {
@@ -62,6 +64,7 @@ class _EntriesPageState extends State<EntriesPage> {
   Future<void> _addFromTile(QuickTile tile) async {
     final l = AppLocalizations.of(context);
     final budget = widget.budget;
+    setState(() => _tilesOpen = false);
     final entry = await showEntrySheet(
       context,
       budget: budget,
@@ -86,6 +89,7 @@ class _EntriesPageState extends State<EntriesPage> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final budget = widget.budget;
+    final scheme = Theme.of(context).colorScheme;
     return ListenableBuilder(
       listenable: budget,
       builder: (context, _) {
@@ -103,7 +107,18 @@ class _EntriesPageState extends State<EntriesPage> {
         final stranded = budget.strandedPending;
         return Column(
           children: [
-            SyncStatusBar(budget: budget, onTap: budget.sync),
+            SyncStatusBar(
+              budget: budget,
+              onTap: budget.sync,
+              leading: tiles.isEmpty
+                  ? null
+                  : FilledButton.tonalIcon(
+                      onPressed: () => setState(() => _tilesOpen = !_tilesOpen),
+                      icon: Icon(_tilesOpen ? Icons.expand_less : Icons.bolt_outlined, size: 18),
+                      label: Text(l.quickEntries),
+                      style: FilledButton.styleFrom(visualDensity: VisualDensity.compact, padding: const EdgeInsets.symmetric(horizontal: 12)),
+                    ),
+            ),
             if (stranded.isNotEmpty)
               MaterialBanner(
                 content: Text(l.strandedPending(stranded.length, stranded.first.date.year)),
@@ -116,98 +131,92 @@ class _EntriesPageState extends State<EntriesPage> {
                 leading: const Icon(Icons.calendar_month_outlined),
                 actions: [TextButton(onPressed: () => _createYear(context), child: Text(l.createYearFile(budget.currentYear)))],
               ),
-            Expanded(
-              flex: 1,
-              child: tiles.isEmpty
-                  ? EmptyHint(icon: Icons.bolt_outlined, text: l.noEntries)
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SectionTitle(l.quickEntries),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                            child: Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [for (final t in tiles) _QuickTileChip(tile: t, onTap: () => _addFromTile(t))],
-                            ),
+            // The quick tiles drop down over the top of the table.
+            AnimatedSize(
+              duration: const Duration(milliseconds: 180),
+              alignment: Alignment.topCenter,
+              child: _tilesOpen && tiles.isNotEmpty
+                  ? ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.42),
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: scheme.surfaceContainerLow,
+                          border: Border(bottom: BorderSide(color: scheme.outline, width: 2)),
+                        ),
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [for (final t in tiles) _QuickTileChip(tile: t, onTap: () => _addFromTile(t))],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    )
+                  : const SizedBox(width: double.infinity),
             ),
-            // A clear seam between the quick tiles and the table.
-            Container(
-              height: 10,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                border: Border.symmetric(horizontal: BorderSide(color: Theme.of(context).colorScheme.outline)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 4),
+              child: TextField(
+                controller: _search,
+                decoration: InputDecoration(
+                  hintText: l.searchHint(all.length),
+                  prefixIcon: const Icon(Icons.search),
+                  isDense: true,
+                  suffixIcon: _search.text.isEmpty ? null : IconButton(icon: const Icon(Icons.clear), onPressed: _search.clear),
+                ),
               ),
             ),
             Expanded(
-              flex: 1,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                    child: TextField(
-                      controller: _search,
-                      decoration: InputDecoration(
-                        hintText: l.searchHint(all.length),
-                        prefixIcon: const Icon(Icons.search),
-                        isDense: true,
-                        suffixIcon: _search.text.isEmpty ? null : IconButton(icon: const Icon(Icons.clear), onPressed: _search.clear),
+              child: shown.isEmpty
+                  ? EmptyHint(icon: Icons.receipt_long_outlined, text: l.noEntries)
+                  : RefreshIndicator(
+                      onRefresh: budget.sync,
+                      child: ListView.builder(
+                        controller: _scroll,
+                        padding: const EdgeInsets.only(bottom: 88),
+                        itemCount: count + (count < shown.length ? 1 : 0),
+                        itemBuilder: (context, i) {
+                          if (i >= count) {
+                            return const Padding(padding: EdgeInsets.all(12), child: Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))));
+                          }
+                          final e = shown[i];
+                          final dayStart = i > 0 && !_sameDay(shown[i - 1].date, e.date);
+                          return Dismissible(
+                            key: ValueKey(e.pendingId ?? 'row-${e.date.year}-${e.row}'),
+                            direction: DismissDirection.endToStart,
+                            confirmDismiss: (_) => confirmDeleteEntry(context, budget, e),
+                            background: Container(
+                              color: scheme.error,
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 20),
+                              child: const Icon(Icons.delete_outline, color: Colors.white),
+                            ),
+                            child: EntryTile(
+                              entry: e,
+                              zebra: i.isOdd,
+                              dayStart: dayStart,
+                              onTap: () => editEntry(context, budget, e),
+                              trailing: IconButton(
+                                tooltip: l.addToEntryShort,
+                                visualDensity: VisualDensity.compact,
+                                icon: const Icon(Icons.add_circle_outline, size: 20),
+                                onPressed: () => addToEntryDialog(context, budget, e),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
-                  ),
-                  Expanded(
-                    child: shown.isEmpty
-                        ? EmptyHint(icon: Icons.receipt_long_outlined, text: l.noEntries)
-                        : RefreshIndicator(
-                            onRefresh: budget.sync,
-                            child: ListView.builder(
-                              controller: _scroll,
-                              padding: const EdgeInsets.only(bottom: 88),
-                              itemCount: count + (count < shown.length ? 1 : 0),
-                              itemBuilder: (context, i) {
-                                if (i >= count) {
-                                  return const Padding(padding: EdgeInsets.all(12), child: Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))));
-                                }
-                                final e = shown[i];
-                                return Dismissible(
-                                  key: ValueKey(e.pendingId ?? 'row-${e.date.year}-${e.row}'),
-                                  direction: DismissDirection.endToStart,
-                                  confirmDismiss: (_) => confirmDeleteEntry(context, budget, e),
-                                  background: Container(
-                                    color: Theme.of(context).colorScheme.error,
-                                    alignment: Alignment.centerRight,
-                                    padding: const EdgeInsets.only(right: 20),
-                                    child: const Icon(Icons.delete_outline, color: Colors.white),
-                                  ),
-                                  child: EntryTile(
-                                    entry: e,
-                                    onTap: () => editEntry(context, budget, e),
-                                    trailing: IconButton(
-                                      tooltip: l.addToEntryShort,
-                                      visualDensity: VisualDensity.compact,
-                                      icon: const Icon(Icons.add_circle_outline, size: 20),
-                                      onPressed: () => addToEntryDialog(context, budget, e),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                  ),
-                ],
-              ),
             ),
           ],
         );
       },
     );
   }
+
+  static bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
   Future<void> _createYear(BuildContext context) async {
     final l = AppLocalizations.of(context);
@@ -230,28 +239,31 @@ class _QuickTileChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final color = categoryColor(tile.category, Theme.of(context).brightness);
+    final budget = AppScope.of(context).budget;
+    final cat = budget.file?.category(tile.category);
     return Material(
       color: scheme.surface,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: scheme.outline)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border(
+              top: BorderSide(color: color, width: 3),
+              left: BorderSide(color: scheme.outline),
+              right: BorderSide(color: scheme.outline),
+              bottom: BorderSide(color: scheme.outline),
+            ),
+          ),
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CategoryDot(name: tile.category, size: 8),
-                  const SizedBox(width: 6),
-                  Text(tile.category, style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
-                ],
-              ),
-              const SizedBox(height: 2),
+              Tooltip(message: tile.category, child: Icon(categoryIcon(cat, tile.category), size: 18, color: color)),
+              const SizedBox(width: 8),
               Text('${tile.description} · ${euroShort(tile.amount)}', style: const TextStyle(fontWeight: FontWeight.w600)),
             ],
           ),

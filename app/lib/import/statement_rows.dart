@@ -29,7 +29,36 @@ class RawBooking {
 class StatementRows {
   StatementRows._();
 
-  static final _booking = RegExp(r'^(.*?)\s{2,}(\d{2})\.(\d{2})\.(\d{4})\s{2,}(\d{1,3}(?:\.\d{3})*,\d{2})(-?)\s*$');
+  /// A booking row: text, two or more spaces, a date, two or more spaces, an
+  /// amount at the end. Dates: 31.08.2026, 31/08/2026, 2026-08-31. Amounts:
+  /// 1.234,56 / 1,234.56 / 1234.56, sign before or after, optional EUR/€.
+  static final _booking = RegExp(
+    r'^(.*?)\s{2,}(\d{1,2}[./]\d{1,2}[./]\d{4}|\d{4}-\d{2}-\d{2})\s{2,}(?:EUR|€)?\s*([-+]?)\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?|\d+(?:[.,]\d{2})?)\s*(?:EUR|€)?\s*([-+]?)\s*$',
+  );
+
+  static DateTime? _date(String s) {
+    final iso = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(s);
+    if (iso != null) return DateTime(int.parse(iso.group(1)!), int.parse(iso.group(2)!), int.parse(iso.group(3)!));
+    final dmy = RegExp(r'^(\d{1,2})[./](\d{1,2})[./](\d{4})$').firstMatch(s);
+    if (dmy == null) return null;
+    final d = int.parse(dmy.group(1)!), m = int.parse(dmy.group(2)!), y = int.parse(dmy.group(3)!);
+    if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+    return DateTime(y, m, d);
+  }
+
+  /// "1.234,56" → 1234.56, "1,234.56" → 1234.56, "1234.56" → 1234.56.
+  static double? _amount(String s) {
+    var t = s;
+    final lastComma = t.lastIndexOf(',');
+    final lastDot = t.lastIndexOf('.');
+    if (lastComma >= 0 && lastDot >= 0) {
+      t = lastComma > lastDot ? t.replaceAll('.', '').replaceAll(',', '.') : t.replaceAll(',', '');
+    } else if (lastComma >= 0) {
+      // "1,234" is a thousands group only when exactly three digits follow and no decimals exist.
+      t = RegExp(r',\d{3}$').hasMatch(t) && t.indexOf(',') == lastComma && t.length - lastComma == 4 && t.length > 5 ? t.replaceAll(',', '') : t.replaceAll(',', '.');
+    }
+    return double.tryParse(t);
+  }
   static final _pageNoise = RegExp(
     r'^(Erste Bank|Sparkassen AG|Am Belvedere|1100 Wien|Kontoauszug|Account Statement|Buchungstext|IBAN|Datum/Date|Old Balance|New Balance|Credits|Debits|Alter Kontostand|Neuer Kontostand|Gutschriften|Belastungen|last valid account name|Zuletzt g|AT\d\d\d\d|Seite/Page|\s*$)',
   );
@@ -43,13 +72,14 @@ class StatementRows {
       final line = raw.trimRight();
       final m = _booking.firstMatch(line);
       if (m != null) {
-        final day = int.parse(m.group(2)!);
-        final month = int.parse(m.group(3)!);
-        final year = int.parse(m.group(4)!);
-        final value = double.parse(m.group(5)!.replaceAll('.', '').replaceAll(',', '.'));
-        current = RawBooking(text: m.group(1)!.trim(), date: DateTime(year, month, day), amount: m.group(6) == '-' ? -value : value);
-        out.add(current);
-        continue;
+        final date = _date(m.group(2)!);
+        final value = _amount(m.group(4)!);
+        if (date != null && value != null) {
+          final negative = m.group(3) == '-' || m.group(5) == '-';
+          current = RawBooking(text: m.group(1)!.trim(), date: date, amount: negative ? -value : value);
+          out.add(current);
+          continue;
+        }
       }
       if (current == null) continue;
       final t = line.trim();

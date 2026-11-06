@@ -73,6 +73,25 @@ void main() {
     expect(StatementRows.looksLikeStatement('Just some OCR text 12,30'), isFalse);
   });
 
+  test('other banks: slash dates, english amounts, sign in front, ISO dates', () {
+    const other = '''
+Statement
+Description  Date  Amount
+POS SPAR WIEN  31/08/2026  -1,234.56
+Salary ACME Ltd  01/09/2026  +3,200.00
+Card payment TESCO  2026-09-02  EUR 12.30-
+Refund  03/09/2026  5,00
+''';
+    final rows = StatementRows.parse(other);
+    expect(rows.length, 4);
+    expect(rows[0].date, DateTime(2026, 8, 31));
+    expect(rows[0].amount, -1234.56);
+    expect(rows[1].amount, 3200);
+    expect(rows[2].date, DateTime(2026, 9, 2));
+    expect(rows[2].amount, -12.3);
+    expect(rows[3].amount, 5);
+  });
+
   test('rows become proposals: learned categories, skips, card bill, transfers', () async {
     final importer = StatementImporter(client: null, categories: categories, existing: existing, ownNames: const ['Max Muster']);
     final r = await importer.import(statement, sourceDescription: 'test');

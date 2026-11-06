@@ -127,7 +127,7 @@ abstract class AppLocalizations {
   /// No description provided for @newEntry.
   ///
   /// In en, this message translates to:
-  /// **'New entry'**
+  /// **'Entry'**
   String get newEntry;
 
   /// No description provided for @scanReceipt.
