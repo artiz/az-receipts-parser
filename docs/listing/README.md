@@ -6,14 +6,46 @@ Assets and texts for the Google Play listing (see [release.md](../release.md)).
 | --- | --- |
 | `icon-512.png` | App icon, 512×512 PNG, no transparency (the launcher icon's artwork on its light background) |
 | `feature-graphic-1024x500.png` | Feature graphic, 1024×500 |
-| `screenshots/01-buchungen.png` … `04-kategorien.png` | Phone screenshots, 591×1159 (status and navigation bars cropped); upload at least two, in this order |
+| `screenshots/01-entries.png` … `04-categories.png` | Phone screenshots, 591×1159 (status and navigation bars cropped); upload at least two, in this order |
 
-Screenshots are German; for the English and Russian listings reuse them or
-take the same four with the app language switched (Settings → Language).
+The listing's default language is English; German and Russian are added as
+translations with the texts below. The screenshots were taken with the app
+in German; take the same four with the app in English (Settings → Language)
+for the default listing, the German set then serves the German translation.
 
 Character limits: app name 30, short description 80, full description 4000.
 
-## Deutsch (Standardsprache)
+## English (default language)
+
+**Name**: AZ Budget
+
+**Short description** (≤ 80 characters):
+
+> Budgeting in your own Excel file: scan receipts, set limits, works offline.
+
+**Full description**:
+
+> AZ Budget is a household budget whose database is a plain Excel file: one spreadsheet per year in a folder you choose (Google Drive, Dropbox, iCloud or on the device). The app writes bookings straight into it, formulas, formats and charts survive, and you can open and edit the file on your laptop at any time. No account, no server, no ads.
+>
+> **Book in seconds**
+> • Quick entries from your most frequent expenses, autocomplete per category, sums like "5+6.50" in the amount field.
+> • Photograph a receipt or share it from the shop's app: merchant, date, total and every item are recognised on the device, the items go into the note. A receipt can be split across categories.
+> • Import a bank statement PDF: rows are read, categories proposed from your own history and rules, duplicates detected. Optionally an AI model with your own OpenAI key names merchants the file has never seen.
+>
+> **Keep the overview**
+> • Month overview with income, expenses, saldo, plan per category and a chart.
+> • Year view: twelve months, plan, cumulated saldo, comparison with the previous year.
+> • Month limits as a traffic light, a notification when one is reached and a forecast of the day the limit falls at your pace.
+> • Home-screen widget and launcher shortcuts straight into the scanner.
+>
+> **Your file, your data**
+> • New users get a ready template with categories, plan and limits in English, German or Russian; categories are editable in the app (name, type, icon, colour).
+> • A backup in the folder before every write, protection against simultaneous edits on the laptop, receipt photos next to the file, CSV export.
+> • Everything runs on the device. Only the optional statement import, with your own key, goes online.
+>
+> For families who keep their expenses together in one spreadsheet, and for everyone who wants their numbers to stay in Excel.
+
+## Deutsch (Übersetzung)
 
 **Name**: AZ Budget
 
@@ -43,37 +75,7 @@ Character limits: app name 30, short description 80, full description 4000.
 >
 > Für Familien, die ihre Ausgaben gemeinsam in einer Tabelle führen, und für alle, die ihre Zahlen in Excel behalten wollen.
 
-## English
-
-**Name**: AZ Budget
-
-**Short description** (≤ 80 characters):
-
-> Budgeting in your own Excel file: scan receipts, set limits, works offline.
-
-**Full description**:
-
-> AZ Budget is a household budget whose database is a plain Excel file: one spreadsheet per year in a folder you choose (Google Drive, Dropbox, iCloud or on the device). The app writes bookings straight into it, formulas, formats and charts survive, and you can open and edit the file on your laptop at any time. No account, no server, no ads.
->
-> **Book in seconds**
-> • Quick entries from your most frequent expenses, autocomplete per category, sums like "5+6.50" in the amount field.
-> • Photograph a receipt or share it from the shop's app: merchant, date, total and every item are recognised on the device, the items go into the note. A receipt can be split across categories.
-> • Import a bank statement PDF: rows are read, categories proposed from your own history and rules, duplicates detected. Optionally an AI model with your own OpenAI key names merchants the file has never seen.
->
-> **Keep the overview**
-> • Month overview with income, expenses, saldo, plan per category and a chart.
-> • Year view: twelve months, plan, cumulated saldo, comparison with the previous year.
-> • Month limits as a traffic light, a notification when one is reached and a forecast of the day the limit falls at your pace.
-> • Home-screen widget and launcher shortcuts straight into the scanner.
->
-> **Your file, your data**
-> • New users get a ready template with categories, plan and limits in German, English or Russian; categories are editable in the app (name, type, icon, colour).
-> • A backup in the folder before every write, protection against simultaneous edits on the laptop, receipt photos next to the file, CSV export.
-> • Everything runs on the device. Only the optional statement import, with your own key, goes online.
->
-> For families who keep their expenses together in one spreadsheet, and for everyone who wants their numbers to stay in Excel.
-
-## Русский
+## Русский (перевод)
 
 **Название**: AZ Budget
 

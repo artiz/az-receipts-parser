@@ -20,7 +20,8 @@ needs before it) comes later and reuses everything below.
    and the password: with Play App Signing a lost upload key can be reset
    through Play support, but it costs days.
 3. **Create the app** in the console: name `AZ Budget`, default language
-   German, app (not game), free. Free cannot be changed to paid later.
+   English (German and Russian are added as translations), app (not game),
+   free. Free cannot be changed to paid later.
 
 ## Build the bundle
 
@@ -63,7 +64,7 @@ All under **Set up your app** on the dashboard:
   budgeting tool declares "none of the above".
 - **Store listing**: everything is prepared in [listing/](listing/README.md):
   icon 512×512, feature graphic 1024×500, four phone screenshots and the
-  short and full descriptions in German (default), English and Russian.
+  short and full descriptions in English (default), German and Russian.
 
 ## Internal testing
 
