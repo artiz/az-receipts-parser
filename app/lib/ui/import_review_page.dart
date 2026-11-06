@@ -169,7 +169,7 @@ class _ImportReviewPageState extends State<ImportReviewPage> {
                         const SizedBox(width: 6),
                         Expanded(child: Text(flag, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: p.isDuplicate || p.skipReason != null ? scheme.onSurfaceVariant : scheme.primary))),
                       ] else if (e.note.isNotEmpty)
-                        Expanded(child: Text(' · ${e.note}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant))),
+                        Expanded(child: Text(' · ${oneLine(e.note)}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant))),
                     ],
                   ),
                 );

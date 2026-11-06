@@ -410,7 +410,42 @@ class XlsxSheet {
         n++;
       }
     }
+    // The table's own column format: Excel re-applies it to a cell on edit,
+    // which would bring the wrapping back.
+    n += _unwrapTableColumn(colIdx);
     if (n > 0) _dirty = true;
+    return n;
+  }
+
+  /// Strip wrapping from the data format (`dataDxfId`) of the table column
+  /// at [colIdx] in every table of this sheet.
+  int _unwrapTableColumn(int colIdx) {
+    var n = 0;
+    final relsPath = path.replaceFirstMapped(RegExp(r'([^/]+)$'), (m) => '_rels/${m[1]}.rels');
+    if (_workbook._archive.findFile(relsPath) == null) return 0;
+    final rels = XmlDocument.parse(_workbook._entryText(relsPath));
+    for (final rel in rels.rootElement.findElements('Relationship')) {
+      if (!(rel.getAttribute('Type') ?? '').endsWith('/table')) continue;
+      final target = rel.getAttribute('Target') ?? '';
+      final tablePath = target.startsWith('/') ? target.substring(1) : 'xl/worksheets/$target'.replaceAll('worksheets/../', '');
+      if (_workbook._archive.findFile(tablePath) == null) continue;
+      final doc = XmlDocument.parse(_workbook._entryText(tablePath));
+      final table = doc.rootElement;
+      final ref = table.getAttribute('ref') ?? '';
+      final start = RegExp(r'^([A-Z]+)').firstMatch(ref)?.group(1);
+      if (start == null) continue;
+      final index = colIdx - XlsxRef.columnIndex(start);
+      final columns = table.findAllElements('tableColumn').toList();
+      if (index < 0 || index >= columns.length) continue;
+      final column = columns[index];
+      final dxf = int.tryParse(column.getAttribute('dataDxfId') ?? '');
+      if (dxf == null) continue;
+      final u = _workbook.unwrappedDxf(dxf);
+      if (u == dxf) continue;
+      column.setAttribute('dataDxfId', '$u');
+      _workbook._replacedEntries[tablePath] = doc.toXmlString();
+      n++;
+    }
     return n;
   }
 
@@ -456,8 +491,29 @@ class XlsxWorkbook {
   XmlDocument? _styles;
   bool _stylesDirty = false;
   final Map<int, int> _unwrapped = {};
+  final Map<int, int> _unwrappedDxfs = {};
 
   XmlDocument get _stylesDoc => _styles ??= XmlDocument.parse(_entryText('xl/styles.xml'));
+
+  /// Index of a differential format (table column / conditional format)
+  /// like [dxfId] but without text wrapping; see [unwrappedStyle].
+  int unwrappedDxf(int dxfId) {
+    final cached = _unwrappedDxfs[dxfId];
+    if (cached != null) return cached;
+    final dxfs = _stylesDoc.rootElement.findElements('dxfs').firstOrNull;
+    if (dxfs == null) return dxfId;
+    final list = dxfs.findElements('dxf').toList();
+    if (dxfId < 0 || dxfId >= list.length) return dxfId;
+    final alignment = list[dxfId].findElements('alignment').firstOrNull;
+    final wrap = alignment?.getAttribute('wrapText');
+    if (wrap == null || wrap == '0' || wrap == 'false') return _unwrappedDxfs[dxfId] = dxfId;
+    final clone = list[dxfId].copy();
+    clone.findElements('alignment').first.removeAttribute('wrapText');
+    dxfs.children.add(clone);
+    dxfs.setAttribute('count', '${list.length + 1}');
+    _stylesDirty = true;
+    return _unwrappedDxfs[dxfId] = list.length;
+  }
 
   /// Index of a cell style like [styleIndex] but without text wrapping: the
   /// same index when it does not wrap, else a copy appended to `cellXfs`.

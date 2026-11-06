@@ -456,7 +456,7 @@ class _CategoryBreakdown extends StatelessWidget {
                     children: [
                       Text(dateDm(e.date), style: small),
                       const SizedBox(width: 8),
-                      Expanded(child: Text([e.description, if (e.note.isNotEmpty) e.note].join(' · '), style: small, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      Expanded(child: Text([e.description, if (e.note.isNotEmpty) oneLine(e.note)].join(' · '), style: small, maxLines: 1, overflow: TextOverflow.ellipsis)),
                       Text(euro(e.amount), style: small.copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
                     ],
                   ),

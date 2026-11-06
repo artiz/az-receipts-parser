@@ -39,7 +39,7 @@ Future<bool> saveNewEntry(BuildContext context, BudgetService budget, BudgetEntr
     );
     if (choice == null) return false;
     if (choice == 'merge') {
-      final extra = [if (entry.note.isNotEmpty) entry.note, if (entry.description.isNotEmpty && entry.description != similar.description) entry.description].join('; ');
+      final extra = [if (entry.description.isNotEmpty && entry.description != similar.description) entry.description, if (entry.note.isNotEmpty) entry.note].join('\n');
       await budget.appendNote(similar, extra);
       messenger.showSnackBar(SnackBar(content: Text(l.noteMerged)));
       return true;

@@ -224,6 +224,18 @@ void unwrapTests() {
       expect(RegExp(r'<row r="5"[^>]*>').firstMatch(sheet)![0], isNot(contains('ht=')), reason: 'auto height dropped');
       expect(RegExp(r'<row r="6"[^>]*>').firstMatch(sheet)![0], contains('ht="45"'), reason: 'hand-set height kept');
       expect(wrap.length, greaterThan(51), reason: 'unwrapped copies appended, shared styles untouched');
+      // The table column's own format (Excel re-applies it on edit) loses its wrapping too; other columns keep theirs.
+      final table = String.fromCharCodes(ZipDecoder().decodeBytes(bytes).findFile('xl/tables/table1.xml')!.content as List<int>);
+      final styles = String.fromCharCodes(ZipDecoder().decodeBytes(bytes).findFile('xl/styles.xml')!.content as List<int>);
+      final dxfs = RegExp(r'<dxf\b[^>]*?(?:/>|>.*?</dxf>)', dotAll: true).allMatches(RegExp(r'<dxfs[^>]*>(.*?)</dxfs>', dotAll: true).firstMatch(styles)!.group(1)!).map((m) => m[0]!).toList();
+      final noteDxf = int.parse(RegExp(r'name="Notiz" dataDxfId="(\d+)"').firstMatch(table)!.group(1)!);
+      final descDxf = int.parse(RegExp(r'name="Beschreibung" dataDxfId="(\d+)"').firstMatch(table)!.group(1)!);
+      expect(noteDxf, 15, reason: 'an unwrapped copy appended after the 15 existing dxfs');
+      expect(dxfs[noteDxf], isNot(contains('wrapText')));
+      expect(dxfs[noteDxf], contains('vertical="top"'));
+      expect(dxfs[13], contains('wrapText="1"'), reason: 'the original dxf stays for whoever else uses it');
+      expect(descDxf, 14, reason: 'Beschreibung keeps its italic dxf');
+      expect(dxfs[descDxf], contains('<i'));
       // Re-reading the result works and a second save changes nothing more.
       final g = BudgetFile.open(bytes);
       expect(g.entries.last.note, 'a; b; c');

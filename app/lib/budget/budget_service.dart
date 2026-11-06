@@ -295,7 +295,7 @@ class BudgetService extends ChangeNotifier {
     final sign = entry.amount < 0 ? -1 : 1;
     final newAmount = ((entry.amount + sign * amount.abs()) * 100).round() / 100;
     final piece = '+${_fmt(amount.abs())}${detail.trim().isEmpty ? '' : ' ${detail.trim()}'}';
-    final note = entry.note.isEmpty ? piece : '${entry.note}; $piece';
+    final note = entry.note.isEmpty ? piece : '${entry.note}\n$piece';
     await updateEntry(entry, entry.copyWith(amount: newAmount, note: note));
   }
 
@@ -304,7 +304,7 @@ class BudgetService extends ChangeNotifier {
   Future<void> appendNote(BudgetEntry entry, String text) async {
     final t = text.trim();
     if (t.isEmpty) return;
-    final note = entry.note.isEmpty ? t : (entry.note.contains(t) ? entry.note : '${entry.note}; $t');
+    final note = entry.note.isEmpty ? t : (entry.note.contains(t) ? entry.note : '${entry.note}\n$t');
     if (note == entry.note) return;
     await updateEntry(entry, entry.copyWith(note: note));
   }
