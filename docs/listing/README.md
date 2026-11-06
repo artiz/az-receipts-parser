@@ -6,12 +6,10 @@ Assets and texts for the Google Play listing (see [release.md](../release.md)).
 | --- | --- |
 | `icon-512.png` | App icon, 512×512 PNG, no transparency (the launcher icon's artwork on its light background) |
 | `feature-graphic-1024x500.png` | Feature graphic, 1024×500 |
-| `screenshots/01-entries.png` … `04-categories.png` | Phone screenshots, 591×1159 (status and navigation bars cropped); upload at least two, in this order |
+| `screenshots/01-entries.png` … `04-categories.png` | Phone screenshots, 1080×2125, app in English (status and navigation bars cropped); upload at least two, in this order |
 
 The listing's default language is English; German and Russian are added as
-translations with the texts below. The screenshots were taken with the app
-in German; take the same four with the app in English (Settings → Language)
-for the default listing, the German set then serves the German translation.
+translations with the texts below and can reuse the English screenshots.
 
 Character limits: app name 30, short description 80, full description 4000.
 
