@@ -35,9 +35,11 @@ void main() {
     expect(title, 'März');
     expect(amount, matches(RegExp(r'^\d[\d.\s\u00A0\u202F]* / 3[.\s\u00A0\u202F]000 €$'))); // de_AT groups with a narrow space
     expect(color, [0xFF3BA55D, 0xFFD9A400, 0xFFFF2E7E][s.limitLevel(s.monthExpenses(3)).index]);
-    // Unchanged numbers are not pushed again by the platform sink; the fake records every call.
+    // The fake records every call (the platform sink skips unchanged numbers).
+    final before = sink.updates.length;
     await updater.update();
-    expect(sink.updates.length, 2);
+    expect(sink.updates.length, before + 1);
+    expect(sink.updates.last, sink.updates[before - 1]);
     updater.dispose();
     await tmp.delete(recursive: true);
   });
