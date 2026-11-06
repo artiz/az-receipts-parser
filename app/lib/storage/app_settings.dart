@@ -119,6 +119,10 @@ class AppSettings extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// The "reaching limit 1" notification was shown for the month.
+  bool approachNotified(int year, int month) => _prefs.getBool('approach_notified_$year-$month') ?? false;
+  Future<void> setApproachNotified(int year, int month, bool on) => _prefs.setBool('approach_notified_$year-$month', on);
+
   /// The start screen was shown (or skipped) once.
   bool get onboardingSeen => _prefs.getBool(_kOnboarding) ?? false;
 

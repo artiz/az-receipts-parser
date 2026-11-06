@@ -29,6 +29,7 @@ Future<void> main() async {
     settings: settings,
     sink: notifications,
     texts: (level, expenses, limit) => limitNotificationTexts(settings.localeCode, level, expenses, limit, symbol: settings.currencySymbol),
+    approachTexts: (expenses, limit) => approachNotificationTexts(settings.localeCode, expenses, limit, symbol: settings.currencySymbol),
   );
   WidgetUpdater(budget: budget, sink: PlatformWidget(), symbol: () => settings.currencySymbol, localeCode: () => settings.localeCode);
   budget.init();

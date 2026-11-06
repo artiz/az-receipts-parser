@@ -125,8 +125,9 @@ the bookings in the file.
    `Übersicht` (Kontostand, Sparkonto, Kreditkarte offen) editable per month;
    those accept a small formula (`=500+232,23`) that is kept in the cell.
    Tapping the expenses card edits the two month limits (written to
-   `Einstellungen`). The first time the calendar month's expenses reach
-   limit 1, and again at limit 2, the app posts a system notification.
+   `Einstellungen`). The app posts a system notification once the calendar
+   month's expenses pass 80 % of limit 1 ("reaching limit 1"), once they
+   reach limit 1, and again at limit 2.
 7. **Settings → OpenAI**: API key (stored in Android's encrypted storage) and
    model (default `gpt-4.1-mini`). Only the statement/screenshot import uses it.
    **Settings → Language** overrides the system language (German, English,
