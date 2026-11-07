@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 
 import '../budget/budget_file.dart';
 import '../budget/budget_service.dart';
+import '../budget/entry_suggest.dart' show DescriptionSuggestion;
 import '../budget/receipt_split.dart';
 import '../l10n/app_localizations.dart';
 import 'split_receipt_page.dart';
@@ -191,7 +192,10 @@ class _EntryFormState extends State<EntryForm> {
     final suggestions = _category == null
         ? const []
         : budget.suggestions.descriptions(_category!, prefix: _description.text.trim(), limit: 8);
-    final top = _category == null ? const [] : budget.suggestions.descriptions(_category!, limit: 3);
+    // The category's usual bookings as chips, only while the description is
+    // still empty: a booking being edited, a scanned receipt or a quick tile
+    // has one already, and the chips would just distract there.
+    final top = _category == null || _description.text.trim().isNotEmpty ? const <DescriptionSuggestion>[] : budget.suggestions.descriptions(_category!, limit: 3);
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(16, 12, 16, 16 + widget.bottomPadding),
       child: Column(
@@ -219,7 +223,7 @@ class _EntryFormState extends State<EntryForm> {
             onChanged: (v) => setState(() => _category = v),
           ),
           const SizedBox(height: 8),
-          if (top.isNotEmpty)
+          if (top.isNotEmpty) ...[
             Wrap(
               spacing: 6,
               runSpacing: 6,
@@ -231,7 +235,8 @@ class _EntryFormState extends State<EntryForm> {
                   ),
               ],
             ),
-          const SizedBox(height: 8),
+            const SizedBox(height: 8),
+          ],
           TextField(
             controller: _description,
             focusNode: _descFocus,
