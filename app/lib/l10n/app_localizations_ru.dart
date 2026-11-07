@@ -220,6 +220,44 @@ class AppLocalizationsRu extends AppLocalizations {
       'Введите процент от 1 до 99 или сумму больше 0';
 
   @override
+  String fileVersion(String version) {
+    return 'Версия файла $version';
+  }
+
+  @override
+  String get fileVersionCurrent => 'Актуальная';
+
+  @override
+  String get fileUpdate => 'Обновить';
+
+  @override
+  String fileUpdateHint(String version, String steps) {
+    return 'Версия $version добавляет: $steps';
+  }
+
+  @override
+  String get migrationRules => 'лист правил';
+
+  @override
+  String get migrationStyle => 'колонку иконки и цвета';
+
+  @override
+  String get migrationLimits => 'настройки лимитов';
+
+  @override
+  String get migrationVersion => 'строку версии';
+
+  @override
+  String fileUpdateConfirm(String year) {
+    return 'Недостающие листы и настройки будут добавлены в Budget $year.xlsx. Существующее не меняется.';
+  }
+
+  @override
+  String fileUpdated(String version) {
+    return 'Файл обновлён до версии $version';
+  }
+
+  @override
   String get settingsOpenAi => 'OpenAI (импорт выписок)';
 
   @override

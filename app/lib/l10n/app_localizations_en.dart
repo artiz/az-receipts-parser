@@ -221,6 +221,44 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter a percentage between 1 and 99 or an amount above 0';
 
   @override
+  String fileVersion(String version) {
+    return 'File version $version';
+  }
+
+  @override
+  String get fileVersionCurrent => 'Up to date';
+
+  @override
+  String get fileUpdate => 'Update';
+
+  @override
+  String fileUpdateHint(String version, String steps) {
+    return 'Version $version adds: $steps';
+  }
+
+  @override
+  String get migrationRules => 'rules sheet';
+
+  @override
+  String get migrationStyle => 'icon & colour column';
+
+  @override
+  String get migrationLimits => 'limit settings';
+
+  @override
+  String get migrationVersion => 'version row';
+
+  @override
+  String fileUpdateConfirm(String year) {
+    return 'The missing sheets and settings are added to Budget $year.xlsx. Nothing that is already there is changed.';
+  }
+
+  @override
+  String fileUpdated(String version) {
+    return 'File updated to version $version';
+  }
+
+  @override
   String get settingsOpenAi => 'OpenAI (statement import)';
 
   @override

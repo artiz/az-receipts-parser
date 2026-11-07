@@ -221,6 +221,44 @@ class AppLocalizationsDe extends AppLocalizations {
       'Prozentwert zwischen 1 und 99 oder Betrag über 0 eingeben';
 
   @override
+  String fileVersion(String version) {
+    return 'Dateiversion $version';
+  }
+
+  @override
+  String get fileVersionCurrent => 'Aktuell';
+
+  @override
+  String get fileUpdate => 'Aktualisieren';
+
+  @override
+  String fileUpdateHint(String version, String steps) {
+    return 'Version $version ergänzt: $steps';
+  }
+
+  @override
+  String get migrationRules => 'Blatt Regeln';
+
+  @override
+  String get migrationStyle => 'Spalte Symbol & Farbe';
+
+  @override
+  String get migrationLimits => 'Limit-Einstellungen';
+
+  @override
+  String get migrationVersion => 'Versionszeile';
+
+  @override
+  String fileUpdateConfirm(String year) {
+    return 'Die fehlenden Blätter und Einstellungen werden in Budget $year.xlsx ergänzt. Vorhandenes bleibt unverändert.';
+  }
+
+  @override
+  String fileUpdated(String version) {
+    return 'Datei auf Version $version aktualisiert';
+  }
+
+  @override
   String get settingsOpenAi => 'OpenAI (Auszug-Import)';
 
   @override

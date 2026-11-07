@@ -34,6 +34,9 @@ from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.worksheet.table import Table, TableStyleInfo
 
 YEAR = 2026
+# Layout version written to the settings sheet ("Dateiversion"); files without
+# the row are version 1. Keep in step with BudgetFile.currentVersion.
+FILE_VERSION = 2
 FONT = "Roboto"
 C_DARK, C_MID, C_BAND, C_PINK, C_PINK_L, C_PINK_D, C_WHITE, C_GREEN = "3B3B40", "8E8E95", "F3F3F5", "E7A5BE", "FBE9F0", "B5456E", "FFFFFF", "4E7A5A"
 EUR = '#,##0.00 "€";-#,##0.00 "€";"–"'
@@ -63,6 +66,7 @@ L = {
         hist_cols=["Monat", "Saldo", "Kumuliert"], hist_chart="Kumuliertes Saldo",
         rules_title="Regeln", rules_sub="Beim Import von Kontoauszügen und beim Scannen: enthält der Buchungstext das Muster, bekommt die Buchung diese Kategorie (und Beschreibung, wenn angegeben). Groß-/Kleinschreibung ist egal, * steht für beliebigen Text. Die App fragt erst danach die Historie und zuletzt das Modell.",
         rules_cols=["Muster", "Kategorie", "Beschreibung"],
+        version_label="Dateiversion", version_note="Aufbau der Datei; die App bringt ältere Dateien in den Einstellungen auf den neuesten Stand",
         categories=[
             ("Wohnen", 0, "Miete, Energie, Versicherung, Möbel"), ("Lebensmittel", 0, "Supermarkt, Bäckerei"), ("Restaurants & Cafés", 0, "Essen außer Haus, Lieferdienste, Kantine"),
             ("Haushalt", 0, "Drogerie, Deko, Geräte, Kleinkram"), ("Kleidung", 0, ""), ("Gesundheit", 0, "Apotheke, Ärzte, Versicherung"),
@@ -94,6 +98,7 @@ L = {
         hist_cols=["Month", "Saldo", "Cumulated"], hist_chart="Cumulated saldo",
         rules_title="Rules", rules_sub="For statement imports and scans: when the booking text contains the pattern, the booking gets this category (and description, if given). Case does not matter, * stands for any text. The app asks the history only after the rules, and the model last.",
         rules_cols=["Pattern", "Category", "Description"],
+        version_label="File version", version_note="Layout of the file; the app brings older files up to date in its settings",
         categories=[
             ("Housing", 0, "Rent, energy, insurance, furniture"), ("Groceries", 0, "Supermarket, bakery"), ("Restaurants & Cafés", 0, "Eating out, delivery, canteen"),
             ("Household", 0, "Drugstore, decoration, appliances, small stuff"), ("Clothing", 0, ""), ("Health", 0, "Pharmacy, doctors, insurance"),
@@ -125,6 +130,7 @@ L = {
         hist_cols=["Месяц", "Сальдо", "Накопительно"], hist_chart="Сальдо накопительно",
         rules_title="Правила", rules_sub="При импорте выписок и сканировании: если текст операции содержит шаблон, запись получает эту категорию (и описание, если задано). Регистр не важен, * означает любой текст. История проверяется после правил, модель в последнюю очередь.",
         rules_cols=["Шаблон", "Категория", "Описание"],
+        version_label="Версия файла", version_note="Структура файла; приложение обновляет старые файлы в настройках",
         categories=[
             ("Жильё", 0, "Аренда, энергия, страховка, мебель"), ("Продукты", 0, "Супермаркет, пекарня"), ("Рестораны и кафе", 0, "Еда вне дома, доставка, столовая"),
             ("Дом и быт", 0, "Бытовая химия, декор, техника, мелочи"), ("Одежда", 0, ""), ("Здоровье", 0, "Аптека, врачи, страховка"),
@@ -241,6 +247,10 @@ def build(lang, out):
         input_cell(ws.cell(row=r, column=7, value=val), EUR0)
         ws.cell(row=r, column=8, value=note).font = font(color=C_MID)
         wb.defined_names[names[i]] = DefinedName(names[i], attr_text=f"{q(s_set)}!$G${r}")
+    r = 5 + len(t["settings"])
+    ws.cell(row=r, column=6, value=t["version_label"]).font = font(bold=True)
+    ws.cell(row=r, column=7, value=FILE_VERSION).font = font()
+    ws.cell(row=r, column=8, value=t["version_note"]).font = font(color=C_MID)
     ws.column_dimensions["F"].width = 20
     ws.column_dimensions["G"].width = 12
     ws.column_dimensions["H"].width = 48

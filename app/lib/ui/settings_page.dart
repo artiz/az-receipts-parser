@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app.dart';
-import '../budget/budget_labels.dart';
+import '../budget/budget_file.dart';
 import '../budget/budget_service.dart';
 import '../l10n/app_localizations.dart';
 import '../ocr/engine_controller.dart';
@@ -44,6 +44,13 @@ class SettingsPage extends StatelessWidget {
                       ? FilledButton.tonal(onPressed: () => createYearFile(context, budget), child: Text(l.createYearFile(budget.currentYear)))
                       : null,
                 ),
+                if (budget.file != null)
+                  ListTile(
+                    leading: Icon(budget.fileOutdated ? Icons.upgrade : Icons.verified_outlined),
+                    title: Text(l.fileVersion(budget.file!.version.toString())),
+                    subtitle: Text(budget.fileOutdated ? l.fileUpdateHint(BudgetFile.currentVersion.toString(), _stepsText(l, budget.file!.migrationSteps)) : l.fileVersionCurrent),
+                    trailing: budget.fileOutdated ? FilledButton.tonal(onPressed: () => _migrateFile(context, budget), child: Text(l.fileUpdate)) : null,
+                  ),
                 ListTile(
                   leading: Icon(budget.state == SyncState.syncing ? Icons.sync : Icons.cloud_sync_outlined),
                   title: Text(l.syncNow),
@@ -181,6 +188,40 @@ class SettingsPage extends StatelessWidget {
         },
       ),
     );
+  }
+
+  String _stepsText(AppLocalizations l, List<MigrationStep> steps) => steps
+      .map((s) => switch (s) {
+            MigrationStep.rulesSheet => l.migrationRules,
+            MigrationStep.styleColumn => l.migrationStyle,
+            MigrationStep.limits => l.migrationLimits,
+            MigrationStep.version => l.migrationVersion,
+          })
+      .join(', ');
+
+  Future<void> _migrateFile(BuildContext context, BudgetService budget) async {
+    final l = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final year = budget.year;
+    if (year == null) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: DialogTitle(child: Text(l.fileUpdateHint(BudgetFile.currentVersion.toString(), _stepsText(l, budget.file!.migrationSteps)))),
+        content: Text(l.fileUpdateConfirm(year.toString())),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l.fileUpdate)),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await budget.migrateFile(year: year);
+      messenger.showSnackBar(SnackBar(content: Text(l.fileUpdated(BudgetFile.currentVersion.toString()))));
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(l.importFailed(e.toString()))));
+    }
   }
 
   String _marginText(AppLocalizations l, ApproachMargin m) =>

@@ -155,6 +155,13 @@ the bookings in the file.
    overview/history labels into the app language; bookings are renamed with
    their categories, the user's own texts and the sheet names stay (formulas
    refer to the sheet names, and the entries table definition to its header).
+   **File version**: the settings sheet carries a `Dateiversion` row (the
+   templates write 2; a file without the row is version 1, the layout this
+   app started with). Settings shows the loaded file's version and, for an
+   older file, an *Update* button that adds what is missing in the file's
+   language: the `Regeln` sheet, the `Symbol & Farbe` column header, the
+   limit settings of the template, the version row. Existing rows, labels
+   and formulas are left alone; the update is idempotent.
 9. **Share into the app**: AZ Budget is a share target for PDFs, images and
    text ("Share" in a shop's app, Gmail, the gallery, or "Open with" on a
    downloaded file). A shop's digital receipt (PDF e-bon) is read from its

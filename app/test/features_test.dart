@@ -148,6 +148,88 @@ GHOST SHOP
     });
   });
 
+  group('file version and migration', () {
+    test('templates carry the current version, the legacy file is version 1 and lists what it lacks', () {
+      for (final lang in BudgetLabels.languages) {
+        final f = BudgetFile.open(template(lang));
+        expect(f.version, BudgetFile.currentVersion, reason: lang);
+        expect(f.migrationSteps, isEmpty, reason: lang);
+      }
+      final g = BudgetFile.open(fixture('budget_small.xlsx'));
+      expect(g.version, 1);
+      expect(g.migrationSteps, [MigrationStep.rulesSheet, MigrationStep.styleColumn, MigrationStep.version], reason: 'the limits are there already');
+    });
+
+    test('migrating the legacy file adds the rules sheet, the style header and the version row, once', () {
+      var g = BudgetFile.open(fixture('budget_small.xlsx'));
+      final limitsBefore = g.settings.map((s) => '${s.label}=${s.value}').toList();
+      g.migrate();
+      final bytes = g.save();
+      g = BudgetFile.open(bytes);
+      expect(g.version, BudgetFile.currentVersion);
+      expect(g.migrationSteps, isEmpty);
+      expect(g.rules, isEmpty);
+      final rules = g.workbook.sheet('Regeln')!;
+      expect(rules.readRow(1)['A']?.text, 'Regeln');
+      expect(rules.readRow(4)['A']?.text, 'Muster');
+      expect(g.workbook.sheet('Einstellungen')!.readRow(4)['E']?.text, 'Symbol & Farbe');
+      final version = g.settings.firstWhere((s) => s.label == 'Dateiversion');
+      expect(version.row, 10, reason: 'below the five limits, above the legend');
+      expect(version.note, isNotEmpty);
+      // Everything that was there stays: categories, limits, bookings, legacy groups column.
+      expect(g.settings.where((s) => s.label != 'Dateiversion').map((s) => '${s.label}=${s.value}'), limitsBefore);
+      expect(g.categories.length, 18);
+      expect(g.entries.length, 36);
+      expect(g.workbook.sheet('Einstellungen')!.readRow(4)['C']?.text, 'Frühere Gruppen (v1)');
+      // A second migration is a no-op; rules still land on the right row.
+      g.migrate();
+      g.addRule(BudgetRule(pattern: 'billa', category: 'Lebensmittel'));
+      g = BudgetFile.open(g.save());
+      expect(g.rules.single.row, 5);
+      expect(g.settings.where((s) => s.label == 'Dateiversion').length, 1);
+    });
+
+    test('a file without any settings gets the template limits, the header and the version in its language', () {
+      var e = BudgetFile.open(template('en'));
+      final sheet = e.workbook.sheet('Settings')!;
+      for (var r = 4; r <= 10; r++) {
+        for (final c in ['F', 'G', 'H']) {
+          sheet.clear('$c$r');
+        }
+      }
+      e = BudgetFile.open(e.save());
+      expect(e.settings, isEmpty);
+      expect(e.version, 1);
+      expect(e.migrationSteps, [MigrationStep.limits, MigrationStep.version]);
+      e.migrate();
+      e = BudgetFile.open(e.save());
+      expect(e.setting('Monatslimit 1'), 3000);
+      expect(e.setting('Monatslimit 2'), 4000);
+      expect(e.setting('Ausgabenlimit 3'), 1000);
+      expect(e.settings.map((s) => s.label), ['Month limit 1', 'Month limit 2', 'Expense limit 1', 'Expense limit 2', 'Expense limit 3', 'File version']);
+      expect(e.settings.first.note, 'Monthly expenses above this: amber');
+      expect(e.workbook.sheet('Settings')!.readRow(4)['F']?.text, 'Setting');
+      expect(e.version, 2);
+      expect(e.migrationSteps, isEmpty);
+    });
+
+    test('the service migrates the loaded year file in place', () async {
+      SharedPreferences.setMockInitialValues({});
+      final settings = await AppSettings.load();
+      await settings.setFolder('tree', 'Budget');
+      final tmp = await Directory.systemTemp.createTemp('azmig');
+      final folder = FakeFolder(fixture('budget_small.xlsx'));
+      final s = BudgetService(folder: folder, settings: settings, queueDir: tmp, clock: () => DateTime(2026, 4, 10));
+      await s.sync();
+      expect(s.fileOutdated, isTrue);
+      await s.migrateFile();
+      expect(s.fileOutdated, isFalse);
+      expect(s.file!.version, BudgetFile.currentVersion);
+      expect(s.file!.rules, isEmpty);
+      await tmp.delete(recursive: true);
+    });
+  });
+
   group('csv', () {
     late Directory tmp;
     late AppSettings settings;

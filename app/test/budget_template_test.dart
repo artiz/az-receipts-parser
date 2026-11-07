@@ -45,6 +45,7 @@ void main() {
         expect(f.settings.map((s) => s.label), contains(limitLabel));
         expect(f.setting('Monatslimit 1'), 3000);
         expect(f.setting('Monatslimit 2'), 4000);
+        expect(f.version, BudgetFile.currentVersion);
         expect(f.entries, isEmpty);
         expect(f.overview.rows.length, 3);
         expect(f.overview.byLabelPrefix('Kontostand')!.$1, 5);
@@ -66,7 +67,7 @@ void main() {
         expect(g.entries.single.category, groceries);
         expect(g.entries.single.row, 2);
         expect(g.setting('Monatslimit 1'), 3500);
-        expect(g.settings.length, 5, reason: 'the existing row is updated, not a German one appended');
+        expect(g.settings.length, 6, reason: 'the existing row is updated, not a German one appended (five limits and the version)');
         expect(g.overview.byLabelPrefix('Sparkonto')!.$2[2], 1000);
         expect(g.overview.plan[groceries]!.$2[2], 400);
         final history = g.workbook.sheet(BudgetLabels.historySheet[lang]!)!;
@@ -75,7 +76,7 @@ void main() {
         // A setting the template does not have gets the file's own language.
         g.setSetting('Ausgabenlimit 4', 2000);
         final h = BudgetFile.open(g.save());
-        expect(h.settings.length, 6);
+        expect(h.settings.length, 7);
         expect(h.setting('Ausgabenlimit 4'), 2000);
         expect(h.settings.last.label, BudgetLabels.settingInLanguage('Ausgabenlimit 4', lang));
       });

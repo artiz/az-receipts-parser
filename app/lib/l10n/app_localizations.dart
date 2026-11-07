@@ -454,6 +454,66 @@ abstract class AppLocalizations {
   /// **'Enter a percentage between 1 and 99 or an amount above 0'**
   String get approachMarginInvalid;
 
+  /// No description provided for @fileVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'File version {version}'**
+  String fileVersion(String version);
+
+  /// No description provided for @fileVersionCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to date'**
+  String get fileVersionCurrent;
+
+  /// No description provided for @fileUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get fileUpdate;
+
+  /// No description provided for @fileUpdateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version} adds: {steps}'**
+  String fileUpdateHint(String version, String steps);
+
+  /// No description provided for @migrationRules.
+  ///
+  /// In en, this message translates to:
+  /// **'rules sheet'**
+  String get migrationRules;
+
+  /// No description provided for @migrationStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'icon & colour column'**
+  String get migrationStyle;
+
+  /// No description provided for @migrationLimits.
+  ///
+  /// In en, this message translates to:
+  /// **'limit settings'**
+  String get migrationLimits;
+
+  /// No description provided for @migrationVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'version row'**
+  String get migrationVersion;
+
+  /// No description provided for @fileUpdateConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'The missing sheets and settings are added to Budget {year}.xlsx. Nothing that is already there is changed.'**
+  String fileUpdateConfirm(String year);
+
+  /// No description provided for @fileUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'File updated to version {version}'**
+  String fileUpdated(String version);
+
   /// No description provided for @settingsOpenAi.
   ///
   /// In en, this message translates to:
