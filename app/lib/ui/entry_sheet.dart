@@ -27,11 +27,6 @@ class EntryDraft {
   List<ReceiptItemDraft> items;
 }
 
-/// Number of entry forms open right now (0 or 1 in practice). The home
-/// page hides its quick tiles while one is open, so they do not sit above
-/// the form being filled.
-final ValueNotifier<int> openEntrySheets = ValueNotifier<int>(0);
-
 /// Shows the form; returns the entry when saved, null when dismissed.
 /// [onSplit] (receipt scans) enables "split": the entries, one per
 /// category, are handed to it and the sheet closes with null.
@@ -42,11 +37,6 @@ Future<BudgetEntry?> showEntrySheet(BuildContext context, {required BudgetServic
   // The sheet's own MediaQuery has no bottom padding; take the system
   // navigation bar height from the page that opened it.
   final navBar = MediaQuery.of(context).viewPadding.bottom;
-  openEntrySheets.value++;
-  return _showSheet(context, budget: budget, draft: draft, title: title, onDelete: onDelete, onSplit: onSplit, navBar: navBar).whenComplete(() => openEntrySheets.value--);
-}
-
-Future<BudgetEntry?> _showSheet(BuildContext context, {required BudgetService budget, EntryDraft? draft, String? title, Future<void> Function()? onDelete, Future<void> Function(List<BudgetEntry>)? onSplit, required double navBar}) {
   return showModalBottomSheet<BudgetEntry>(
     context: context,
     isScrollControlled: true,
