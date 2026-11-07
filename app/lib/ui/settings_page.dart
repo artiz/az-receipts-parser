@@ -89,9 +89,27 @@ class SettingsPage extends StatelessWidget {
               SwitchListTile(
                 secondary: const Icon(Icons.history_outlined),
                 title: Text(l.backupsTitle),
-                subtitle: Text(l.backupsHint),
+                subtitle: Text(l.backupsHint(settings.backupsKept)),
                 value: settings.backups,
                 onChanged: settings.setBackups,
+              ),
+              ListTile(
+                enabled: settings.backups,
+                leading: const Icon(Icons.layers_outlined),
+                title: Text(l.backupsKeptTitle),
+                trailing: DropdownButton<int>(
+                  value: AppSettings.backupsKeptChoices.contains(settings.backupsKept) ? settings.backupsKept : null,
+                  hint: Text('${settings.backupsKept}'),
+                  underline: const SizedBox.shrink(),
+                  items: [for (final n in AppSettings.backupsKeptChoices) DropdownMenuItem(value: n, child: Text('$n'))],
+                  onChanged: settings.backups
+                      ? (v) async {
+                          if (v == null) return;
+                          await settings.setBackupsKept(v);
+                          await budget.pruneBackups(); // fewer kept: the older copies go right away
+                        }
+                      : null,
+                ),
               ),
               SwitchListTile(
                 secondary: const Icon(Icons.photo_library_outlined),

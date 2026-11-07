@@ -26,6 +26,7 @@ class AppSettings extends ChangeNotifier {
   static const _kNotified = 'limit_notified_';
   static const _kOnboarding = 'onboarding_seen';
   static const _kBackups = 'backups';
+  static const _kBackupsKept = 'backups_kept';
   static const _kSavePhotos = 'save_photos';
   static const _kCurrency = 'currency';
   static const _kApproachEnabled = 'approach_enabled';
@@ -103,6 +104,15 @@ class AppSettings extends ChangeNotifier {
   bool get backups => _prefs.getBool(_kBackups) ?? true;
   Future<void> setBackups(bool on) async {
     await _prefs.setBool(_kBackups, on);
+    notifyListeners();
+  }
+
+  /// How many backups of a year file stay in `.backup/` (newest first).
+  static const List<int> backupsKeptChoices = [1, 2, 3, 5, 10, 20];
+  static const int defaultBackupsKept = 3;
+  int get backupsKept => (_prefs.getInt(_kBackupsKept) ?? defaultBackupsKept).clamp(1, 100);
+  Future<void> setBackupsKept(int n) async {
+    await _prefs.setInt(_kBackupsKept, n.clamp(1, 100));
     notifyListeners();
   }
 

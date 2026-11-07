@@ -700,8 +700,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get backupsTitle => 'Sicherungskopie vor jedem Schreiben';
 
   @override
-  String get backupsHint =>
-      '.backup/ im Budget-Ordner, die neuesten fünf bleiben';
+  String backupsHint(int count) {
+    return '.backup/ im Budget-Ordner, die neuesten $count bleiben';
+  }
+
+  @override
+  String get backupsKeptTitle => 'Anzahl Sicherungen';
 
   @override
   String get savePhotosTitle => 'Belegdateien aufbewahren';

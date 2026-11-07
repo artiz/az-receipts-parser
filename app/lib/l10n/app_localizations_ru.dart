@@ -696,7 +696,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get backupsTitle => 'Резервная копия перед каждой записью';
 
   @override
-  String get backupsHint => '.backup/ в папке бюджета, хранятся пять последних';
+  String backupsHint(int count) {
+    return '.backup/ в папке бюджета, хранятся последние $count';
+  }
+
+  @override
+  String get backupsKeptTitle => 'Сколько копий хранить';
 
   @override
   String get savePhotosTitle => 'Сохранять файлы чеков';
