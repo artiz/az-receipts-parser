@@ -36,13 +36,21 @@ class _EntriesPageState extends State<EntriesPage> {
     super.initState();
     _search.addListener(() => setState(() => _visible = _pageSize));
     _scroll.addListener(_onScroll);
+    openEntrySheets.addListener(_sheetChanged);
   }
 
   @override
   void dispose() {
+    openEntrySheets.removeListener(_sheetChanged);
     _search.dispose();
     _scroll.dispose();
     super.dispose();
+  }
+
+  /// A form opened or closed: the tiles fold away while one is open and come
+  /// back afterwards (the user's open/closed choice is kept).
+  void _sheetChanged() {
+    if (mounted) setState(() {});
   }
 
   /// Next page when the list is near its end; the data is in memory, so the
@@ -142,7 +150,7 @@ class _EntriesPageState extends State<EntriesPage> {
             AnimatedSize(
               duration: const Duration(milliseconds: 180),
               alignment: Alignment.topCenter,
-              child: _tilesOpen && tiles.isNotEmpty
+              child: _tilesOpen && tiles.isNotEmpty && openEntrySheets.value == 0
                   ? ConstrainedBox(
                       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.42),
                       child: Container(
