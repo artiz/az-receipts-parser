@@ -718,12 +718,13 @@ class BudgetFile {
     final sheet = _settingsSheet;
     final row = categories.last.row! + 1;
     if (!(sheet.readRow(row)['A']?.isEmpty ?? true)) throw XlsxException('row $row below the categories is not empty');
+    final all = [...categories, c.copyWith(name: name)];
     sheet.setText('A$row', name);
     sheet.setText('B$row', templateTexts[language]!['types.${c.type.index}']!);
     if (c.hint.trim().isNotEmpty) sheet.setText('D$row', c.hint.trim());
     if (c.styleCell.isNotEmpty) sheet.setText('E$row', c.styleCell);
-    _entriesSheet.extendListValidations(row);
-    final all = [...categories, c.copyWith(name: name)];
+    _invalidate(); // the dropdowns follow the categories as read back
+    _syncCategoryDropdowns();
     _rebuildTotals(all);
     if (c.type == CategoryType.transfer) _cloneTransferFormat(all, name);
     _invalidate();
@@ -982,7 +983,28 @@ class BudgetFile {
   /// not blow up the row height); a file without wrapping is left as is.
   Uint8List save() {
     _entriesSheet.unwrapColumn('F');
+    _syncCategoryDropdowns();
     return workbook.save();
+  }
+
+  /// Make every category dropdown (bookings, rules; whatever list validation
+  /// points at column A of the settings sheet) reach the last category row.
+  /// Runs on each save as well, so a file where a category was appended
+  /// before this covered Excel's own validation format is repaired by the
+  /// next write. Never shortens a range.
+  void _syncCategoryDropdowns() {
+    final int last;
+    try {
+      final cats = categories;
+      if (cats.isEmpty || cats.last.row == null) return;
+      last = cats.last.row!;
+    } on XlsxException {
+      return; // no category header: nothing to align with
+    }
+    final settingsName = _settingsSheet.name;
+    for (final name in workbook.sheetNames) {
+      workbook.sheet(name)?.extendListValidations(last, onSheet: settingsName);
+    }
   }
 
   static double _round2(double v) => (v * 100).round() / 100;
