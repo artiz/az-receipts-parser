@@ -97,6 +97,8 @@ class _EntryFormState extends State<EntryForm> {
       _category = byUse.isEmpty ? null : byUse.first;
     }
     _description.addListener(() => setState(() {}));
+    // The suggestion list shows only while the description has focus.
+    _descFocus.addListener(() => setState(() {}));
   }
 
   @override
@@ -117,8 +119,15 @@ class _EntryFormState extends State<EntryForm> {
 
   BudgetCategory? get _cat => _category == null ? null : widget.budget.file?.category(_category!);
 
-  void _pickSuggestion(String description, double? amount) {
+  /// Take a suggestion: its description, its last amount when none is typed
+  /// yet, and its category when it comes from another one (and that
+  /// category still exists in the file).
+  void _pickSuggestion(String description, double? amount, {String category = ''}) {
+    if (category.isNotEmpty && category != _category && widget.budget.categories.any((c) => c.name == category)) {
+      setState(() => _category = category);
+    }
     _description.text = description;
+    _description.selection = TextSelection.collapsed(offset: description.length);
     if (amount != null && _amount.text.trim().isEmpty) _amount.text = _fmt(amount);
     _amountFocus.requestFocus();
   }
@@ -189,9 +198,11 @@ class _EntryFormState extends State<EntryForm> {
     final scheme = Theme.of(context).colorScheme;
     final budget = widget.budget;
     final cats = budget.categoriesByName;
-    final suggestions = _category == null
-        ? const []
-        : budget.suggestions.descriptions(_category!, prefix: _description.text.trim(), limit: 8);
+    // Autocomplete from the whole history, the chosen category first; hidden
+    // once the text is exactly the only match (it was just picked).
+    final typed = _description.text.trim();
+    var suggestions = typed.isEmpty ? const <DescriptionSuggestion>[] : budget.suggestions.autocomplete(typed, category: _category, limit: 6);
+    if (suggestions.length == 1 && suggestions.single.description == typed && suggestions.single.category == _category) suggestions = const [];
     // The category's usual bookings as chips, only while the description is
     // still empty: a booking being edited, a scanned receipt or a quick tile
     // has one already, and the chips would just distract there.
@@ -210,6 +221,8 @@ class _EntryFormState extends State<EntryForm> {
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
+            // Keyed by the value: a suggestion from another category changes it from outside.
+            key: ValueKey(_category),
             initialValue: cats.any((c) => c.name == _category) ? _category : null,
             isExpanded: true,
             decoration: InputDecoration(labelText: l.category),
@@ -245,20 +258,30 @@ class _EntryFormState extends State<EntryForm> {
             textInputAction: TextInputAction.next,
             onSubmitted: (_) => _amountFocus.requestFocus(),
           ),
-          if (_descFocus.hasFocus && suggestions.isNotEmpty && _description.text.trim().isNotEmpty)
-            Container(
-              margin: const EdgeInsets.only(top: 4),
-              decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(12), border: Border.all(color: scheme.outline)),
-              child: Column(
-                children: [
-                  for (final s in suggestions.take(5))
-                    ListTile(
-                      dense: true,
-                      title: Text(s.description),
-                      trailing: Text(euroShort(s.lastAmount), style: TextStyle(color: scheme.onSurfaceVariant)),
-                      onTap: () => _pickSuggestion(s.description, s.lastAmount),
-                    ),
-                ],
+          if (_descFocus.hasFocus && suggestions.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              // A Material, not a decorated box: the rows paint their tap ripple on it.
+              child: Material(
+                color: scheme.surfaceContainerHighest,
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: scheme.outline)),
+                child: Column(
+                  children: [
+                    for (final s in suggestions)
+                      ListTile(
+                        dense: true,
+                        visualDensity: VisualDensity.compact,
+                        title: Text(s.description, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        // Matches from another category say which one picking them switches to.
+                        subtitle: s.category == _category
+                            ? null
+                            : Row(children: [CategoryDot(name: s.category), const SizedBox(width: 6), Expanded(child: Text(s.category, maxLines: 1, overflow: TextOverflow.ellipsis))]),
+                        trailing: Text(euroShort(s.lastAmount), style: TextStyle(color: scheme.onSurfaceVariant)),
+                        onTap: () => _pickSuggestion(s.description, s.lastAmount, category: s.category),
+                      ),
+                  ],
+                ),
               ),
             ),
           const SizedBox(height: 12),

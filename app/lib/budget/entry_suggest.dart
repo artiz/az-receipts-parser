@@ -34,8 +34,12 @@ class QuickTile {
 }
 
 class DescriptionSuggestion {
-  const DescriptionSuggestion({required this.description, required this.count, required this.lastAmount, required this.lastDate});
+  const DescriptionSuggestion({required this.description, required this.count, required this.lastAmount, required this.lastDate, this.category = ''});
   final String description;
+
+  /// Category of the bookings behind it ('' from [EntrySuggestions.descriptions],
+  /// which is asked for one category).
+  final String category;
   final int count;
   final double lastAmount;
   final DateTime lastDate;
@@ -130,6 +134,43 @@ class EntrySuggestions {
     return [
       for (final k in keys.take(limit))
         DescriptionSuggestion(description: display[k]!, count: count[k]!, lastAmount: last[k]!.amount, lastDate: last[k]!.date),
+    ];
+  }
+
+  /// Autocomplete over the whole history: descriptions matching [prefix]
+  /// (word prefix, case and accents aside; a substring from three letters
+  /// on), one per (category, description). Bookings of [category] come
+  /// first, then a match at the start of the description, then use.
+  List<DescriptionSuggestion> autocomplete(String prefix, {String? category, int limit = 6}) {
+    final p = _norm(prefix);
+    if (p.isEmpty) return const [];
+    final score = <String, double>{};
+    final count = <String, int>{};
+    final last = <String, BudgetEntry>{};
+    for (final e in _entries) {
+      if (e.description.isEmpty || e.category.isEmpty) continue;
+      final n = _norm(e.description);
+      if (!_prefixMatch(n, p) && !(p.length >= 3 && n.contains(p))) continue;
+      final key = '${e.category}\u0000$n';
+      score[key] = (score[key] ?? 0) + _weight(e);
+      count[key] = (count[key] ?? 0) + 1;
+      final prev = last[key];
+      if (prev == null || !e.date.isBefore(prev.date)) last[key] = e;
+    }
+    int rank(String key) {
+      final e = last[key]!;
+      final n = _norm(e.description);
+      return (e.category == category ? 2 : 0) + (n.startsWith(p) ? 1 : 0);
+    }
+
+    final keys = score.keys.toList()
+      ..sort((a, b) {
+        final r = rank(b) - rank(a);
+        return r != 0 ? r : score[b]!.compareTo(score[a]!);
+      });
+    return [
+      for (final k in keys.take(limit))
+        DescriptionSuggestion(description: last[k]!.description, category: last[k]!.category, count: count[k]!, lastAmount: last[k]!.amount, lastDate: last[k]!.date),
     ];
   }
 
