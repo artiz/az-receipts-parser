@@ -50,13 +50,14 @@ class _YearChartState extends State<YearChart> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              height: 22,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 22),
               child: sel == null
-                  ? Text(l.yearChartHint, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12))
+                  ? Text(l.yearChartHint, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis)
                   : Text(
                       '${widget.monthLabel(sel.month)} · ${l.expenses} ${euroShort(sel.expenses)}${sel.plan > 0 ? ' / ${euroShort(sel.plan)}' : ''} · ${l.saldo} ${euroShort(sel.saldo)} · Σ ${euroShort(cumulatedAt[_selected!])}',
                       style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
             ),

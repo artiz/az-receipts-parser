@@ -187,6 +187,77 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get settingsNotifications => 'Уведомления';
+
+  @override
+  String get approachTitle => 'Предупреждать перед лимитом 1';
+
+  @override
+  String get approachHint =>
+      'Уведомление незадолго до достижения лимита 1; лимиты 1 и 2 сообщают всегда';
+
+  @override
+  String get approachMarginTitle => 'Насколько близко к лимиту 1';
+
+  @override
+  String approachMarginPercent(String value) {
+    return '$value % лимита до его достижения';
+  }
+
+  @override
+  String approachMarginAmount(String value) {
+    return '$value до его достижения';
+  }
+
+  @override
+  String get approachModePercent => 'Проценты';
+
+  @override
+  String get approachModeAmount => 'Сумма';
+
+  @override
+  String get approachMarginInvalid =>
+      'Введите процент от 1 до 99 или сумму больше 0';
+
+  @override
+  String fileVersion(String version) {
+    return 'Версия файла $version';
+  }
+
+  @override
+  String get fileVersionCurrent => 'Актуальная';
+
+  @override
+  String get fileUpdate => 'Обновить';
+
+  @override
+  String fileUpdateHint(String version, String steps) {
+    return 'Версия $version добавляет: $steps';
+  }
+
+  @override
+  String get migrationRules => 'лист правил';
+
+  @override
+  String get migrationStyle => 'колонку иконки и цвета';
+
+  @override
+  String get migrationLimits => 'настройки лимитов';
+
+  @override
+  String get migrationVersion => 'строку версии';
+
+  @override
+  String fileUpdateConfirm(String year) {
+    return 'Недостающие листы и настройки будут добавлены в Budget $year.xlsx. Существующее не меняется.';
+  }
+
+  @override
+  String fileUpdated(String version) {
+    return 'Файл обновлён до версии $version';
+  }
+
+  @override
   String get settingsOpenAi => 'OpenAI (импорт выписок)';
 
   @override

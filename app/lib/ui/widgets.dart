@@ -396,3 +396,26 @@ class EmptyHint extends StatelessWidget {
     );
   }
 }
+
+/// Title row of a dialog with a close cross on the right: every alert can
+/// be dismissed without picking an answer (pops with no result).
+class DialogTitle extends StatelessWidget {
+  const DialogTitle({super.key, required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: child),
+        const SizedBox(width: 8),
+        IconButton(
+          icon: const Icon(Icons.close),
+          visualDensity: VisualDensity.compact,
+          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ],
+    );
+  }
+}

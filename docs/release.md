@@ -80,16 +80,29 @@ All under **Set up your app** on the dashboard:
    internal track; a "Not available" message right after rollout means
    waiting a bit).
 
-**Switching from a sideloaded APK.** A Play install is signed with the Play
-app signing key, the sideloaded build with the debug or upload key, so Android
-refuses to update one with the other: uninstall the sideloaded app first.
+**Switching keys.** Android updates an installed app only with a build
+signed by the same key. Three keys are in play: the debug key (builds from
+before `android\key.properties` existed), the upload key (builds since), and
+the Play app signing key (installs from the store). Crossing any of them
+fails with
+
+```
+INSTALL_FAILED_UPDATE_INCOMPATIBLE: Existing package dev.artiz.az_budget signatures do not match newer version
+```
+
+so uninstall first:
+
+```bat
+adb uninstall dev.artiz.az_budget
+```
+
 Device data goes with it (folder grant, language, OpenAI key, a queued
 booking not yet written); the `Budget <year>.xlsx` in the folder is untouched.
-After installing from Play: choose the folder again, re-enter the key.
-
-The same applies in reverse while developing: `scripts\build_android.bat
---install` cannot update a Play-installed app. Use a second device or
-uninstall.
+After the new install: choose the folder again, re-enter the key.
+`scripts\build_android.bat --install` prints this explanation when it hits
+the error. The first build after `make_keystore.bat` is such a switch, and
+so is the move to the Play install later. To keep developing beside a Play
+install, use a second device.
 
 ## Later: closed testing and production
 

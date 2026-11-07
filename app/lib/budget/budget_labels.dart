@@ -39,6 +39,7 @@ class BudgetLabels {
   static const List<List<String>> settings = [
     ['monatslimit', 'month limit', 'месячный лимит'],
     ['ausgabenlimit', 'expense limit', 'лимит записи'],
+    ['dateiversion', 'file version', 'версия файла'],
   ];
 
   static String _norm(String s) => s.trim().toLowerCase();

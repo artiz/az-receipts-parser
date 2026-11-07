@@ -506,6 +506,14 @@ class BudgetService extends ChangeNotifier {
   }
 
   /// Add a rule to the loaded year's `Regeln` sheet (created when missing).
+  /// The loaded file is older than the layout the app writes.
+  bool get fileOutdated => file != null && file!.version < BudgetFile.currentVersion;
+
+  /// Bring the year file up to the current layout (see [BudgetFile.migrate]).
+  Future<void> migrateFile({int? year}) async {
+    await _withFile(year ?? this.year ?? currentYear, (f) => f.migrate());
+  }
+
   Future<void> addRule(BudgetRule rule, {int? year}) async {
     await _withFile(year ?? this.year ?? currentYear, (f) => f.addRule(rule));
   }

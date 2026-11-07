@@ -116,6 +116,70 @@
       }
     }
   },
+  "settingsNotifications": "Notifications",
+  "approachTitle": "Warn before limit 1",
+  "approachHint": "A notification shortly before limit 1 is reached; limit 1 and 2 always notify",
+  "approachMarginTitle": "How close to limit 1",
+  "approachMarginPercent": "{value} % of the limit before it is reached",
+  "@approachMarginPercent": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "approachMarginAmount": "{value} before it is reached",
+  "@approachMarginAmount": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "approachModePercent": "Percent",
+  "approachModeAmount": "Amount",
+  "approachMarginInvalid": "Enter a percentage between 1 and 99 or an amount above 0",
+  "fileVersion": "File version {version}",
+  "@fileVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "fileVersionCurrent": "Up to date",
+  "fileUpdate": "Update",
+  "fileUpdateHint": "Version {version} adds: {steps}",
+  "@fileUpdateHint": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "steps": {
+        "type": "String"
+      }
+    }
+  },
+  "migrationRules": "rules sheet",
+  "migrationStyle": "icon & colour column",
+  "migrationLimits": "limit settings",
+  "migrationVersion": "version row",
+  "fileUpdateConfirm": "The missing sheets and settings are added to Budget {year}.xlsx. Nothing that is already there is changed.",
+  "@fileUpdateConfirm": {
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "fileUpdated": "File updated to version {version}",
+  "@fileUpdated": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "settingsOpenAi": "OpenAI (statement import)",
   "openAiKey": "API key",
   "openAiKeySet": "Stored on this device",
