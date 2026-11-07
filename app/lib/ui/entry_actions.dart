@@ -28,7 +28,7 @@ Future<bool> saveNewEntry(BuildContext context, BudgetService budget, BudgetEntr
     final choice = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(l.entryExistsTitle),
+        title: DialogTitle(child: Text(l.entryExistsTitle)),
         content: Text(l.entryExistsBody('${dateDm(similar.date)} ${similar.description.isEmpty ? similar.category : similar.description}', euro(similar.amount))),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
@@ -85,7 +85,7 @@ Future<bool> confirmDeleteEntry(BuildContext context, BudgetService budget, Budg
   final ok = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: Text(l.deleteEntryTitle),
+      title: DialogTitle(child: Text(l.deleteEntryTitle)),
       content: Text(l.deleteEntryBody('${dateDm(e.date)} ${e.description.isEmpty ? e.category : e.description} · ${euro(e.amount)}')),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
@@ -114,7 +114,7 @@ Future<void> addToEntryDialog(BuildContext context, BudgetService budget, Budget
   final ok = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: Text(l.addToEntry(e.description.isEmpty ? e.category : e.description, euro(e.amount))),
+      title: DialogTitle(child: Text(l.addToEntry(e.description.isEmpty ? e.category : e.description, euro(e.amount)))),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -163,7 +163,7 @@ Future<void> createYearFile(BuildContext context, BudgetService budget) async {
     language = await showDialog<String>(
       context: context,
       builder: (ctx) => SimpleDialog(
-        title: Text(l.templateLanguage),
+        title: DialogTitle(child: Text(l.templateLanguage)),
         children: [
           for (final code in BudgetLabels.languages)
             SimpleDialogOption(onPressed: () => Navigator.pop(ctx, code), child: Text(languageDisplayName(code))),

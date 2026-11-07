@@ -127,7 +127,7 @@ class _EntryFormState extends State<EntryForm> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(l.deleteEntryTitle),
+        title: DialogTitle(child: Text(l.deleteEntryTitle)),
         content: Text(l.deleteEntryBody('${_description.text.trim()} · ${_amount.text.trim()} €')),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),

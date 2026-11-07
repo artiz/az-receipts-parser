@@ -485,7 +485,7 @@ Future<void> _editPlan(BuildContext context, BudgetService budget, int year, Str
   final ok = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: Text(l.planTitle(category, monthLabel)),
+      title: DialogTitle(child: Text(l.planTitle(category, monthLabel))),
       content: TextField(
         controller: c,
         autofocus: true,
@@ -517,7 +517,7 @@ Future<void> _editLimits(BuildContext context, BudgetService budget, int year, d
   final ok = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: Text(l.limitsTitle),
+      title: DialogTitle(child: Text(l.limitsTitle)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -692,7 +692,7 @@ class _InputRow extends StatelessWidget {
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(label, style: const TextStyle(fontSize: 16)),
+        title: DialogTitle(child: Text(label, style: const TextStyle(fontSize: 16))),
         content: TextField(
           controller: controller,
           autofocus: true,

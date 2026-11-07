@@ -173,7 +173,7 @@ class SettingsPage extends StatelessWidget {
     final value = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(title),
+        title: DialogTitle(child: Text(title)),
         content: TextField(controller: controller, autofocus: true, obscureText: obscure, autocorrect: false, enableSuggestions: false),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
