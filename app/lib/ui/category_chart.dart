@@ -62,10 +62,10 @@ class _CategoryChartState extends State<CategoryChart> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              height: 22,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 22),
               child: sel == null
-                  ? Text(l.chartHint, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12))
+                  ? Text(l.chartHint, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis)
                   : Row(
                       children: [
                         Icon(categoryIcon(sel.category), size: 16, color: colors[_selected!]),
