@@ -463,7 +463,7 @@ class _StatCard extends StatelessWidget {
                 if (icon != null) Icon(icon, size: 18, color: color),
                 if (onTap != null && showEdit) ...[
                   const SizedBox(width: 6),
-                  Icon(Icons.edit_outlined, size: 16, color: scheme.onSurfaceVariant),
+                  Icon(Icons.edit_outlined, size: 32, color: scheme.onSurfaceVariant),
                 ],
               ],
             ),
@@ -587,7 +587,7 @@ class _CategoryRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   child: Padding(
                     padding: const EdgeInsets.only(left: 8, top: 2, bottom: 2),
-                    child: Icon(Icons.edit_outlined, size: 16, color: scheme.onSurfaceVariant),
+                    child: Icon(Icons.edit_outlined, size: 32, color: scheme.onSurfaceVariant),
                   ),
                 ),
             ],

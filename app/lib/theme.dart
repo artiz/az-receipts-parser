@@ -130,7 +130,8 @@ ThemeData azTheme(Brightness brightness) {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
     ),
     dialogTheme: DialogThemeData(backgroundColor: scheme.surface, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
-    snackBarTheme: SnackBarThemeData(behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+    // Every snackbar gets a close cross: "saved" messages must not sit on the table.
+    snackBarTheme: SnackBarThemeData(behavior: SnackBarBehavior.floating, showCloseIcon: true, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
     textTheme: base.textTheme.apply(fontFamily: 'Inter', bodyColor: scheme.onSurface, displayColor: scheme.onSurface),
   );
 }
