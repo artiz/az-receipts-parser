@@ -697,7 +697,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupsTitle => 'Backups before each write';
 
   @override
-  String get backupsHint => '.backup/ in the budget folder, newest five kept';
+  String backupsHint(int count) {
+    return '.backup/ in the budget folder, newest $count kept';
+  }
+
+  @override
+  String get backupsKeptTitle => 'Backups kept';
 
   @override
   String get savePhotosTitle => 'Keep receipt files';

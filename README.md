@@ -174,8 +174,10 @@ the bookings in the file.
     modification time right before writing; if the laptop saved in between,
     the change is applied again to the fresh file instead of overwriting it.
     Before each write the previous version is copied to `.backup/` in the
-    budget folder (at most once per ten minutes per year, the newest five
-    kept; *Settings → Data* switches it off).
+    budget folder (at most once per ten minutes per year, the newest three
+    kept by default; *Settings → Data* sets how many, or switches it off).
+    Older copies are deleted after each backup, once after the first sync
+    of a session and right when the number is lowered.
 11. **Split a receipt**: the entry sheet of a scanned receipt offers *Split by
     category*: give each item a category and one booking per category is
     saved, the items in the notes, a rounding remainder with the main one.

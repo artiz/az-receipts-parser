@@ -48,9 +48,10 @@ void main() {
     expect(folder.writes, 1, reason: 'the first attempt was discarded before writing');
   });
 
-  test('every write backs the previous version up, at most once per interval, five kept', () async {
+  test('every write backs the previous version up, at most once per interval, three kept by default', () async {
     final s = service();
     await s.sync();
+    expect(settings.backupsKept, 3, reason: 'default');
     final original = Uint8List.fromList(folder.files['f1']!);
     await s.setOverviewInput('Sparkonto', 4, 100);
     final dir = 'tree/${BudgetService.backupFolder}';
@@ -62,19 +63,70 @@ void main() {
 
     await s.setOverviewInput('Sparkonto', 4, 200); // 0 s later: within the interval, no new backup
     expect((await folder.listFiles(dir)).length, 1);
-    for (var i = 1; i <= 6; i++) {
+    Future<void> writeLater(double v) async {
       now = now.add(const Duration(minutes: 11));
-      await s.setOverviewInput('Sparkonto', 4, 200 + i.toDouble());
+      await s.setOverviewInput('Sparkonto', 4, v);
+    }
+
+    for (var i = 1; i <= 4; i++) {
+      await writeLater(200 + i.toDouble());
     }
     backups = await folder.listFiles(dir);
-    expect(backups.length, BudgetService.backupsKept);
+    expect(backups.length, 3);
     expect(folder.deleted.length, 2);
     expect(backups.map((b) => b.name), isNot(contains(startsWith('Budget 2026 2026-04-10T12-00-00'))), reason: 'the oldest were dropped');
 
+    // More kept: nothing is deleted until the new limit is reached.
+    await settings.setBackupsKept(5);
+    for (var i = 0; i < 2; i++) {
+      await writeLater(300 + i.toDouble());
+    }
+    expect((await folder.listFiles(dir)).length, 5);
+    expect(folder.deleted.length, 2);
+    // Fewer kept: the next backup trims the older ones down to it.
+    await settings.setBackupsKept(1);
+    await writeLater(400);
+    backups = await folder.listFiles(dir);
+    expect(backups.length, 1);
+    expect(backups.single.name, startsWith('Budget 2026 ${now.toIso8601String().substring(0, 19).replaceAll(':', '-')}'), reason: 'the newest stays');
+
     await settings.setBackups(false);
-    now = now.add(const Duration(minutes: 11));
-    await s.setOverviewInput('Sparkonto', 4, 300);
-    expect((await folder.listFiles(dir)).length, BudgetService.backupsKept, reason: 'switched off');
+    await writeLater(500);
+    expect((await folder.listFiles(dir)).length, 1, reason: 'switched off');
+  });
+
+  test('backups beyond the setting are deleted right after the first sync and when the setting is lowered', () async {
+    // Left over from the old default of five, plus one of another year and a foreign file.
+    final dir = await folder.ensureFolder('tree', const [BudgetService.backupFolder]);
+    for (var h = 10; h < 15; h++) {
+      await folder.createFile(dir, 'Budget 2026 2026-04-09T$h-00-00.xlsx', 'x', Uint8List(1));
+    }
+    await folder.createFile(dir, 'Budget 2025 2025-12-31T10-00-00.xlsx', 'x', Uint8List(1));
+    await folder.createFile(dir, 'notes.txt', 'text/plain', Uint8List(1));
+    Future<List<String>> names() async => [for (final f in await folder.listFiles(dir)) f.name]..sort();
+
+    final s = service();
+    final writesBefore = folder.writes;
+    await s.sync();
+    expect(await names(), [
+      'Budget 2025 2025-12-31T10-00-00.xlsx',
+      'Budget 2026 2026-04-09T12-00-00.xlsx',
+      'Budget 2026 2026-04-09T13-00-00.xlsx',
+      'Budget 2026 2026-04-09T14-00-00.xlsx',
+      'notes.txt',
+    ], reason: 'the newest three of 2026 stay; other years and other files are not touched');
+    expect(folder.writes, writesBefore, reason: 'cleaning up writes nothing to the budget file');
+
+    await s.sync();
+    expect((await names()).length, 5, reason: 'once per session');
+
+    await settings.setBackupsKept(1);
+    expect(await s.pruneBackups(), 2);
+    expect(await names(), ['Budget 2025 2025-12-31T10-00-00.xlsx', 'Budget 2026 2026-04-09T14-00-00.xlsx', 'notes.txt']);
+
+    await settings.setBackups(false);
+    await settings.setBackupsKept(1);
+    expect(await s.pruneBackups(), 0, reason: 'switched off: the copies that are there stay');
   });
 
   test('year summary is computed off the UI thread, cached per year until the next sync', () async {

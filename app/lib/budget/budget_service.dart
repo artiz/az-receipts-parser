@@ -433,7 +433,6 @@ class BudgetService extends ChangeNotifier {
   /// [backupInterval] (a burst of edits is one backup).
   final Map<int, DateTime> _lastBackup = {};
   static const Duration backupInterval = Duration(minutes: 10);
-  static const int backupsKept = 5;
   static const String backupFolder = '.backup';
 
   /// Read, change and write back a year file, the way a second editor is not
@@ -473,16 +472,47 @@ class BudgetService extends ChangeNotifier {
       final stamp = now.toIso8601String().substring(0, 19).replaceAll(':', '-');
       await folder.createFile(dir, 'Budget ${ref.year} $stamp.xlsx', xlsxMime, bytes);
       _lastBackup[ref.year] = now;
-      // Keep the newest [backupsKept] of this year; names sort by time.
-      final prefix = 'Budget ${ref.year} ';
-      final old = [for (final f in await folder.listFiles(dir)) if (f.name.startsWith(prefix) && f.name.endsWith('.xlsx')) f]..sort((a, b) => b.name.compareTo(a.name));
-      for (final f in old.skip(backupsKept)) {
-        await folder.deleteFile(f.uri);
-      }
+      await _prune(dir);
     } catch (_) {
       // A backup must never block the booking; the provider may not support folders.
     }
   }
+
+  /// Delete the backups beyond [AppSettings.backupsKept] per year, oldest
+  /// first (the names sort by time). Runs after each backup, after the
+  /// first sync of a session and when the setting changes, so lowering it
+  /// cleans up right away. Returns the number of deleted files.
+  Future<int> pruneBackups() async {
+    if (!settings.backups) return 0;
+    final root = settings.folderUri;
+    if (root == null) return 0;
+    try {
+      return await _prune(await folder.ensureFolder(root, const [backupFolder]));
+    } catch (_) {
+      return 0; // never in the way of the app; the provider may not support folders
+    }
+  }
+
+  static final _backupName = RegExp(r'^Budget (\d{4}) .+\.xlsx$');
+
+  Future<int> _prune(String dir) async {
+    final byYear = <String, List<FileEntry>>{};
+    for (final f in await folder.listFiles(dir)) {
+      final m = _backupName.firstMatch(f.name);
+      if (m != null) byYear.putIfAbsent(m.group(1)!, () => []).add(f);
+    }
+    var n = 0;
+    for (final files in byYear.values) {
+      files.sort((a, b) => b.name.compareTo(a.name));
+      for (final f in files.skip(settings.backupsKept)) {
+        await folder.deleteFile(f.uri);
+        n++;
+      }
+    }
+    return n;
+  }
+
+  bool _prunedThisSession = false;
 
   /// Store a receipt (photo or PDF) as `Belege/<year>/<date>_<merchant>.<ext>`
   /// next to the budget files; returns that relative path for the note.
@@ -597,6 +627,12 @@ class BudgetService extends ChangeNotifier {
       } while (_syncAgain);
     } finally {
       _running = null;
+    }
+    // Once per session, after the folder answered: trim backups left over
+    // from a larger setting (or the old default of five).
+    if (!_prunedThisSession && state != SyncState.noFolder && file != null) {
+      _prunedThisSession = true;
+      await pruneBackups();
     }
   }
 

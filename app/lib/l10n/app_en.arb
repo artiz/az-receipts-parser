@@ -535,7 +535,15 @@
   },
   "settingsData": "Data",
   "backupsTitle": "Backups before each write",
-  "backupsHint": ".backup/ in the budget folder, newest five kept",
+  "backupsHint": ".backup/ in the budget folder, newest {count} kept",
+  "@backupsHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupsKeptTitle": "Backups kept",
   "savePhotosTitle": "Keep receipt files",
   "savePhotosHint": "Belege/<year>/ in the budget folder, linked from the note",
   "currencyTitle": "Currency symbol",

@@ -1249,8 +1249,14 @@ abstract class AppLocalizations {
   /// No description provided for @backupsHint.
   ///
   /// In en, this message translates to:
-  /// **'.backup/ in the budget folder, newest five kept'**
-  String get backupsHint;
+  /// **'.backup/ in the budget folder, newest {count} kept'**
+  String backupsHint(int count);
+
+  /// No description provided for @backupsKeptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backups kept'**
+  String get backupsKeptTitle;
 
   /// No description provided for @savePhotosTitle.
   ///
