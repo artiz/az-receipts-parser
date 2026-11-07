@@ -95,5 +95,18 @@ if "%ADB%"=="" (
   exit /b %ERRORLEVEL%
 )
 echo Installing %APK% with "%ADB%" install -r
-"%ADB%" install -r "%APK%"
-exit /b %ERRORLEVEL%
+set "INSTALL_LOG=%TEMP%\az_budget_install.log"
+"%ADB%" install -r "%APK%" > "%INSTALL_LOG%" 2>&1
+set "RC=%ERRORLEVEL%"
+type "%INSTALL_LOG%"
+if not "%RC%"=="0" findstr /c:"INSTALL_FAILED_UPDATE_INCOMPATIBLE" "%INSTALL_LOG%" >nul && (
+  echo.
+  echo The app on the device was signed with another key: a build from before
+  echo android\key.properties existed ^(debug key^), or an install from Google Play.
+  echo Android never updates across keys. Uninstall first, which clears the app's
+  echo data on the device ^(folder grant, language, OpenAI key, queued bookings;
+  echo the Budget file in the folder is untouched^), then run this script again
+  echo and choose the folder again in the app:
+  echo   "%ADB%" uninstall dev.artiz.az_budget
+)
+exit /b %RC%
