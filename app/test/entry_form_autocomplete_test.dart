@@ -56,4 +56,42 @@ void main() {
     await tester.binding.setSurfaceSize(null);
     tmp.deleteSync(recursive: true);
   });
+
+  testWidgets('the description keeps focus when the first letter hides the category chips', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final settings = (await tester.runAsync(AppSettings.load))!;
+    await tester.runAsync(() => settings.setFolder('tree', 'Budget'));
+    final tmp = Directory.systemTemp.createTempSync('azfocus');
+    final budget = BudgetService(folder: FakeFolder(File('test/fixtures/budget_small.xlsx').readAsBytesSync()), settings: settings, queueDir: tmp, clock: () => DateTime(2026, 4, 10));
+    await tester.runAsync(budget.sync);
+    await tester.binding.setSurfaceSize(const Size(800, 1600));
+    await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: const Locale('de'),
+      home: AppScope(
+        budget: budget,
+        settings: settings,
+        engine: EngineController(),
+        child: Scaffold(body: EntryForm(budget: budget, draft: EntryDraft(category: 'Lebensmittel'))),
+      ),
+    ));
+    expect(find.byType(ActionChip), findsWidgets, reason: 'the chips show while the description is empty');
+    final description = find.byType(TextField).first;
+    await tester.tap(description);
+    await tester.pump();
+    FocusNode node() => tester.widget<EditableText>(find.descendant(of: find.byType(TextField).first, matching: find.byType(EditableText))).focusNode;
+    expect(node().hasFocus, isTrue);
+    // Type one letter the way the keyboard does (no re-focus by the test).
+    tester.testTextInput.enterText('S');
+    await tester.pump();
+    expect(find.byType(ActionChip), findsNothing, reason: 'the chips are gone after the first letter');
+    expect(node().hasFocus, isTrue, reason: 'the field keeps the focus');
+    tester.testTextInput.enterText('Sp');
+    await tester.pump();
+    expect(tester.widget<TextField>(find.byType(TextField).first).controller!.text, 'Sp', reason: 'the second letter lands in the same field');
+    expect(node().hasFocus, isTrue);
+    await tester.binding.setSurfaceSize(null);
+    tmp.deleteSync(recursive: true);
+  });
 }

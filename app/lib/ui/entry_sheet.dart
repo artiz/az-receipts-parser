@@ -236,21 +236,31 @@ class _EntryFormState extends State<EntryForm> {
             onChanged: (v) => setState(() => _category = v),
           ),
           const SizedBox(height: 8),
-          if (top.isNotEmpty) ...[
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                for (final s in top)
-                  ActionChip(
-                    label: Text('${s.description} · ${euroShort(s.lastAmount)}'),
-                    onPressed: () => _pickSuggestion(s.description, s.lastAmount),
+          // Fixed slots (chips above, suggestions below) and keyed fields: a
+          // child appearing or vanishing next to the description must not
+          // shift it in the column, or Flutter rebuilds the field and the
+          // keyboard loses it after the first letter.
+          KeyedSubtree(
+            key: const ValueKey('chips'),
+            child: top.isEmpty
+                ? const SizedBox.shrink()
+                : Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        for (final s in top)
+                          ActionChip(
+                            label: Text('${s.description} · ${euroShort(s.lastAmount)}'),
+                            onPressed: () => _pickSuggestion(s.description, s.lastAmount),
+                          ),
+                      ],
+                    ),
                   ),
-              ],
-            ),
-            const SizedBox(height: 8),
-          ],
+          ),
           TextField(
+            key: const ValueKey('description'),
             controller: _description,
             focusNode: _descFocus,
             textCapitalization: TextCapitalization.sentences,
@@ -258,8 +268,11 @@ class _EntryFormState extends State<EntryForm> {
             textInputAction: TextInputAction.next,
             onSubmitted: (_) => _amountFocus.requestFocus(),
           ),
-          if (_descFocus.hasFocus && suggestions.isNotEmpty)
-            Padding(
+          KeyedSubtree(
+            key: const ValueKey('suggestions'),
+            child: !_descFocus.hasFocus || suggestions.isEmpty
+                ? const SizedBox.shrink()
+                : Padding(
               padding: const EdgeInsets.only(top: 4),
               // A Material, not a decorated box: the rows paint their tap ripple on it.
               child: Material(
@@ -284,8 +297,10 @@ class _EntryFormState extends State<EntryForm> {
                 ),
               ),
             ),
+          ),
           const SizedBox(height: 12),
           TextField(
+            key: const ValueKey('amount'),
             controller: _amount,
             focusNode: _amountFocus,
             keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
@@ -299,6 +314,7 @@ class _EntryFormState extends State<EntryForm> {
           ),
           const SizedBox(height: 12),
           TextField(
+            key: const ValueKey('note'),
             controller: _note,
             textCapitalization: TextCapitalization.sentences,
             decoration: InputDecoration(labelText: l.note),
