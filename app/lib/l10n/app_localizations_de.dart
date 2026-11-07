@@ -188,6 +188,39 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get settingsNotifications => 'Benachrichtigungen';
+
+  @override
+  String get approachTitle => 'Vor Limit 1 warnen';
+
+  @override
+  String get approachHint =>
+      'Eine Benachrichtigung kurz bevor Limit 1 erreicht ist; Limit 1 und 2 melden sich immer';
+
+  @override
+  String get approachMarginTitle => 'Wie nah an Limit 1';
+
+  @override
+  String approachMarginPercent(String value) {
+    return '$value % des Limits bevor es erreicht ist';
+  }
+
+  @override
+  String approachMarginAmount(String value) {
+    return '$value bevor es erreicht ist';
+  }
+
+  @override
+  String get approachModePercent => 'Prozent';
+
+  @override
+  String get approachModeAmount => 'Betrag';
+
+  @override
+  String get approachMarginInvalid =>
+      'Prozentwert zwischen 1 und 99 oder Betrag über 0 eingeben';
+
+  @override
   String get settingsOpenAi => 'OpenAI (Auszug-Import)';
 
   @override

@@ -5,6 +5,7 @@ import '../budget/budget_labels.dart';
 import '../budget/budget_service.dart';
 import '../l10n/app_localizations.dart';
 import '../ocr/engine_controller.dart';
+import '../storage/app_settings.dart';
 import 'categories_page.dart';
 import 'entry_actions.dart';
 import 'onboarding_page.dart';
@@ -113,6 +114,21 @@ class SettingsPage extends StatelessWidget {
                     }
                   },
                 ),
+              SectionTitle(l.settingsNotifications),
+              SwitchListTile(
+                secondary: const Icon(Icons.notifications_active_outlined),
+                title: Text(l.approachTitle),
+                subtitle: Text(l.approachHint),
+                value: settings.approachEnabled,
+                onChanged: settings.setApproachEnabled,
+              ),
+              ListTile(
+                enabled: settings.approachEnabled,
+                leading: const Icon(Icons.speed_outlined),
+                title: Text(l.approachMarginTitle),
+                subtitle: Text(_marginText(l, settings.approachMargin)),
+                onTap: () => _editApproachMargin(context, settings),
+              ),
               SectionTitle(l.language),
               ListTile(
                 leading: const Icon(Icons.translate_outlined),
@@ -165,6 +181,64 @@ class SettingsPage extends StatelessWidget {
         },
       ),
     );
+  }
+
+  String _marginText(AppLocalizations l, ApproachMargin m) =>
+      m.byAmount ? l.approachMarginAmount(euroShort(m.amount)) : l.approachMarginPercent(euroShortPlain(m.percent));
+
+  /// Margin dialog: percent of limit 1 or a fixed amount below it, one field.
+  Future<void> _editApproachMargin(BuildContext context, AppSettings settings) async {
+    final l = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    var margin = settings.approachMargin;
+    final controller = TextEditingController(text: euroShortPlain(margin.byAmount ? margin.amount : margin.percent));
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: DialogTitle(child: Text(l.approachMarginTitle)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SegmentedButton<bool>(
+                segments: [
+                  ButtonSegment(value: false, label: Text(l.approachModePercent), icon: const Icon(Icons.percent)),
+                  ButtonSegment(value: true, label: Text(l.approachModeAmount), icon: const Icon(Icons.payments_outlined)),
+                ],
+                selected: {margin.byAmount},
+                onSelectionChanged: (sel) => setState(() {
+                  // Keep what was typed for the mode we leave, show the other mode's value.
+                  final typed = parseAmount(controller.text);
+                  margin = margin.byAmount ? margin.copyWith(amount: typed ?? margin.amount) : margin.copyWith(percent: typed ?? margin.percent);
+                  margin = margin.copyWith(byAmount: sel.first);
+                  controller.text = euroShortPlain(margin.byAmount ? margin.amount : margin.percent);
+                }),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(suffixText: margin.byAmount ? moneySymbol : '%', helperText: margin.byAmount ? l.approachMarginAmount(moneySymbol) : l.approachMarginPercent('')),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l.save)),
+          ],
+        ),
+      ),
+    );
+    if (ok != true) return;
+    final v = parseAmount(controller.text);
+    final valid = v != null && (margin.byAmount ? v > 0 : v >= 1 && v <= 99);
+    if (!valid) {
+      messenger.showSnackBar(SnackBar(content: Text(l.approachMarginInvalid)));
+      return;
+    }
+    await settings.setApproachMargin(margin.byAmount ? margin.copyWith(amount: v) : margin.copyWith(percent: v));
   }
 
   Future<void> _editText(BuildContext context, {required String title, required String initial, bool obscure = false, required Future<void> Function(String) onSave}) async {

@@ -400,6 +400,60 @@ abstract class AppLocalizations {
   /// **'Last sync {time}'**
   String lastSync(String time);
 
+  /// No description provided for @settingsNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get settingsNotifications;
+
+  /// No description provided for @approachTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Warn before limit 1'**
+  String get approachTitle;
+
+  /// No description provided for @approachHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A notification shortly before limit 1 is reached; limit 1 and 2 always notify'**
+  String get approachHint;
+
+  /// No description provided for @approachMarginTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How close to limit 1'**
+  String get approachMarginTitle;
+
+  /// No description provided for @approachMarginPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} % of the limit before it is reached'**
+  String approachMarginPercent(String value);
+
+  /// No description provided for @approachMarginAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} before it is reached'**
+  String approachMarginAmount(String value);
+
+  /// No description provided for @approachModePercent.
+  ///
+  /// In en, this message translates to:
+  /// **'Percent'**
+  String get approachModePercent;
+
+  /// No description provided for @approachModeAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get approachModeAmount;
+
+  /// No description provided for @approachMarginInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a percentage between 1 and 99 or an amount above 0'**
+  String get approachMarginInvalid;
+
   /// No description provided for @settingsOpenAi.
   ///
   /// In en, this message translates to:

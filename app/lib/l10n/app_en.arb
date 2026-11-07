@@ -116,6 +116,29 @@
       }
     }
   },
+  "settingsNotifications": "Notifications",
+  "approachTitle": "Warn before limit 1",
+  "approachHint": "A notification shortly before limit 1 is reached; limit 1 and 2 always notify",
+  "approachMarginTitle": "How close to limit 1",
+  "approachMarginPercent": "{value} % of the limit before it is reached",
+  "@approachMarginPercent": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "approachMarginAmount": "{value} before it is reached",
+  "@approachMarginAmount": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "approachModePercent": "Percent",
+  "approachModeAmount": "Amount",
+  "approachMarginInvalid": "Enter a percentage between 1 and 99 or an amount above 0",
   "settingsOpenAi": "OpenAI (statement import)",
   "openAiKey": "API key",
   "openAiKeySet": "Stored on this device",

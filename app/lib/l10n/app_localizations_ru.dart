@@ -187,6 +187,39 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get settingsNotifications => 'Уведомления';
+
+  @override
+  String get approachTitle => 'Предупреждать перед лимитом 1';
+
+  @override
+  String get approachHint =>
+      'Уведомление незадолго до достижения лимита 1; лимиты 1 и 2 сообщают всегда';
+
+  @override
+  String get approachMarginTitle => 'Насколько близко к лимиту 1';
+
+  @override
+  String approachMarginPercent(String value) {
+    return '$value % лимита до его достижения';
+  }
+
+  @override
+  String approachMarginAmount(String value) {
+    return '$value до его достижения';
+  }
+
+  @override
+  String get approachModePercent => 'Проценты';
+
+  @override
+  String get approachModeAmount => 'Сумма';
+
+  @override
+  String get approachMarginInvalid =>
+      'Введите процент от 1 до 99 или сумму больше 0';
+
+  @override
   String get settingsOpenAi => 'OpenAI (импорт выписок)';
 
   @override

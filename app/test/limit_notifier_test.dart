@@ -73,19 +73,53 @@ void main() {
     await service.sync();
     expect(service.monthExpenses(4), 230);
 
-    // Early warning: 80 % of limit 1 spent, the limit itself not reached, once per month.
+    // Early warning: within 5 % of limit 1 (the default margin), the limit
+    // itself not reached, once per month.
     await service.setMonthLimits(1000, 2000); // 230 of 1000: nothing
     final before = sink.shown.length;
-    await service.addEntry(BudgetEntry(date: DateTime(2026, 4, 9), category: 'Haushalt', description: 'Ikea', amount: 600)); // 830 ≥ 800
+    await service.addEntry(BudgetEntry(date: DateTime(2026, 4, 9), category: 'Haushalt', description: 'Ikea', amount: 600)); // 830 < 950
+    await service.sync();
+    expect(sink.shown.length, before, reason: '80 % is not near enough with a 5 % margin');
+    await service.addEntry(BudgetEntry(date: DateTime(2026, 4, 9), category: 'Haushalt', description: 'Lampe', amount: 130)); // 960 ≥ 950
     await service.sync();
     expect(sink.shown.length, before + 1);
     expect(sink.shown.last.$2, 'Limit 1 fast erreicht');
-    expect(sink.shown.last.$3, matches(RegExp(r'^Ausgaben diesen Monat: 830 € von 1[.\s\u00A0\u202F]000 €\.$')));
+    expect(sink.shown.last.$3, matches(RegExp(r'^Ausgaben diesen Monat: 960 € von 1[.\s\u00A0\u202F]000 €\.$')));
     await service.sync();
     expect(sink.shown.length, before + 1, reason: 'once');
-    await service.addEntry(BudgetEntry(date: DateTime(2026, 4, 9), category: 'Haushalt', description: 'Lampe', amount: 200)); // 1030: limit 1 itself
+
+    // A wider margin as a fixed amount: 300 below the limit, i.e. from 700
+    // on; the month is already flagged, so nothing new until it drops below.
+    await settings.setApproachMargin(const ApproachMargin(byAmount: true, percent: 5, amount: 300));
+    await service.sync();
+    expect(sink.shown.length, before + 1);
+    // Switched off: no warning even after the flag is forgotten.
+    await settings.setApproachNotified(2026, 4, false);
+    await settings.setApproachEnabled(false);
+    await service.sync();
+    expect(sink.shown.length, before + 1, reason: 'switched off');
+    await settings.setApproachEnabled(true); // the settings change re-checks by itself
+    await Future<void>.delayed(Duration.zero);
+    expect(sink.shown.length, before + 2);
+    expect(sink.shown.last.$3, startsWith('Ausgaben diesen Monat: 960 €'));
+
+    await service.addEntry(BudgetEntry(date: DateTime(2026, 4, 9), category: 'Haushalt', description: 'Regal', amount: 100)); // 1060: limit 1 itself
     await service.sync();
     expect(sink.shown.last.$2, 'Limit 1 erreicht');
     await tmp.delete(recursive: true);
+  });
+
+  test('approach margin: percent or amount below limit 1, nonsense margins disable it', () {
+    const pct = ApproachMargin(byAmount: false, percent: 5, amount: 100);
+    expect(pct.threshold(1000), 950);
+    expect(pct.copyWith(percent: 20).threshold(500), 400);
+    expect(pct.copyWith(percent: 100).threshold(1000), isNull, reason: 'would fire at zero expenses');
+    const amt = ApproachMargin(byAmount: true, percent: 5, amount: 100);
+    expect(amt.threshold(1000), 900);
+    expect(amt.threshold(100), isNull, reason: 'margin covers the whole limit');
+    expect(amt.copyWith(amount: 0).threshold(1000), isNull, reason: 'no margin means limit 1 itself');
+    // Both values are kept across a mode switch.
+    final m = const ApproachMargin(byAmount: false, percent: 10, amount: 250).copyWith(byAmount: true);
+    expect((m.byAmount, m.percent, m.amount), (true, 10.0, 250.0));
   });
 }
