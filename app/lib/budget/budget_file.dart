@@ -96,6 +96,9 @@ class BudgetCategory {
   String toString() => 'BudgetCategory($name, $type)';
 }
 
+/// Something [BudgetFile.migrate] adds to an older file.
+enum MigrationStep { rulesSheet, styleColumn, limits, version }
+
 class BudgetSetting {
   const BudgetSetting({required this.label, required this.value, required this.row, this.note = ''});
   final String label;
@@ -274,10 +277,10 @@ class BudgetFile {
     return out;
   }
 
-  /// Append a rule; the sheet (title, explanation, header) is created in the
-  /// file's language when the file has none.
-  void addRule(BudgetRule rule) {
-    if (rule.pattern.trim().isEmpty || rule.category.trim().isEmpty) throw XlsxException('empty rule');
+  /// The rules sheet with its header row; created (title, explanation,
+  /// header) in the file's language when the file has none, a header added
+  /// when a sheet of that name has none.
+  (XlsxSheet, int) _ensureRulesSheet() {
     var sheet = _rulesSheet;
     int header;
     if (sheet == null) {
@@ -299,6 +302,13 @@ class BudgetFile {
         header = 1;
       }
     }
+    return (sheet, header);
+  }
+
+  /// Append a rule; the sheet is created when the file has none.
+  void addRule(BudgetRule rule) {
+    if (rule.pattern.trim().isEmpty || rule.category.trim().isEmpty) throw XlsxException('empty rule');
+    final (sheet, header) = _ensureRulesSheet();
     var row = header + 1;
     for (final r in rules) {
       if (r.row != null && r.row! >= row) row = r.row! + 1;
@@ -404,6 +414,56 @@ class BudgetFile {
       if (BudgetLabels.settingMatches(s.label, labelPrefix)) return s.value;
     }
     return null;
+  }
+
+  // --- layout version ---------------------------------------------------------
+
+  /// Layout version the templates are built with (tools/budget_template.py,
+  /// FILE_VERSION). Version 1 is the file this app started with: no rules
+  /// sheet, no icon/colour column; a file without the version row is 1.
+  static const int currentVersion = 2;
+
+  /// Default month and single-entry limits of the templates, written when a
+  /// file has none of them (label key in template_texts, value).
+  static const List<(int, double)> _defaultLimits = [(0, 3000), (1, 4000), (2, 200), (3, 500), (4, 1000)];
+
+  int get version => setting('Dateiversion')?.round() ?? 1;
+
+  /// What [migrate] would add to this file, empty when it is up to date.
+  List<MigrationStep> get migrationSteps {
+    final out = <MigrationStep>[];
+    if (_rulesSheet == null) out.add(MigrationStep.rulesSheet);
+    if (_settingsSheet.readRow(_categoryHeaderRow)['E']?.text?.trim().isEmpty ?? true) out.add(MigrationStep.styleColumn);
+    if (_defaultLimits.any((d) => setting(templateTexts['de']!['settings.${d.$1}.label']!) == null)) out.add(MigrationStep.limits);
+    if (version < currentVersion) out.add(MigrationStep.version);
+    return out;
+  }
+
+  /// Bring an older file up to [currentVersion]: the rules sheet, the
+  /// "Symbol & Farbe" header of the categories, the limit settings the
+  /// templates have, then the version row. Everything the file already has
+  /// is left alone; the user's own labels, rows and formulas are not touched.
+  void migrate() {
+    final steps = migrationSteps;
+    if (steps.isEmpty) return;
+    final texts = templateTexts[language]!;
+    final sheet = _settingsSheet;
+    final headerRow = _categoryHeaderRow;
+    if (steps.contains(MigrationStep.rulesSheet)) _ensureRulesSheet();
+    if (steps.contains(MigrationStep.styleColumn)) sheet.setText('E$headerRow', texts['cat_cols.4']!);
+    if (sheet.readRow(headerRow)['F']?.text?.trim().isEmpty ?? true) {
+      sheet.setText('F$headerRow', texts['setting_cols.0']!);
+      sheet.setText('G$headerRow', texts['setting_cols.1']!);
+    }
+    for (final (i, value) in _defaultLimits) {
+      final label = templateTexts['de']!['settings.$i.label']!;
+      if (setting(label) == null) {
+        setSetting(label, value, note: texts['settings.$i.note']!);
+        _settings = null;
+      }
+    }
+    setSetting('Dateiversion', currentVersion.toDouble(), note: texts['version_note']!);
+    _invalidate();
   }
 
   // --- reading ---------------------------------------------------------------
@@ -658,12 +718,13 @@ class BudgetFile {
     final sheet = _settingsSheet;
     final row = categories.last.row! + 1;
     if (!(sheet.readRow(row)['A']?.isEmpty ?? true)) throw XlsxException('row $row below the categories is not empty');
+    final all = [...categories, c.copyWith(name: name)];
     sheet.setText('A$row', name);
     sheet.setText('B$row', templateTexts[language]!['types.${c.type.index}']!);
     if (c.hint.trim().isNotEmpty) sheet.setText('D$row', c.hint.trim());
     if (c.styleCell.isNotEmpty) sheet.setText('E$row', c.styleCell);
-    _entriesSheet.extendListValidations(row);
-    final all = [...categories, c.copyWith(name: name)];
+    _invalidate(); // the dropdowns follow the categories as read back
+    _syncCategoryDropdowns();
     _rebuildTotals(all);
     if (c.type == CategoryType.transfer) _cloneTransferFormat(all, name);
     _invalidate();
@@ -922,7 +983,28 @@ class BudgetFile {
   /// not blow up the row height); a file without wrapping is left as is.
   Uint8List save() {
     _entriesSheet.unwrapColumn('F');
+    _syncCategoryDropdowns();
     return workbook.save();
+  }
+
+  /// Make every category dropdown (bookings, rules; whatever list validation
+  /// points at column A of the settings sheet) reach the last category row.
+  /// Runs on each save as well, so a file where a category was appended
+  /// before this covered Excel's own validation format is repaired by the
+  /// next write. Never shortens a range.
+  void _syncCategoryDropdowns() {
+    final int last;
+    try {
+      final cats = categories;
+      if (cats.isEmpty || cats.last.row == null) return;
+      last = cats.last.row!;
+    } on XlsxException {
+      return; // no category header: nothing to align with
+    }
+    final settingsName = _settingsSheet.name;
+    for (final name in workbook.sheetNames) {
+      workbook.sheet(name)?.extendListValidations(last, onSheet: settingsName);
+    }
   }
 
   static double _round2(double v) => (v * 100).round() / 100;

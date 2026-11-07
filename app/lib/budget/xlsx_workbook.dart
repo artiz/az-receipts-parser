@@ -347,20 +347,31 @@ class XlsxSheet {
     return n;
   }
 
-  /// Grow every list validation of the form `$A$5:$A$22` to end at
-  /// [lastRow] (the category dropdown follows an added category).
-  int extendListValidations(int lastRow) {
+  /// Extend list validations whose source is a column-A range ending
+  /// above [lastRow] (a category dropdown after a category was appended) so
+  /// the range ends at [lastRow]. Both places a validation can live are
+  /// covered: `dataValidation/formula1`, and the `x14:dataValidation/
+  /// x14:formula1/xm:f` that Excel writes into the sheet's extLst for a list
+  /// on another sheet. With [onSheet] only ranges on that sheet are touched
+  /// (quoted or not). Ranges are only ever made longer. Returns the number
+  /// of formulas changed.
+  int extendListValidations(int lastRow, {String? onSheet}) {
     var n = 0;
-    final range = RegExp(r'(\$A\$\d+:\$A\$)(\d+)');
-    for (final dv in _document.rootElement.findAllElements('dataValidation')) {
-      for (final f in dv.findElements('formula1')) {
-        final text = f.innerText;
-        final m = range.firstMatch(text);
-        if (m == null || int.parse(m.group(2)!) >= lastRow) continue;
-        f.children.clear();
-        f.children.add(XmlText(text.replaceFirst(range, '${m.group(1)}$lastRow')));
-        n++;
+    final range = RegExp(r"((?:'(?:[^']|'')+'|[^'!=\s,;()]+)!)?(\$A\$\d+:\$A\$)(\d+)");
+    String unquote(String s) => s.startsWith("'") && s.endsWith("'") ? s.substring(1, s.length - 1).replaceAll("''", "'") : s;
+    for (final f in _document.rootElement.descendantElements.where((e) => e.name.local == 'formula1').toList()) {
+      // Excel's extension form keeps the formula one level down, in <xm:f>.
+      final target = f.childElements.firstWhere((c) => c.name.local == 'f', orElse: () => f);
+      final text = target.innerText;
+      final m = range.firstMatch(text);
+      if (m == null || int.parse(m.group(3)!) >= lastRow) continue;
+      if (onSheet != null) {
+        final prefix = m.group(1);
+        if (prefix == null || unquote(prefix.substring(0, prefix.length - 1)) != onSheet) continue;
       }
+      target.children.clear();
+      target.children.add(XmlText(text.replaceRange(m.start, m.end, '${m.group(1) ?? ''}${m.group(2)}$lastRow')));
+      n++;
     }
     if (n > 0) _dirty = true;
     return n;

@@ -22,7 +22,7 @@ import '../theme.dart';
   }
 }
 
-/// Texts of the early warning: 80 % of limit 1 spent, the limit not reached.
+/// Texts of the early warning: within the margin of limit 1, the limit not reached.
 (String, String) approachNotificationTexts(String localeCode, double expenses, double limit, {String symbol = '€'}) {
   final f = NumberFormat('#,##0', 'de_AT');
   final e = '${f.format(expenses)} $symbol';

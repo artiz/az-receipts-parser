@@ -332,6 +332,8 @@ extension _YearView on _OverviewPageState {
   }
 }
 
+/// A row of the year table: the category, actual over plan in one column
+/// (two lines), the previous year in its own.
 class _YearRow extends StatelessWidget {
   const _YearRow({required this.name, required this.actual, required this.plan, this.previous, this.bold = false, this.header = false, this.over = false});
   final String name;
@@ -345,16 +347,33 @@ class _YearRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final style = TextStyle(fontWeight: bold || header ? FontWeight.w700 : FontWeight.w400, fontSize: header ? 11 : 14, color: header ? scheme.onSurfaceVariant : null);
+    final weight = bold || header ? FontWeight.w700 : FontWeight.w400;
+    final nameStyle = TextStyle(fontWeight: weight, fontSize: header ? 11 : 14, color: header ? scheme.onSurfaceVariant : null);
+    final actualStyle = TextStyle(fontWeight: bold ? FontWeight.w700 : FontWeight.w600, fontSize: header ? 11 : 14, color: header ? scheme.onSurfaceVariant : (over ? scheme.primary : null));
+    final planStyle = TextStyle(fontWeight: weight, fontSize: header ? 11 : 12, color: scheme.onSurfaceVariant);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (!header && !bold) ...[CategoryDot(name: name), const SizedBox(width: 10)],
-          Expanded(child: Text(name, style: style, overflow: TextOverflow.ellipsis)),
-          SizedBox(width: 78, child: Text(actual, textAlign: TextAlign.right, style: style.copyWith(color: over ? scheme.primary : style.color))),
-          SizedBox(width: 72, child: Text(plan, textAlign: TextAlign.right, style: style.copyWith(color: header ? style.color : scheme.onSurfaceVariant))),
-          if (previous != null) SizedBox(width: 78, child: Text(previous!, textAlign: TextAlign.right, style: style.copyWith(color: header ? style.color : scheme.onSurfaceVariant))),
+          Expanded(child: Text(name, style: nameStyle, overflow: TextOverflow.ellipsis)),
+          SizedBox(
+            width: 96,
+            child: header
+                ? Text('$actual / $plan', textAlign: TextAlign.right, style: actualStyle)
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(actual, textAlign: TextAlign.right, style: actualStyle),
+                      Text(plan, textAlign: TextAlign.right, style: planStyle),
+                    ],
+                  ),
+          ),
+          if (previous != null) ...[
+            const SizedBox(width: 10),
+            SizedBox(width: 88, child: Text(previous!, textAlign: TextAlign.right, style: header ? actualStyle : planStyle.copyWith(fontSize: 14, fontWeight: weight))),
+          ],
         ],
       ),
     );
@@ -444,7 +463,7 @@ class _StatCard extends StatelessWidget {
                 if (icon != null) Icon(icon, size: 18, color: color),
                 if (onTap != null && showEdit) ...[
                   const SizedBox(width: 6),
-                  Icon(Icons.edit_outlined, size: 16, color: scheme.onSurfaceVariant),
+                  Icon(Icons.edit_outlined, size: 32, color: scheme.onSurfaceVariant),
                 ],
               ],
             ),
@@ -466,7 +485,7 @@ Future<void> _editPlan(BuildContext context, BudgetService budget, int year, Str
   final ok = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: Text(l.planTitle(category, monthLabel)),
+      title: DialogTitle(child: Text(l.planTitle(category, monthLabel))),
       content: TextField(
         controller: c,
         autofocus: true,
@@ -498,7 +517,7 @@ Future<void> _editLimits(BuildContext context, BudgetService budget, int year, d
   final ok = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: Text(l.limitsTitle),
+      title: DialogTitle(child: Text(l.limitsTitle)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -568,7 +587,7 @@ class _CategoryRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   child: Padding(
                     padding: const EdgeInsets.only(left: 8, top: 2, bottom: 2),
-                    child: Icon(Icons.edit_outlined, size: 16, color: scheme.onSurfaceVariant),
+                    child: Icon(Icons.edit_outlined, size: 32, color: scheme.onSurfaceVariant),
                   ),
                 ),
             ],
@@ -673,7 +692,7 @@ class _InputRow extends StatelessWidget {
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(label, style: const TextStyle(fontSize: 16)),
+        title: DialogTitle(child: Text(label, style: const TextStyle(fontSize: 16))),
         content: TextField(
           controller: controller,
           autofocus: true,

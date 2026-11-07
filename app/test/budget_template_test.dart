@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -45,6 +46,7 @@ void main() {
         expect(f.settings.map((s) => s.label), contains(limitLabel));
         expect(f.setting('Monatslimit 1'), 3000);
         expect(f.setting('Monatslimit 2'), 4000);
+        expect(f.version, BudgetFile.currentVersion);
         expect(f.entries, isEmpty);
         expect(f.overview.rows.length, 3);
         expect(f.overview.byLabelPrefix('Kontostand')!.$1, 5);
@@ -66,7 +68,7 @@ void main() {
         expect(g.entries.single.category, groceries);
         expect(g.entries.single.row, 2);
         expect(g.setting('Monatslimit 1'), 3500);
-        expect(g.settings.length, 5, reason: 'the existing row is updated, not a German one appended');
+        expect(g.settings.length, 6, reason: 'the existing row is updated, not a German one appended (five limits and the version)');
         expect(g.overview.byLabelPrefix('Sparkonto')!.$2[2], 1000);
         expect(g.overview.plan[groceries]!.$2[2], 400);
         final history = g.workbook.sheet(BudgetLabels.historySheet[lang]!)!;
@@ -75,7 +77,7 @@ void main() {
         // A setting the template does not have gets the file's own language.
         g.setSetting('Ausgabenlimit 4', 2000);
         final h = BudgetFile.open(g.save());
-        expect(h.settings.length, 6);
+        expect(h.settings.length, 7);
         expect(h.setting('Ausgabenlimit 4'), 2000);
         expect(h.settings.last.label, BudgetLabels.settingInLanguage('Ausgabenlimit 4', lang));
       });
@@ -427,6 +429,57 @@ void _typeTests() {
       final xml2 = entriesXml(f.save());
       expect(xml2, isNot(contains(r'$C2="Amex"')));
       expect(xml2, contains(r'$C2="Credit card"'));
+    });
+
+    test('category dropdowns in Excel\'s own format follow an added category, on every sheet; old files are repaired on save', () {
+      // Excel moves a list that points at another sheet into the sheet's
+      // extLst (x14:dataValidation with the formula in xm:f).
+      Uint8List excelStyle(Uint8List bytes, {int lastRow = 22}) {
+        final zip = ZipDecoder().decodeBytes(bytes);
+        final out = Archive();
+        for (final f in zip.files) {
+          var data = f.content as List<int>;
+          if (f.name == 'xl/worksheets/sheet1.xml') {
+            var x = utf8.decode(data);
+            x = x.replaceFirst(RegExp(r'<dataValidation [^>]*type="list"[^>]*><formula1>[^<]*</formula1></dataValidation>'), '');
+            x = x.replaceFirst('<dataValidations count="2">', '<dataValidations count="1">');
+            x = x.replaceFirst('</worksheet>',
+                '<extLst><ext uri="{CCE6A557-97BC-4b89-ADB6-D9C93CAAB3DF}" xmlns:x14="http://schemas.microsoft.com/office/spreadsheetml/2009/9/main">'
+                '<x14:dataValidations count="2" xmlns:xm="http://schemas.microsoft.com/office/excel/2006/main">'
+                '<x14:dataValidation type="list" allowBlank="1" showErrorMessage="1"><x14:formula1><xm:f>Einstellungen!\$A\$5:\$A\$$lastRow</xm:f></x14:formula1><xm:sqref>C2:C2000</xm:sqref></x14:dataValidation>'
+                '<x14:dataValidation type="list" allowBlank="1"><x14:formula1><xm:f>Verlauf!\$A\$5:\$A\$16</xm:f></x14:formula1><xm:sqref>H2:H10</xm:sqref></x14:dataValidation>'
+                '</x14:dataValidations></ext></extLst></worksheet>');
+            data = utf8.encode(x);
+          }
+          out.addFile(ArchiveFile(f.name, data.length, data));
+        }
+        return Uint8List.fromList(ZipEncoder().encode(out));
+      }
+
+      String part(Uint8List bytes, String name) => utf8.decode(ZipDecoder().decodeBytes(bytes).findFile(name)!.content as List<int>);
+
+      final f = BudgetFile.open(excelStyle(template('de')));
+      expect(f.categories.last.row, 22);
+      f.addCategory(const BudgetCategory(name: 'Einnahmen Kate', type: CategoryType.income));
+      final bytes = f.save();
+      final entries = part(bytes, 'xl/worksheets/sheet1.xml');
+      expect(entries, contains(r'<xm:f>Einstellungen!$A$5:$A$23</xm:f>'), reason: "Excel's extension form is extended");
+      expect(entries, contains(r'<xm:f>Verlauf!$A$5:$A$16</xm:f>'), reason: 'a list on another sheet is left alone');
+      expect(entries, contains('DATE(2020,1,1)'));
+      expect(part(bytes, 'xl/worksheets/sheet5.xml'), contains(r"'Einstellungen'!$A$5:$A$23"), reason: 'the rules sheet dropdown follows too');
+      final g = BudgetFile.open(bytes);
+      expect(g.category('Einnahmen Kate')!.type, CategoryType.income);
+      expect(g.categories.length, 19);
+
+      // A file where a category was appended before this fix: the next write repairs it.
+      final old = BudgetFile.open(excelStyle(template('de')));
+      old.workbook.sheet('Einstellungen')!.setText('A23', 'Einnahmen Kate');
+      old.workbook.sheet('Einstellungen')!.setText('B23', 'Einnahme');
+      final repaired = old.save();
+      expect(part(repaired, 'xl/worksheets/sheet1.xml'), contains(r'<xm:f>Einstellungen!$A$5:$A$23</xm:f>'));
+      // Never shortened: a range that already reaches further stays.
+      final wide = BudgetFile.open(excelStyle(template('de'), lastRow: 60)).save();
+      expect(part(wide, 'xl/worksheets/sheet1.xml'), contains(r'<xm:f>Einstellungen!$A$5:$A$60</xm:f>'));
     });
 
     test("a user's file: the totals rows are recognised", () {

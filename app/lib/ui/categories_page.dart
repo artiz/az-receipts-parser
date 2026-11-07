@@ -261,7 +261,7 @@ Future<void> translateFileDialog(BuildContext context, BudgetService budget) asy
   final ok = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: Text(l.translateFileConfirm(year, languageDisplayName(language))),
+      title: DialogTitle(child: Text(l.translateFileConfirm(year, languageDisplayName(language)))),
       content: Text(l.translateFileHint(languageDisplayName(budget.file?.language ?? 'de'), languageDisplayName(language))),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l.cancel)),

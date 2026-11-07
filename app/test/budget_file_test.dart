@@ -190,6 +190,30 @@ void main() {
       expect(s.descriptions('Kinder').map((x) => x.description), containsAll(['Marina', 'Platon']));
       expect(s.descriptions('Lebensmittel', prefix: 'bil').first.description, 'Billa');
     });
+    test('autocomplete over the whole history, the chosen category first', () {
+      final h = EntrySuggestions([
+        BudgetEntry(date: DateTime(2026, 10, 1), category: 'Lebensmittel', description: 'Spar', amount: 20),
+        BudgetEntry(date: DateTime(2026, 10, 2), category: 'Lebensmittel', description: 'SPAR', amount: 25),
+        BudgetEntry(date: DateTime(2026, 10, 3), category: 'Haushalt', description: 'Spar Gourmet', amount: 8),
+        BudgetEntry(date: DateTime(2026, 10, 4), category: 'Restaurants & Cafés', description: 'Pizza Spartacus', amount: 30),
+        BudgetEntry(date: DateTime(2026, 10, 5), category: 'Restaurants & Cafés', description: 'Café Sperl', amount: 6),
+        BudgetEntry(date: DateTime(2026, 10, 6), category: 'Wohnen', description: 'Wien Energie', amount: 90),
+      ], now: DateTime(2026, 11, 1));
+      String fmt(DescriptionSuggestion d) => '${d.category}:${d.description}';
+      // Without a category: a match at the start beats a later word, then use.
+      expect(h.autocomplete('spa').map(fmt), ['Lebensmittel:SPAR', 'Haushalt:Spar Gourmet', 'Restaurants & Cafés:Pizza Spartacus']);
+      expect(h.autocomplete('spa').first.count, 2, reason: 'Spar and SPAR are one suggestion, shown as last written');
+      expect(h.autocomplete('spa').first.lastAmount, 25);
+      // The chosen category first even when its match is on a later word.
+      expect(h.autocomplete('spa', category: 'Restaurants & Cafés').map(fmt).first, 'Restaurants & Cafés:Pizza Spartacus');
+      // Accents and case aside; substring from three letters on.
+      expect(h.autocomplete('cafe').map(fmt), ['Restaurants & Cafés:Café Sperl']);
+      expect(h.autocomplete('nergi').map(fmt), ['Wohnen:Wien Energie']);
+      expect(h.autocomplete('er'), isEmpty, reason: 'two letters: word prefixes only');
+      expect(h.autocomplete(''), isEmpty);
+      expect(h.autocomplete('s', limit: 2).length, 2);
+    });
+
     test('learned category and usual amount', () {
       expect(s.categoryFor('SPAR Wien 1220'), 'Lebensmittel');
       expect(s.categoryFor('Marina'), 'Kinder');
