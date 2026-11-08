@@ -245,6 +245,71 @@ Map<int, bool> _wrapByStyle(Uint8List bytes) {
 }
 
 void unwrapTests() {
+  group('rows hidden by an Excel filter', () {
+    // Excel stores an applied autofilter as hidden="1" on the rows it hid
+    // and does not re-evaluate it on open: with a filter "Monat 10, 11"
+    // applied, every empty row below the data is hidden (blank month).
+    BudgetFile filtered() {
+      final f = BudgetFile.open(fixture('budget_small.xlsx'));
+      final sheet = f.workbook.sheet('Buchungen')!;
+      final last = f.entries.last.row!;
+      for (var r = last + 1; r <= last + 20; r++) {
+        sheet.setRowHidden(r, true);
+      }
+      // A booking of another month in the middle, filtered out.
+      sheet.setRowHidden(f.entries[2].row!, true);
+      return BudgetFile.open(f.save());
+    }
+
+    test('a new booking lands visible even in a row Excel hid while it was empty', () {
+      var f = filtered();
+      final sheet = f.workbook.sheet('Buchungen')!;
+      final last = f.entries.last.row!;
+      expect(sheet.isRowHidden(last + 1), isTrue);
+      final rows = f.appendEntries([
+        BudgetEntry(date: DateTime(2026, 11, 8), category: 'Haushalt', description: 'Pfeffermühle', amount: 39),
+        BudgetEntry(date: DateTime(2026, 11, 8), category: 'Lebensmittel', description: 'Hirschschinken', amount: 21),
+      ]);
+      f = BudgetFile.open(f.save());
+      final s2 = f.workbook.sheet('Buchungen')!;
+      expect(rows, [last + 1, last + 2]);
+      expect(rows.map(s2.isRowHidden), [false, false], reason: 'the bookings are visible');
+      expect(s2.isRowHidden(last + 3), isTrue, reason: 'the empty rows below stay as Excel left them');
+      expect(s2.isRowHidden(f.entries[2].row!), isTrue, reason: 'a filtered-out booking stays filtered out');
+    });
+
+    test('editing shows the row; deleting moves each booking with its own visibility', () {
+      var f = filtered();
+      final sheet = f.workbook.sheet('Buchungen')!;
+      final hiddenRow = f.entries[2].row!;
+      final before = [for (final e in f.entries) (e.description, sheet.isRowHidden(e.row!))];
+
+      // Delete the first booking: everything below moves up one row.
+      f.deleteEntryRow(f.entries.first.row!);
+      f = BudgetFile.open(f.save());
+      final s2 = f.workbook.sheet('Buchungen')!;
+      final after = [for (final e in f.entries) (e.description, s2.isRowHidden(e.row!))];
+      expect(after, before.skip(1).toList(), reason: 'every booking keeps its visibility, the hidden one moved up with it');
+      expect(s2.isRowHidden(hiddenRow - 1), isTrue);
+      expect(s2.isRowHidden(hiddenRow), isFalse, reason: 'the visible booking that moved into its old row is shown');
+
+      // Editing the filtered-out booking shows it, like a cell typed in Excel.
+      final e = f.entries.firstWhere((x) => s2.isRowHidden(x.row!));
+      f.updateEntry(e.row!, BudgetEntry(date: e.date, category: e.category, description: '${e.description} (edited)', amount: e.amount));
+      f = BudgetFile.open(f.save());
+      expect(f.workbook.sheet('Buchungen')!.isRowHidden(e.row!), isFalse);
+    });
+
+    test('rows without the attribute are untouched by a write', () {
+      final f = BudgetFile.open(fixture('budget_small.xlsx'));
+      final sheet = f.workbook.sheet('Buchungen')!;
+      final row = f.entries.first.row!;
+      expect(sheet.isRowHidden(row), isFalse);
+      sheet.setRowHidden(row, false);
+      expect(BudgetFile.open(f.save()).workbook.sheet('Buchungen')!.isRowHidden(row), isFalse);
+    });
+  });
+
   group('note column unwrapped on save', () {
     test('wrapped F cells and the column default get an unwrapped style, D keeps wrapping, auto heights dropped', () {
       final f = BudgetFile.open(fixture('budget_small_wrap.xlsx'));
