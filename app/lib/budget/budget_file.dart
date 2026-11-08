@@ -576,6 +576,10 @@ class BudgetFile {
     final placed = <int>[];
     for (final e in newEntries) {
       row += 1;
+      // A filter applied in Excel while this row was still empty marked it
+      // hidden (blank month); a new booking must be seen, as Excel shows a
+      // freshly typed row until the filter is applied again.
+      sheet.setRowHidden(row, false);
       sheet.setNumber('A$row', XlsxDate.toSerial(e.date));
       sheet.ensureMonthFormula(row, monthFormula);
       sheet.setText('C$row', e.category);
@@ -604,18 +608,22 @@ class BudgetFile {
   /// in between are compacted away) and the last used row is cleared. The
   /// pre-formatted rows, their styles and month formulas stay where they are.
   void deleteEntryRow(int row) {
+    final sheet = _entriesSheet;
     final later = [for (final e in entries) if (e.row != null && e.row! > row) e]..sort((a, b) => a.row!.compareTo(b.row!));
     var target = row;
     for (final e in later) {
-      updateEntry(target, e);
+      // A moved booking keeps its own visibility under an Excel filter.
+      updateEntry(target, e, hidden: sheet.isRowHidden(e.row!));
       target = e.row!;
     }
     clearEntryRow(target);
   }
 
-  /// Overwrite an existing entry row in place.
-  void updateEntry(int row, BudgetEntry e) {
+  /// Overwrite an existing entry row in place. The row is shown (an edited
+  /// booking must be seen) unless [hidden] says otherwise.
+  void updateEntry(int row, BudgetEntry e, {bool hidden = false}) {
     final sheet = _entriesSheet;
+    sheet.setRowHidden(row, hidden);
     sheet.setNumber('A$row', XlsxDate.toSerial(e.date));
     sheet.setText('C$row', e.category);
     sheet.setText('D$row', e.description);

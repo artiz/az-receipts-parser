@@ -213,6 +213,26 @@ class XlsxSheet {
   /// Clear a cell's value (keeps its style).
   void clear(String ref) => _setCell(ref);
 
+  /// Whether the row is hidden (by hand, or by an autofilter when it was
+  /// last applied: Excel stores the result as `hidden="1"` on the row and
+  /// does not re-evaluate it on open).
+  bool isRowHidden(int rowIndex) {
+    final h = _findRow(rowIndex)?.getAttribute('hidden');
+    return h == '1' || h == 'true';
+  }
+
+  /// Show or hide a row; a missing row is visible already.
+  void setRowHidden(int rowIndex, bool hidden) {
+    if (isRowHidden(rowIndex) == hidden) return;
+    final row = _findRow(rowIndex) ?? _insertRow(rowIndex);
+    if (hidden) {
+      row.setAttribute('hidden', '1');
+    } else {
+      row.removeAttribute('hidden');
+    }
+    _dirty = true;
+  }
+
   /// Store a formula (without the leading '=') together with its computed
   /// value, so readers that do not recalculate still see the number. Without
   /// [cached] the cell has no value, which makes every reader (LibreOffice
