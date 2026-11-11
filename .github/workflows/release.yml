@@ -1,0 +1,176 @@
+name: release
+
+# Builds the signed App Bundle and uploads it to Google Play.
+#
+# - Push a tag v1.2.3: version name 1.2.3, uploaded to the internal track.
+# - Run it by hand (Actions -> release -> Run workflow): pick the track and,
+#   optionally, release notes; "upload" off only builds the bundle.
+# - A pull request that changes this file builds the bundle unsigned by the
+#   upload key (debug key) and uploads nothing: a check of the pipeline.
+#
+# The version code is the commit count of the built commit, the same number
+# scripts/build_android.bat uses locally, so CI and local builds never clash.
+# Setup (secrets, Play service account): docs/release.md.
+
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths: ['.github/workflows/release.yml', 'scripts/build_android_rust.sh', 'scripts/download_models.sh']
+  workflow_dispatch:
+    inputs:
+      track:
+        description: Play track
+        type: choice
+        options: [internal, alpha, production]
+        default: internal
+      status:
+        description: completed = roll out; draft = upload only, roll out in the console
+        type: choice
+        options: [completed, draft]
+        default: completed
+      notes:
+        description: Release notes (en-US); empty = app/distribution/whatsnew/whatsnew-en-US
+        type: string
+        default: ''
+      upload:
+        description: Upload to Google Play (off = build the bundle only)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  # One upload at a time; pull request checks run on their own.
+  group: ${{ github.event_name == 'pull_request' && format('release-check-{0}', github.ref) || 'play-release' }}
+  cancel-in-progress: false
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      PACKAGE: dev.artiz.az_budget
+      AAB: app/build/app/outputs/bundle/release/app-release.aab
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the version code is the commit count
+
+      - name: Version
+        id: version
+        run: |
+          code=$(git rev-list --count HEAD)
+          name=$(sed -n 's/^version: *\([0-9][0-9.]*\).*/\1/p' app/pubspec.yaml)
+          if [ "${GITHUB_REF_TYPE}" = tag ]; then name="${GITHUB_REF_NAME#v}"; fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "### AZ Budget $name ($code)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload key
+        if: github.event_name != 'pull_request'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+        run: |
+          # Without key.properties Gradle signs with the debug key and Play
+          # rejects the bundle: fail here with a clear message instead.
+          for v in KEYSTORE_BASE64 STORE_PASSWORD KEY_PASSWORD KEY_ALIAS; do
+            if [ -z "${!v}" ]; then echo "::error::secret ANDROID_UPLOAD_$v is not set (docs/release.md)"; exit 1; fi
+          done
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          {
+            echo "storeFile=$RUNNER_TEMP/upload.jks"
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > app/android/key.properties
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust/receipt_ocr
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-ndk
+
+      - name: Native OCR library
+        run: |
+          export ANDROID_NDK_HOME="$ANDROID_NDK_LATEST_HOME"
+          scripts/build_android_rust.sh
+
+      - uses: actions/cache@v4
+        with:
+          path: app/assets/models
+          key: ocr-models-v1
+      - name: OCR models
+        run: scripts/download_models.sh
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.9
+          cache: true
+
+      - name: Tests
+        working-directory: app
+        run: |
+          flutter pub get
+          flutter test
+
+      - name: App Bundle
+        working-directory: app
+        run: flutter build appbundle --release --build-number=${{ steps.version.outputs.code }} --build-name=${{ steps.version.outputs.name }}
+
+      - name: Check the signature is the upload key
+        if: github.event_name != 'pull_request'
+        run: |
+          # The debug certificate says "CN=Android Debug"; an upload key does not.
+          cert=$(keytool -printcert -jarfile "$AAB")
+          echo "$cert" | grep -E 'Owner:|SHA256:' | head -2
+          if echo "$cert" | grep -q 'CN=Android Debug'; then echo "::error::bundle is debug-signed"; exit 1; fi
+
+      - name: Release notes
+        if: inputs.notes != ''
+        env:
+          NOTES: ${{ inputs.notes }}
+        run: printf '%s\n' "$NOTES" > app/distribution/whatsnew/whatsnew-en-US
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-release-${{ steps.version.outputs.name }}-${{ steps.version.outputs.code }}
+          path: ${{ env.AAB }}
+          retention-days: 14
+
+      - name: Play service account
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.upload)
+        env:
+          SA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$SA" ]; then echo "::error::secret PLAY_SERVICE_ACCOUNT_JSON is not set (docs/release.md); the bundle is attached to this run"; exit 1; fi
+
+      - name: Upload to Google Play
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.upload)
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ${{ env.PACKAGE }}
+          releaseFiles: ${{ env.AAB }}
+          releaseName: ${{ steps.version.outputs.code }} (${{ steps.version.outputs.name }})
+          track: ${{ inputs.track || 'internal' }}
+          status: ${{ inputs.status || 'completed' }}
+          whatsNewDirectory: app/distribution/whatsnew
+
+      - name: Remove the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks" app/android/key.properties
