@@ -578,6 +578,15 @@
   },
   "yearLabel": "Year",
   "yearChartHint": "Expenses per month (colour = limit), plan in grey, line = cumulated saldo. Tap a month.",
+  "yearBreakdownMonths": "By month (tap to open the month)",
+  "moreDescriptions": "{count} more",
+  "@moreDescriptions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "previousYear": "Prev. year",
   "yearByCategory": "By category: actual / plan / previous year",
   "tilePinned": "Pinned to quick entries (long-press to unpin)",

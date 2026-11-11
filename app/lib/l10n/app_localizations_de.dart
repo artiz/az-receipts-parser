@@ -755,6 +755,14 @@ class AppLocalizationsDe extends AppLocalizations {
       'Ausgaben je Monat (Farbe = Limit), Plan grau, Linie = kumuliertes Saldo. Tippe auf einen Monat.';
 
   @override
+  String get yearBreakdownMonths => 'Nach Monat (antippen öffnet den Monat)';
+
+  @override
+  String moreDescriptions(int count) {
+    return '$count weitere';
+  }
+
+  @override
   String get previousYear => 'Vorjahr';
 
   @override

@@ -188,6 +188,8 @@ the bookings in the file.
     Jan 2026 …" across the year files in the folder. The view shows twelve
     months as bars (colour = limit, plan grey, line = cumulated saldo) and
     every category's actual / plan / previous year (from `Budget <year-1>.xlsx`).
+    Tapping a category opens its year: the months with an amount (a tap on
+    one opens that month) and the descriptions with count and sum.
 13. **Widget and shortcuts**: a home-screen widget shows the month's
     expenses against limit 1 with the traffic-light colour and a "+" for a
     booking; long-pressing the launcher icon offers scan, new booking and

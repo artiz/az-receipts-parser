@@ -1336,6 +1336,18 @@ abstract class AppLocalizations {
   /// **'Expenses per month (colour = limit), plan in grey, line = cumulated saldo. Tap a month.'**
   String get yearChartHint;
 
+  /// No description provided for @yearBreakdownMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'By month (tap to open the month)'**
+  String get yearBreakdownMonths;
+
+  /// No description provided for @moreDescriptions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} more'**
+  String moreDescriptions(int count);
+
   /// No description provided for @previousYear.
   ///
   /// In en, this message translates to:
