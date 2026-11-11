@@ -1,14 +1,21 @@
 # Releasing to Google Play
 
-The goal for now: the app on the **internal testing** track, installed and
-updated through Play for a handful of named testers. Production (and the
-closed test with 12 testers for 14 days that a personal developer account
-needs before it) comes later and reuses everything below.
+The app is on the **internal testing** track, installed and updated through
+Play for a handful of named testers. The developer account is an
+**organization** account (with a D-U-N-S number), so production needs no
+closed test with 12 testers first. Releases are built and uploaded by
+GitHub Actions ([below](#releases-from-github-actions)); the local build is
+the fallback.
 
 ## One-time setup
 
-1. **Developer account.** https://play.google.com/console, personal account,
-   25 USD once, identity verification (takes a day or two).
+1. **Developer account.** https://play.google.com/console, organization
+   account, 25 USD once. It needs a D-U-N-S number (free from Dun &
+   Bradstreet; a new number is visible to Google about a day after it is
+   issued, and the console allows only a few lookups, so do not retry
+   early). Name and address must match the D&B record exactly. Then:
+   identity verification (a few days), developer email and phone, and the
+   Android device check in the Play Console app.
 2. **Upload key.** On the machine that builds bundles:
 
    ```bat
@@ -52,13 +59,14 @@ All under **Set up your app** on the dashboard:
   gets a budget file created), the OpenAI key is optional.
 - **Ads**: no. **Content rating**: fill the questionnaire (utility /
   productivity, no user-generated content), expect "Everyone".
-- **Target audience**: 18 and over. **News app**: no. **COVID-19**: no.
-- **Data safety**: no data collected, no data shared by default. If you want
-  to be precise about the optional OpenAI import: "Financial info > Other
-  financial info", shared, optional, user-initiated, for app functionality,
-  not encrypted in transit claim is "yes" (HTTPS), deletable (nothing is
-  stored). Simpler and still truthful: declare only what is collected
-  (nothing) and mention OpenAI in the privacy policy, which is done.
+- **Target audience**: 16 and over (as submitted). **News app**: no. **COVID-19**: no.
+- **Data safety** (as submitted): collects data, encrypted in transit
+  (HTTPS), no deletion request (nothing is stored on a server). One data
+  type: *Financial info → Other financial info* (the text of an imported
+  statement or screenshot sent to OpenAI with the user's own key):
+  collected, not shared (the user starts the transfer), processed
+  ephemerally, optional, for app functionality. Nothing else: the budget
+  file goes to the user's own folder, no analytics, no identifiers.
 - **Government apps / Financial features**: the financial features
   declaration applies to loans, banking, crypto and the like; a personal
   budgeting tool declares "none of the above".
@@ -104,10 +112,64 @@ the error. The first build after `make_keystore.bat` is such a switch, and
 so is the move to the Play install later. To keep developing beside a Play
 install, use a second device.
 
-## Later: closed testing and production
+## Releases from GitHub Actions
 
-A personal account created after November 2023 needs a closed test with at
-least 12 testers opted in for 14 consecutive days before it can apply for
-production access. Internal testing does not count. Everything above stays
-the same; the closed track just gets a bigger tester list, and after the 14
-days the console offers "Apply for production access".
+`.github/workflows/release.yml` builds the signed bundle on a GitHub runner
+(Rust OCR library, models, tests, `flutter build appbundle`) and uploads it
+to Play:
+
+* **Tag push** `v1.2.3`: version name 1.2.3, internal track, rolled out.
+
+  ```bash
+  git tag v1.0.1 && git push origin v1.0.1
+  ```
+
+* **By hand**: Actions → release → *Run workflow*: track (internal, alpha,
+  production), status (`completed` rolls out, `draft` leaves the roll-out to
+  the console), optional release notes, and *upload* off to only build (the
+  bundle is attached to the run either way).
+* A pull request that changes the workflow or the build scripts builds the
+  bundle with the debug key and uploads nothing.
+
+The version code is the commit count of the built commit, as in the local
+script, so local and CI builds of the same commit agree and every later
+commit gets a higher one. Release notes come from
+`app/distribution/whatsnew/whatsnew-en-US` (at most 500 characters; add
+`whatsnew-de-DE` and `whatsnew-ru-RU` once the listing has those languages).
+With managed publishing on, an approved release still waits for *Publish
+changes* in the console; internal testing needs no review.
+
+### One-time setup
+
+1. **Service account for the Play API.** In Google Cloud
+   (console.cloud.google.com), any project: enable the *Google Play Android
+   Developer API*, create a service account (no roles needed), add a JSON
+   key and download it. In Play Console → *Users and permissions* → *Invite
+   new users*: the service account's email, app permission for AZ Budget
+   with *Release to testing tracks* (and *Release to production* if CI may
+   upload there). It can take up to a day before the API accepts the
+   account.
+2. **Repository secrets** (GitHub → Settings → Secrets and variables →
+   Actions → *New repository secret*):
+
+   | Secret | Value |
+   |---|---|
+   | `ANDROID_UPLOAD_KEYSTORE_BASE64` | the upload `.jks`, base64 |
+   | `ANDROID_UPLOAD_STORE_PASSWORD` | `storePassword` from `app\android\key.properties` |
+   | `ANDROID_UPLOAD_KEY_PASSWORD` | `keyPassword` from the same file |
+   | `ANDROID_UPLOAD_KEY_ALIAS` | `keyAlias` from the same file |
+   | `PLAY_SERVICE_ACCOUNT_JSON` | the whole JSON key file |
+
+   The keystore as base64, on Windows (PowerShell), copied to the clipboard:
+
+   ```powershell
+   [Convert]::ToBase64String([IO.File]::ReadAllBytes("$env:USERPROFILE\az-budget-upload.jks")) | Set-Clipboard
+   ```
+
+   The workflow refuses to build without them (a bundle signed with the
+   debug key would be rejected by Play), checks the signature of the built
+   bundle and deletes the key from the runner afterwards.
+
+The secrets are readable by workflows in this repository only; forks and
+pull requests from forks do not get them. Whoever can push a `v*` tag can
+release, so keep tag pushes to the maintainers.
