@@ -752,6 +752,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Expenses per month (colour = limit), plan in grey, line = cumulated saldo. Tap a month.';
 
   @override
+  String get yearBreakdownMonths => 'By month (tap to open the month)';
+
+  @override
+  String moreDescriptions(int count) {
+    return '$count more';
+  }
+
+  @override
   String get previousYear => 'Prev. year';
 
   @override

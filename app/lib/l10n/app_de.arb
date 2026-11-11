@@ -206,6 +206,8 @@
   "receiptLink": "Beleg: {path}",
   "yearLabel": "Jahr",
   "yearChartHint": "Ausgaben je Monat (Farbe = Limit), Plan grau, Linie = kumuliertes Saldo. Tippe auf einen Monat.",
+  "yearBreakdownMonths": "Nach Monat (antippen öffnet den Monat)",
+  "moreDescriptions": "{count} weitere",
   "previousYear": "Vorjahr",
   "yearByCategory": "Nach Kategorie: Ist / Plan / Vorjahr",
   "tilePinned": "An Schnellbuchungen angeheftet (lange drücken zum Lösen)",

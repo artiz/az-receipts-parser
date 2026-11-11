@@ -751,6 +751,14 @@ class AppLocalizationsRu extends AppLocalizations {
       'Расходы по месяцам (цвет = лимит), план серым, линия = сальдо нарастающим итогом. Нажмите на месяц.';
 
   @override
+  String get yearBreakdownMonths => 'По месяцам (нажмите, чтобы открыть месяц)';
+
+  @override
+  String moreDescriptions(int count) {
+    return 'ещё $count';
+  }
+
+  @override
   String get previousYear => 'Прошлый год';
 
   @override

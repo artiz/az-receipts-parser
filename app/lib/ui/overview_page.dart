@@ -32,6 +32,16 @@ class _OverviewPageState extends State<OverviewPage> {
   int? _month;
   final Set<String> _expanded = {};
 
+  /// Open or close an expandable row ([key] as in [_expanded]).
+  void _toggle(String key) => setState(() => _expanded.contains(key) ? _expanded.remove(key) : _expanded.add(key));
+
+  /// Leave the year view for one of its months.
+  void _openMonth(int year, int month) => setState(() {
+        _year = year;
+        _month = month;
+        _expanded.clear();
+      });
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -319,6 +329,16 @@ extension _YearView on _OverviewPageState {
                       plan: (planByCategory[name] ?? 0) > 0 ? euroShort(planByCategory[name]!) : '–',
                       previous: prev == null ? null : euroShort(prevBy[name] ?? 0),
                       over: (planByCategory[name] ?? 0) > 0 && (byCategory[name] ?? 0) > planByCategory[name]!,
+                      // Keys apart from the month view's, which shares the set.
+                      expanded: _expanded.contains('year\u0000$name'),
+                      onTap: () => _toggle('year\u0000$name'),
+                      breakdown: _expanded.contains('year\u0000$name')
+                          ? _YearCategoryBreakdown(
+                              entries: all.where((e) => e.category == name).toList(),
+                              monthLabel: label,
+                              onMonth: (m) => _openMonth(year, m),
+                            )
+                          : null,
                     ),
                   const Divider(),
                   _YearRow(name: l.total, actual: euroShort(expenses), plan: planYear > 0 ? euroShort(planYear) : '–', previous: prev == null ? null : euroShort(prevTotal), bold: true),
@@ -335,7 +355,18 @@ extension _YearView on _OverviewPageState {
 /// A row of the year table: the category, actual over plan in one column
 /// (two lines), the previous year in its own.
 class _YearRow extends StatelessWidget {
-  const _YearRow({required this.name, required this.actual, required this.plan, this.previous, this.bold = false, this.header = false, this.over = false});
+  const _YearRow({
+    required this.name,
+    required this.actual,
+    required this.plan,
+    this.previous,
+    this.bold = false,
+    this.header = false,
+    this.over = false,
+    this.onTap,
+    this.expanded = false,
+    this.breakdown,
+  });
   final String name;
   final String actual;
   final String plan;
@@ -344,6 +375,11 @@ class _YearRow extends StatelessWidget {
   final bool header;
   final bool over;
 
+  /// Tap opens or closes [breakdown] under the row (category rows only).
+  final VoidCallback? onTap;
+  final bool expanded;
+  final Widget? breakdown;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -351,13 +387,12 @@ class _YearRow extends StatelessWidget {
     final nameStyle = TextStyle(fontWeight: weight, fontSize: header ? 11 : 14, color: header ? scheme.onSurfaceVariant : null);
     final actualStyle = TextStyle(fontWeight: bold ? FontWeight.w700 : FontWeight.w600, fontSize: header ? 11 : 14, color: header ? scheme.onSurfaceVariant : (over ? scheme.primary : null));
     final planStyle = TextStyle(fontWeight: weight, fontSize: header ? 11 : 12, color: scheme.onSurfaceVariant);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      child: Row(
+    final row = Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (!header && !bold) ...[CategoryDot(name: name), const SizedBox(width: 10)],
           Expanded(child: Text(name, style: nameStyle, overflow: TextOverflow.ellipsis)),
+          if (onTap != null) ...[Icon(expanded ? Icons.expand_less : Icons.expand_more, size: 18, color: scheme.onSurfaceVariant), const SizedBox(width: 4)],
           SizedBox(
             width: 96,
             child: header
@@ -374,6 +409,82 @@ class _YearRow extends StatelessWidget {
             const SizedBox(width: 10),
             SizedBox(width: 88, child: Text(previous!, textAlign: TextAlign.right, style: header ? actualStyle : planStyle.copyWith(fontSize: 14, fontWeight: weight))),
           ],
+        ],
+      );
+    final body = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      child: breakdown == null ? row : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [row, breakdown!]),
+    );
+    return onTap == null ? body : InkWell(onTap: onTap, child: body);
+  }
+}
+
+/// What the category's year consists of: the months with an amount (a tap
+/// opens that month, where the row expands down to single bookings), then
+/// the descriptions with count and sum, largest first.
+class _YearCategoryBreakdown extends StatelessWidget {
+  const _YearCategoryBreakdown({required this.entries, required this.monthLabel, required this.onMonth});
+  final List<BudgetEntry> entries;
+  final String Function(int month) monthLabel;
+  final void Function(int month) onMonth;
+
+  /// Descriptions shown before "N more".
+  static const int topDescriptions = 8;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final small = TextStyle(fontSize: 12, color: scheme.onSurfaceVariant);
+    if (entries.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Align(alignment: Alignment.centerLeft, child: Text(l.noEntries, style: small)),
+      );
+    }
+    final byMonth = <int, double>{};
+    final groups = <String, (String, int, double)>{};
+    for (final e in entries) {
+      byMonth[e.month] = (byMonth[e.month] ?? 0) + e.amount;
+      final key = normalize(e.description.isEmpty ? e.category : e.description);
+      final g = groups[key];
+      groups[key] = (e.description.isEmpty ? e.category : e.description, (g?.$2 ?? 0) + 1, (g?.$3 ?? 0) + e.amount);
+    }
+    final months = byMonth.keys.where((m) => byMonth[m] != 0).toList()..sort();
+    final sorted = groups.values.toList()..sort((a, b) => b.$3.abs().compareTo(a.$3.abs()));
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, left: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(l.yearBreakdownMonths, style: small),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final m in months)
+                ActionChip(
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  label: Text('${monthLabel(m)} ${euroShort(byMonth[m]!)}', style: const TextStyle(fontSize: 12, fontFeatures: [FontFeature.tabularFigures()])),
+                  onPressed: () => onMonth(m),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          for (final g in sorted.take(topDescriptions))
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  Expanded(child: Text(g.$2 > 1 ? '${g.$1} ×${g.$2}' : g.$1, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis)),
+                  Text(euro(g.$3), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFeatures: [FontFeature.tabularFigures()])),
+                ],
+              ),
+            ),
+          if (sorted.length > topDescriptions)
+            Padding(padding: const EdgeInsets.only(top: 2), child: Text(l.moreDescriptions(sorted.length - topDescriptions), style: small)),
         ],
       ),
     );
