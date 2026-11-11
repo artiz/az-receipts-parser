@@ -54,7 +54,7 @@ jobs:
       PACKAGE: dev.artiz.az_budget
       AAB: app/build/app/outputs/bundle/release/app-release.aab
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # the version code is the commit count
 
@@ -89,7 +89,7 @@ jobs:
             echo "keyPassword=$KEY_PASSWORD"
           } > app/android/key.properties
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
@@ -109,7 +109,7 @@ jobs:
           export ANDROID_NDK_HOME="$ANDROID_NDK_LATEST_HOME"
           scripts/build_android_rust.sh
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: app/assets/models
           key: ocr-models-v1
@@ -146,7 +146,7 @@ jobs:
           NOTES: ${{ inputs.notes }}
         run: printf '%s\n' "$NOTES" > app/distribution/whatsnew/whatsnew-en-US
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: app-release-${{ steps.version.outputs.name }}-${{ steps.version.outputs.code }}
           path: ${{ env.AAB }}
