@@ -201,6 +201,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get approachMarginTitle => 'How close to limit 1';
 
   @override
+  String get approach2Title => 'Warn before limit 2';
+
+  @override
+  String get approach2Hint =>
+      'A notification shortly before limit 2 is reached, once limit 1 is passed';
+
+  @override
+  String get approach2MarginTitle => 'How close to limit 2';
+
+  @override
   String approachMarginPercent(String value) {
     return '$value % of the limit before it is reached';
   }

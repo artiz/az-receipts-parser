@@ -200,6 +200,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get approachMarginTitle => 'Насколько близко к лимиту 1';
 
   @override
+  String get approach2Title => 'Предупреждать перед лимитом 2';
+
+  @override
+  String get approach2Hint =>
+      'Уведомление незадолго до достижения лимита 2, когда лимит 1 уже пройден';
+
+  @override
+  String get approach2MarginTitle => 'Насколько близко к лимиту 2';
+
+  @override
   String approachMarginPercent(String value) {
     return '$value % лимита до его достижения';
   }
