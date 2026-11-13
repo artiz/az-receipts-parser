@@ -207,36 +207,64 @@ void main() {
     final t0 = DateTime(2026, 11, 13, 12);
     DateTime at(int ms) => t0.add(Duration(milliseconds: ms));
 
-    test('fires once after holding still on the lines for the hold time', () {
+    test('fires once after the receipt stays framed and still for 300 ms', () {
       final a = AutoCapture();
+      expect(a.hold, const Duration(milliseconds: 300));
       expect(a.update(aligned: true, motion: 2, now: at(0)), 0);
-      expect(a.update(aligned: true, motion: 2, now: at(350)), closeTo(0.5, 0.01));
+      expect(a.update(aligned: true, motion: 2, now: at(150)), closeTo(0.5, 0.01));
       expect(a.fired, isFalse);
-      expect(a.update(aligned: true, motion: 2, now: at(700)), 1);
+      expect(a.update(aligned: true, motion: 2, now: at(300)), 1);
       expect(a.fired, isTrue);
-      expect(a.update(aligned: false, motion: 50, now: at(800)), 1, reason: 'stays fired until reset');
+      expect(a.update(aligned: false, motion: 50, now: at(400)), 1, reason: 'stays fired until reset');
       a.reset();
       expect(a.fired, isFalse);
-      expect(a.update(aligned: true, motion: 2, now: at(900)), 0);
+      expect(a.update(aligned: true, motion: 2, now: at(500)), 0);
     });
 
-    test('moving or leaving the lines starts the hold over', () {
+    test('moving or losing the receipt starts the hold over', () {
       final a = AutoCapture();
       a.update(aligned: true, motion: 2, now: at(0));
-      a.update(aligned: true, motion: 2, now: at(500));
-      expect(a.update(aligned: true, motion: 12, now: at(600)), 0, reason: 'shaking');
-      expect(a.update(aligned: true, motion: 2, now: at(700)), 0);
-      expect(a.update(aligned: true, motion: 2, now: at(1200)), closeTo(5 / 7, 0.01));
-      expect(a.update(aligned: false, motion: 2, now: at(1300)), 0, reason: 'slipped off the lines');
+      a.update(aligned: true, motion: 2, now: at(200));
+      expect(a.update(aligned: true, motion: 15, now: at(250)), 0, reason: 'shaking');
+      expect(a.update(aligned: true, motion: 8, now: at(300)), 0, reason: 'a steady hand: the hold starts');
+      expect(a.update(aligned: true, motion: 8, now: at(450)), closeTo(0.5, 0.01));
+      expect(a.update(aligned: false, motion: 2, now: at(500)), 0, reason: 'the receipt left the picture');
       expect(a.fired, isFalse);
     });
 
-    test('motion between two grids of a still and a shaken scene', () {
+    test('motion: sensor noise and exposure changes are still, a shift is not', () {
       final a = upright(scene(seed: 1), 360, 640);
       final b = upright(scene(seed: 2), 360, 640);
       final moved = upright(scene(left: 0.25, right: 0.91, seed: 1), 360, 640);
-      expect(a.motionTo(b), lessThan(AutoCapture().maxMotion), reason: 'sensor noise only');
-      expect(a.motionTo(moved), greaterThan(AutoCapture().maxMotion));
+      final max = AutoCapture().maxMotion;
+      expect(a.motionTo(b), lessThan(max), reason: 'sensor noise only');
+      expect(a.motionTo(moved), greaterThan(max));
+      // The camera brightening the whole picture (auto exposure) is not movement.
+      final brighter = LumaGrid(a.width, a.height, Uint8List.fromList([for (final v in a.values) math.min(255, v + 25)]));
+      expect(a.motionTo(brighter), lessThan(max));
+    });
+  });
+
+  group('framed (what triggers the shot)', () {
+    LumaGrid grid(Uint8List px) => upright(px, 360, 640);
+
+    test('the whole receipt in view counts, wherever it is between the borders', () {
+      expect(detectReceipt(grid(scene())).framed, isTrue, reason: 'on the lines');
+      expect(detectReceipt(grid(scene(left: 0.30, right: 0.70))).framed, isTrue, reason: 'smaller than the lines');
+      expect(detectReceipt(grid(scene(left: 0.08, right: 0.92))).framed, isTrue, reason: 'wider than the lines');
+      expect(detectReceipt(grid(scene(left: 0.27, right: 0.93))).framed, isTrue, reason: 'off-centre');
+      expect(detectReceipt(grid(scene(left: 0.0, right: 0.75))).framed, isFalse, reason: 'runs off the left: the shot would cut it');
+      expect(detectReceipt(grid(scene(paper: 215, background: 205))).framed, isFalse, reason: 'white on white');
+      expect(detectReceipt(grid(scene(left: 0.5, right: 0.5))).framed, isFalse, reason: 'no paper');
+    });
+
+    test('the real photos: framed unless the receipt runs off the frame', () {
+      const expected = {'action_wien': false, 'dm_wien': false, 'ernstings_wien': true, 'tedi_wien': true, 'tkmaxx_wien': true};
+      for (final e in expected.entries) {
+        final (px, w, h) = readPgm('$frames/${e.key}.pgm');
+        final d = detectReceipt(upright(px, w, h));
+        expect(d.framed, e.value, reason: '${e.key}: $d');
+      }
     });
   });
 }

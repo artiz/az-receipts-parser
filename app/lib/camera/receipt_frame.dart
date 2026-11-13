@@ -80,13 +80,19 @@ class LumaGrid {
     return LumaGrid(gw, gh, out);
   }
 
-  /// Mean absolute difference to [other] (same size), 0..255: how much the
-  /// picture moved between two frames.
+  /// How much the picture moved between two frames (same size): the mean
+  /// absolute difference, 0..255, after removing the overall brightness
+  /// change, so the camera adjusting its exposure does not count as motion.
   double motionTo(LumaGrid other) {
     if (other.width != width || other.height != height) return 255;
-    var sum = 0;
+    var shift = 0;
     for (var i = 0; i < values.length; i++) {
-      sum += (values[i] - other.values[i]).abs();
+      shift += values[i] - other.values[i];
+    }
+    final mean = shift / values.length;
+    var sum = 0.0;
+    for (var i = 0; i < values.length; i++) {
+      sum += (values[i] - other.values[i] - mean).abs();
     }
     return sum / values.length;
   }
@@ -141,6 +147,10 @@ class ReceiptDetection {
   final double contrast;
 
   bool get aligned => hint == FrameHint.aligned;
+
+  /// The whole receipt is in the picture: both edges found, neither at the
+  /// frame border. Enough for a shot; the guides only help to get there.
+  bool get framed => left != null && right != null && left! > borderZone && right! < 1 - borderZone;
 
   @override
   String toString() => 'ReceiptDetection($hint, left: ${left?.toStringAsFixed(3)}, right: ${right?.toStringAsFixed(3)}, '
@@ -234,9 +244,9 @@ const double borderZone = 0.05;
 
 /// Steadiness and hold time before an automatic shot.
 class AutoCapture {
-  AutoCapture({this.hold = const Duration(milliseconds: 700), this.maxMotion = 6});
+  AutoCapture({this.hold = const Duration(milliseconds: 300), this.maxMotion = 10});
 
-  /// How long the receipt must stay on the lines.
+  /// How long the receipt must stay framed.
   final Duration hold;
 
   /// Largest frame-to-frame change (mean absolute difference) still
@@ -248,7 +258,8 @@ class AutoCapture {
 
   bool get fired => _fired;
 
-  /// Feed one analysed frame. Returns the progress towards the shot (0..1);
+  /// Feed one analysed frame ([aligned]: the receipt is framed). Returns the
+  /// progress towards the shot (0..1);
   /// [fired] turns true once, when it reaches 1.
   double update({required bool aligned, required double motion, required DateTime now}) {
     if (_fired) return 1;

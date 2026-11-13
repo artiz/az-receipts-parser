@@ -164,24 +164,26 @@ void main() {
     }
   }
 
-  testWidgets('a receipt held on the lines is photographed by itself', (tester) async {
+  testWidgets('a receipt fully in view is photographed after 300 ms of holding still', (tester) async {
     await boot(tester, FakeCamera());
     final run = open(tester);
     await run();
     expect(find.byType(ReceiptCameraPage), findsOneWidget);
     expect(find.text('Put the receipt between the lines'), findsOneWidget);
 
-    // Too small: no shot, the hint says what to do.
-    await feed(tester, frame(left: 0.32, right: 0.68), n: 10);
+    // Running off the left side: one edge only, no shot, the hint says what to do.
+    await feed(tester, frame(left: 0.0, right: 0.75), n: 8);
     expect(camera.pictures, 0);
-    expect(find.text('Move closer'), findsOneWidget);
+    expect(find.text('Move back a little'), findsOneWidget);
 
-    // On the lines and still: the hold fills, then the shot.
-    final aligned = frame();
-    await feed(tester, aligned, n: 3);
+    // Whole receipt in view, smaller than the lines: framed, so it shoots.
+    final framed = frame(left: 0.32, right: 0.68);
+    // Frames 150 ms apart: the first after the change counts as motion, the
+    // second starts the hold, the shot comes 300 ms (two frames) later.
+    await feed(tester, framed, n: 3);
     expect(camera.pictures, 0, reason: 'still holding');
     expect(find.text('Hold still…'), findsOneWidget);
-    await feed(tester, aligned, n: 5);
+    await feed(tester, framed, n: 1);
     await settle(tester);
     expect(camera.pictures, 1);
     expect(find.byType(ReceiptCameraPage), findsNothing, reason: 'the page closed with the photo');
@@ -209,8 +211,8 @@ void main() {
     );
     await tester.tap(find.text('scan'));
     await settle(tester);
-    // Nothing on the lines: tap the shutter.
-    await feed(tester, frame(left: 0.4, right: 0.6), n: 3);
+    // No receipt on the table: tap the shutter.
+    await feed(tester, frame(left: 0.5, right: 0.5), n: 3);
     await tester.tap(find.byIcon(Icons.receipt_long));
     await settle(tester);
     expect(camera.pictures, 1);

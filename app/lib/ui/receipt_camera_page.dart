@@ -1,8 +1,8 @@
 /// The app's own camera for receipts: a full-screen preview with two
 /// vertical guide lines. Every few frames the luminance is checked for the
-/// receipt's edges (camera/receipt_frame.dart); once they sit on the lines
-/// and the phone holds still, the photo is taken by itself. The shutter
-/// button works at any time.
+/// receipt's edges (camera/receipt_frame.dart); once the whole receipt is in
+/// view and the phone holds still for a moment, the photo is taken by
+/// itself. The lines show where to put it. The shutter works at any time.
 library;
 
 import 'dart:async';
@@ -167,7 +167,7 @@ class _ReceiptCameraPageState extends State<ReceiptCameraPage> with WidgetsBindi
       final detection = detectReceipt(grid, guides: widget.guides);
       final motion = _previous == null ? 255.0 : grid.motionTo(_previous!);
       _previous = grid;
-      final progress = _auto.update(aligned: detection.aligned, motion: motion, now: now);
+      final progress = _auto.update(aligned: detection.framed, motion: motion, now: now);
       if (mounted) {
         setState(() {
           _detection = detection;
@@ -236,7 +236,7 @@ class _ReceiptCameraPageState extends State<ReceiptCameraPage> with WidgetsBindi
 
   String _hint(AppLocalizations l) {
     if (!_autoOn) return l.cameraHintManual;
-    if (_progress > 0) return l.cameraHintHold;
+    if (_progress > 0 || _detection.framed) return l.cameraHintHold;
     return switch (_detection.hint) {
       FrameHint.searching => l.cameraHintSearching,
       FrameHint.lowContrast => l.cameraHintLowContrast,
@@ -252,9 +252,11 @@ class _ReceiptCameraPageState extends State<ReceiptCameraPage> with WidgetsBindi
     final l = AppLocalizations.of(context);
     final c = _controller;
     final auto = _autoOn;
-    final aligned = auto && _detection.aligned;
+    // Green: the whole receipt is in view and the shot is coming; yellow: one
+    // edge found (it runs off a side); white: nothing yet.
+    final framed = auto && _detection.framed;
     final seen = auto && (_detection.left != null || _detection.right != null);
-    final lineColor = aligned ? Colors.greenAccent : (seen ? Colors.amberAccent : Colors.white);
+    final lineColor = framed ? Colors.greenAccent : (seen ? Colors.amberAccent : Colors.white);
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -375,7 +377,7 @@ class _GuidesPainter extends CustomPainter {
       canvas.drawLine(Offset(size.width * f, top), Offset(size.width * f, bottom), line);
     }
     final d = detection;
-    if (d == null || d.aligned) return;
+    if (d == null || d.framed) return;
     final edge = Paint()
       ..color = Colors.amberAccent.withValues(alpha: 0.5)
       ..strokeWidth = 2;
