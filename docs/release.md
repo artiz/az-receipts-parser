@@ -142,8 +142,17 @@ to Play:
 The version code is the commit count of the built commit, as in the local
 script, so local and CI builds of the same commit agree and every later
 commit gets a higher one. Release notes come from
-`app/distribution/whatsnew/whatsnew-en-US` (at most 500 characters; add
-`whatsnew-de-DE` and `whatsnew-ru-RU` once the listing has those languages).
+`app/distribution/whatsnew/whatsnew-<locale>` (en-US, de-DE, ru-RU; at most
+500 characters each); the *notes* input of a manual run replaces en-US only.
+Update the three files in the pull request that brings the change.
+
+The release build runs R8 (minify, `app/android/app/proguard-rules.pro`):
+Google Play flags apps whose DEX code is less than 25 % obfuscated. The
+mapping file is uploaded with the bundle, so Android vitals shows readable
+stack traces, and the workflow fails when it is missing. R8 problems show at
+run time, not in the build: try each release from internal testing (scan,
+camera, statement import, folder access, widget, notifications) before
+promoting it.
 With managed publishing on, an approved release still waits for *Publish
 changes* in the console; internal testing needs no review.
 
