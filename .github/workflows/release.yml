@@ -135,8 +135,8 @@ jobs:
 
       - name: Permissions in the bundle
         run: |
-          # Plugins add permissions on their own; the app strips the ones it
-          # does not use (app/build.gradle.kts). Check the manifest that ships,
+          # Plugins add permissions on their own; the app removes the ones it
+          # does not use (AndroidManifest.xml). Check the manifest that ships,
           # in the bundle, and fail when one comes back.
           curl -sSL -o "$RUNNER_TEMP/bundletool.jar" https://github.com/google/bundletool/releases/download/1.18.3/bundletool-all-1.18.3.jar
           java -jar "$RUNNER_TEMP/bundletool.jar" dump manifest --bundle "$AAB" > "$RUNNER_TEMP/manifest.xml"
