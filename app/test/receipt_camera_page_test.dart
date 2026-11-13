@@ -164,29 +164,56 @@ void main() {
     }
   }
 
-  testWidgets('a receipt fully in view is photographed after 300 ms of holding still', (tester) async {
+  testWidgets('a receipt edge in view (yellow lines) is photographed after 300 ms of holding still', (tester) async {
     await boot(tester, FakeCamera());
     final run = open(tester);
     await run();
     expect(find.byType(ReceiptCameraPage), findsOneWidget);
     expect(find.text('Put the receipt between the lines'), findsOneWidget);
 
-    // Running off the left side: one edge only, no shot, the hint says what to do.
-    await feed(tester, frame(left: 0.0, right: 0.75), n: 8);
+    // An empty table: no edge, no shot, however long.
+    await feed(tester, frame(left: 0.5, right: 0.5), n: 8);
     expect(camera.pictures, 0);
-    expect(find.text('Move back a little'), findsOneWidget);
+    expect(find.text('Put the receipt between the lines'), findsOneWidget);
 
-    // Whole receipt in view, smaller than the lines: framed, so it shoots.
-    final framed = frame(left: 0.32, right: 0.68);
+    // Running off the left side: one edge only, still enough for the shot.
+    final oneEdge = frame(left: 0.0, right: 0.75);
     // Frames 150 ms apart: the first after the change counts as motion, the
     // second starts the hold, the shot comes 300 ms (two frames) later.
-    await feed(tester, framed, n: 3);
+    await feed(tester, oneEdge, n: 3);
     expect(camera.pictures, 0, reason: 'still holding');
     expect(find.text('Hold still…'), findsOneWidget);
-    await feed(tester, framed, n: 1);
+    await feed(tester, oneEdge, n: 1);
     await settle(tester);
     expect(camera.pictures, 1);
     expect(find.byType(ReceiptCameraPage), findsNothing, reason: 'the page closed with the photo');
+  });
+
+  testWidgets('a receipt fully in view (green lines) is photographed the same way', (tester) async {
+    await boot(tester, FakeCamera());
+    final run = open(tester);
+    await run();
+    final framed = frame(left: 0.32, right: 0.68);
+    await feed(tester, framed, n: 3);
+    expect(camera.pictures, 0);
+    await feed(tester, framed, n: 1);
+    await settle(tester);
+    expect(camera.pictures, 1);
+  });
+
+  testWidgets('a long press on the hint shows what the detector sees', (tester) async {
+    await boot(tester, FakeCamera());
+    final run = open(tester);
+    await run();
+    await settle(tester);
+    expect(find.byKey(const ValueKey('camera-diag')), findsNothing);
+    await tester.longPress(find.text('Put the receipt between the lines'));
+    await tester.pump();
+    await feed(tester, frame(left: 0.5, right: 0.5), n: 2);
+    final line = tester.widget<Text>(find.byKey(const ValueKey('camera-diag'))).data!;
+    expect(line, startsWith('L - R - · step'));
+    expect(line, contains('motion '));
+    expect(line, endsWith('searching'));
   });
 
   testWidgets('the outcome is the photo; the shutter works without the lines', (tester) async {

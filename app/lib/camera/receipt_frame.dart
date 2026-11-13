@@ -244,38 +244,55 @@ const double borderZone = 0.05;
 
 /// Steadiness and hold time before an automatic shot.
 class AutoCapture {
-  AutoCapture({this.hold = const Duration(milliseconds: 300), this.maxMotion = 10});
+  AutoCapture({this.hold = const Duration(milliseconds: 300), this.maxMotion = 10, this.grace = const Duration(milliseconds: 250)});
 
-  /// How long the receipt must stay framed.
+  /// How long the receipt must stay in view (lines yellow or green).
   final Duration hold;
 
   /// Largest frame-to-frame change (mean absolute difference) still
   /// counted as holding still.
   final double maxMotion;
 
+  /// A single bad frame (an edge lost for a moment, a small jolt) does not
+  /// start the hold over unless it lasts longer than this.
+  final Duration grace;
+
   DateTime? _since;
+  DateTime? _lastGood;
   bool _fired = false;
 
   bool get fired => _fired;
 
-  /// Feed one analysed frame ([aligned]: the receipt is framed). Returns the
-  /// progress towards the shot (0..1);
-  /// [fired] turns true once, when it reaches 1.
-  double update({required bool aligned, required double motion, required DateTime now}) {
+  /// Feed one analysed frame ([ready]: a receipt edge is in view). Returns
+  /// the progress towards the shot (0..1); [fired] turns true once, when it
+  /// reaches 1. The shot itself needs a good frame: ready and steady.
+  double update({required bool ready, required double motion, required DateTime now}) {
     if (_fired) return 1;
-    if (!aligned || motion > maxMotion) {
-      _since = null;
-      return 0;
+    final since = _since;
+    final good = ready && motion <= maxMotion;
+    if (!good) {
+      final last = _lastGood;
+      if (since == null || last == null || now.difference(last) > grace) {
+        _since = null;
+        _lastGood = null;
+        return 0;
+      }
+      return _progress(since, now).clamp(0.0, 0.99);
     }
-    final since = _since ??= now;
-    final p = hold.inMicroseconds == 0 ? 1.0 : (now.difference(since).inMicroseconds / hold.inMicroseconds).clamp(0.0, 1.0);
+    _lastGood = now;
+    final start = _since ??= now;
+    final p = _progress(start, now);
     if (p >= 1) _fired = true;
     return p;
   }
 
+  double _progress(DateTime since, DateTime now) =>
+      hold.inMicroseconds == 0 ? 1.0 : (now.difference(since).inMicroseconds / hold.inMicroseconds).clamp(0.0, 1.0);
+
   /// Start over (after a manual shot failed, or the user turned auto back on).
   void reset() {
     _since = null;
+    _lastGood = null;
     _fired = false;
   }
 }

@@ -111,13 +111,15 @@ the bookings in the file.
    propose one booking: merchant as description, total as amount, the line
    items in the note, the category from the file's history for that merchant.
    The app's own camera shows two vertical guide lines and takes the photo
-   by itself once the whole receipt is in view (both paper edges found,
-   neither at the frame border; the lines turn green) and the phone holds
-   still for 0.3 s; auto-exposure changes do not count as movement (`lib/camera/receipt_frame.dart`: summed signed horizontal
-   steps of the luminance per column find the paper edges, no model, about
-   a millisecond per frame). Yellow lines: only one edge found (the receipt
-   runs off a side); hints say "closer", "back a little", "centre";
-   the shutter works at any time, the torch is one tap away. *Settings →
+   by itself once a paper edge is in view (lines yellow: one edge, green: the
+   whole receipt) and the phone holds still for 0.3 s; one bad frame does
+   not restart the wait, auto-exposure changes do not count as movement
+   (`lib/camera/receipt_frame.dart`: summed signed horizontal steps of the
+   luminance per column find the paper edges, no model, about a millisecond
+   per frame). Hints say "closer", "back a little", "centre"; a long press
+   on the hint shows the detector's numbers (edges, step, rows, motion,
+   hold, fps) for tuning. The shutter works at any time, the torch is one
+   tap away. *Settings →
    Receipt camera* turns auto-capture off or goes back to the phone's camera
    app, which is also the fallback when the camera permission is refused.
 4. **Picture button**: a banking-app screenshot from the gallery → OCR →

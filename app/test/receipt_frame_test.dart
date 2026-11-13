@@ -207,28 +207,45 @@ void main() {
     final t0 = DateTime(2026, 11, 13, 12);
     DateTime at(int ms) => t0.add(Duration(milliseconds: ms));
 
-    test('fires once after the receipt stays framed and still for 300 ms', () {
+    test('fires once after a receipt edge stays in view and still for 300 ms', () {
       final a = AutoCapture();
       expect(a.hold, const Duration(milliseconds: 300));
-      expect(a.update(aligned: true, motion: 2, now: at(0)), 0);
-      expect(a.update(aligned: true, motion: 2, now: at(150)), closeTo(0.5, 0.01));
+      expect(a.update(ready: true, motion: 2, now: at(0)), 0);
+      expect(a.update(ready: true, motion: 2, now: at(150)), closeTo(0.5, 0.01));
       expect(a.fired, isFalse);
-      expect(a.update(aligned: true, motion: 2, now: at(300)), 1);
+      expect(a.update(ready: true, motion: 2, now: at(300)), 1);
       expect(a.fired, isTrue);
-      expect(a.update(aligned: false, motion: 50, now: at(400)), 1, reason: 'stays fired until reset');
+      expect(a.update(ready: false, motion: 50, now: at(400)), 1, reason: 'stays fired until reset');
       a.reset();
       expect(a.fired, isFalse);
-      expect(a.update(aligned: true, motion: 2, now: at(500)), 0);
+      expect(a.update(ready: true, motion: 2, now: at(500)), 0);
     });
 
-    test('moving or losing the receipt starts the hold over', () {
+    test('one bad frame does not start the hold over, nor does it shoot', () {
       final a = AutoCapture();
-      a.update(aligned: true, motion: 2, now: at(0));
-      a.update(aligned: true, motion: 2, now: at(200));
-      expect(a.update(aligned: true, motion: 15, now: at(250)), 0, reason: 'shaking');
-      expect(a.update(aligned: true, motion: 8, now: at(300)), 0, reason: 'a steady hand: the hold starts');
-      expect(a.update(aligned: true, motion: 8, now: at(450)), closeTo(0.5, 0.01));
-      expect(a.update(aligned: false, motion: 2, now: at(500)), 0, reason: 'the receipt left the picture');
+      a.update(ready: true, motion: 2, now: at(0));
+      a.update(ready: true, motion: 2, now: at(100));
+      expect(a.update(ready: false, motion: 2, now: at(200)), closeTo(0.67, 0.01), reason: 'edge lost for one frame');
+      expect(a.update(ready: true, motion: 15, now: at(300)), 0.99, reason: 'a jolt at the end: no blurred shot');
+      expect(a.fired, isFalse);
+      expect(a.update(ready: true, motion: 3, now: at(400)), 1);
+      expect(a.fired, isTrue);
+    });
+
+    test('moving or losing the receipt for longer starts the hold over', () {
+      final a = AutoCapture();
+      a.update(ready: true, motion: 2, now: at(0));
+      a.update(ready: true, motion: 2, now: at(100));
+      a.update(ready: true, motion: 15, now: at(200));
+      a.update(ready: true, motion: 15, now: at(300));
+      expect(a.update(ready: true, motion: 15, now: at(400)), 0, reason: 'shaking for 300 ms');
+      expect(a.update(ready: true, motion: 8, now: at(500)), 0, reason: 'a steady hand: the hold starts');
+      expect(a.update(ready: true, motion: 8, now: at(650)), closeTo(0.5, 0.01));
+      for (final ms in [700, 800]) {
+        a.update(ready: false, motion: 2, now: at(ms));
+      }
+      expect(a.update(ready: false, motion: 2, now: at(950)), 0, reason: 'the receipt left the picture');
+      expect(a.update(ready: true, motion: 2, now: at(1000)), 0);
       expect(a.fired, isFalse);
     });
 
@@ -245,7 +262,7 @@ void main() {
     });
   });
 
-  group('framed (what triggers the shot)', () {
+  group('framed (green lines)', () {
     LumaGrid grid(Uint8List px) => upright(px, 360, 640);
 
     test('the whole receipt in view counts, wherever it is between the borders', () {
@@ -265,6 +282,16 @@ void main() {
         final d = detectReceipt(upright(px, w, h));
         expect(d.framed, e.value, reason: '${e.key}: $d');
       }
+    });
+
+    test('auto-capture needs one edge: every real photo has one, an empty table has none', () {
+      for (final name in ['action_wien', 'dm_wien', 'ernstings_wien', 'tedi_wien', 'tkmaxx_wien']) {
+        final (px, w, h) = readPgm('$frames/$name.pgm');
+        final d = detectReceipt(upright(px, w, h));
+        expect(d.left != null || d.right != null, isTrue, reason: '$name: $d');
+      }
+      final empty = detectReceipt(grid(scene(left: 0.5, right: 0.5)));
+      expect(empty.left == null && empty.right == null, isTrue, reason: '$empty');
     });
   });
 }

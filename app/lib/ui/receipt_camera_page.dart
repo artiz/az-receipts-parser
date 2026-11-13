@@ -64,6 +64,11 @@ class _ReceiptCameraPageState extends State<ReceiptCameraPage> with WidgetsBindi
   double _progress = 0;
   final AutoCapture _auto = AutoCapture();
 
+  // Diagnostics (long press on the hint): what the detector sees.
+  bool _diag = false;
+  double _motion = 0;
+  double _fps = 0;
+
   @override
   void initState() {
     super.initState();
@@ -156,6 +161,7 @@ class _ReceiptCameraPageState extends State<ReceiptCameraPage> with WidgetsBindi
     final now = widget.clock();
     if (_processing || _capturing || now.difference(_lastFrame) < frameInterval) return;
     _processing = true;
+    final gap = now.difference(_lastFrame).inMicroseconds;
     _lastFrame = now;
     try {
       final c = _controller;
@@ -167,11 +173,16 @@ class _ReceiptCameraPageState extends State<ReceiptCameraPage> with WidgetsBindi
       final detection = detectReceipt(grid, guides: widget.guides);
       final motion = _previous == null ? 255.0 : grid.motionTo(_previous!);
       _previous = grid;
-      final progress = _auto.update(aligned: detection.framed, motion: motion, now: now);
+      // Any receipt edge in view (yellow or green lines) is enough: the
+      // whole receipt is the ideal, but a shot beats waiting for it.
+      final ready = detection.left != null || detection.right != null;
+      final progress = _auto.update(ready: ready, motion: motion, now: now);
       if (mounted) {
         setState(() {
           _detection = detection;
           _progress = progress;
+          _motion = motion;
+          _fps = gap > 0 && gap < 5e6 ? 1e6 / gap : 0;
         });
       }
       if (_auto.fired) unawaited(_capture());
@@ -236,7 +247,7 @@ class _ReceiptCameraPageState extends State<ReceiptCameraPage> with WidgetsBindi
 
   String _hint(AppLocalizations l) {
     if (!_autoOn) return l.cameraHintManual;
-    if (_progress > 0 || _detection.framed) return l.cameraHintHold;
+    if (_progress > 0) return l.cameraHintHold;
     return switch (_detection.hint) {
       FrameHint.searching => l.cameraHintSearching,
       FrameHint.lowContrast => l.cameraHintLowContrast,
@@ -311,10 +322,25 @@ class _ReceiptCameraPageState extends State<ReceiptCameraPage> with WidgetsBindi
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(18)),
-                    child: Text(_hint(l), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 15)),
+                  GestureDetector(
+                    onLongPress: () => setState(() => _diag = !_diag),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(18)),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_hint(l), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 15)),
+                          if (_diag)
+                            Text(
+                              diagnosticLine(_detection, motion: _motion, maxMotion: _auto.maxMotion, progress: _progress, fps: _fps),
+                              key: const ValueKey('camera-diag'),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.white70, fontSize: 11, fontFamily: 'monospace'),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
@@ -388,4 +414,15 @@ class _GuidesPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_GuidesPainter old) => old.color != color || old.detection != detection || old.guides != guides;
+}
+
+/// One line for tuning on a real phone: edges (fraction of the width, `-`
+/// when not found), edge strength, how many rows show them, motion against
+/// its limit, hold progress and analysed frames per second.
+@visibleForTesting
+String diagnosticLine(ReceiptDetection d, {required double motion, required double maxMotion, required double progress, required double fps}) {
+  String f(double? v) => v == null ? '-' : v.toStringAsFixed(2);
+  return 'L ${f(d.left)} R ${f(d.right)} · step ${d.contrast.toStringAsFixed(0)} rows ${(d.coverage * 100).round()}% · '
+      'motion ${motion >= 255 ? '-' : motion.toStringAsFixed(1)}/${maxMotion.toStringAsFixed(0)} · '
+      'hold ${(progress * 100).round()}% · ${fps.toStringAsFixed(0)} fps · ${d.hint.name}';
 }
