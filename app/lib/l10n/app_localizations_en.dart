@@ -760,6 +760,54 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get settingsCamera => 'Receipt camera';
+
+  @override
+  String get inAppCameraTitle => 'In-app camera with guides';
+
+  @override
+  String get inAppCameraHint => 'Off: the phone\'s camera app, without guides';
+
+  @override
+  String get autoCaptureTitle => 'Auto-capture';
+
+  @override
+  String get autoCaptureHint =>
+      'Takes the photo once the receipt sits between the lines and the phone holds still';
+
+  @override
+  String get cameraUnavailable =>
+      'In-app camera unavailable, opening the camera app';
+
+  @override
+  String get cameraAutoCapture => 'Auto-capture on/off';
+
+  @override
+  String get cameraTorch => 'Torch';
+
+  @override
+  String get cameraHintSearching => 'Put the receipt between the lines';
+
+  @override
+  String get cameraHintLowContrast =>
+      'Too little contrast: a darker surface helps, or tap the shutter';
+
+  @override
+  String get cameraHintCloser => 'Move closer';
+
+  @override
+  String get cameraHintFurther => 'Move back a little';
+
+  @override
+  String get cameraHintCenter => 'Centre the receipt between the lines';
+
+  @override
+  String get cameraHintHold => 'Hold still…';
+
+  @override
+  String get cameraHintManual => 'Tap the shutter to take the photo';
+
+  @override
   String get previousYear => 'Prev. year';
 
   @override

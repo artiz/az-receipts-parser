@@ -1348,6 +1348,96 @@ abstract class AppLocalizations {
   /// **'{count} more'**
   String moreDescriptions(int count);
 
+  /// No description provided for @settingsCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt camera'**
+  String get settingsCamera;
+
+  /// No description provided for @inAppCameraTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'In-app camera with guides'**
+  String get inAppCameraTitle;
+
+  /// No description provided for @inAppCameraHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Off: the phone\'s camera app, without guides'**
+  String get inAppCameraHint;
+
+  /// No description provided for @autoCaptureTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-capture'**
+  String get autoCaptureTitle;
+
+  /// No description provided for @autoCaptureHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Takes the photo once the receipt sits between the lines and the phone holds still'**
+  String get autoCaptureHint;
+
+  /// No description provided for @cameraUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'In-app camera unavailable, opening the camera app'**
+  String get cameraUnavailable;
+
+  /// No description provided for @cameraAutoCapture.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-capture on/off'**
+  String get cameraAutoCapture;
+
+  /// No description provided for @cameraTorch.
+  ///
+  /// In en, this message translates to:
+  /// **'Torch'**
+  String get cameraTorch;
+
+  /// No description provided for @cameraHintSearching.
+  ///
+  /// In en, this message translates to:
+  /// **'Put the receipt between the lines'**
+  String get cameraHintSearching;
+
+  /// No description provided for @cameraHintLowContrast.
+  ///
+  /// In en, this message translates to:
+  /// **'Too little contrast: a darker surface helps, or tap the shutter'**
+  String get cameraHintLowContrast;
+
+  /// No description provided for @cameraHintCloser.
+  ///
+  /// In en, this message translates to:
+  /// **'Move closer'**
+  String get cameraHintCloser;
+
+  /// No description provided for @cameraHintFurther.
+  ///
+  /// In en, this message translates to:
+  /// **'Move back a little'**
+  String get cameraHintFurther;
+
+  /// No description provided for @cameraHintCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Centre the receipt between the lines'**
+  String get cameraHintCenter;
+
+  /// No description provided for @cameraHintHold.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold still…'**
+  String get cameraHintHold;
+
+  /// No description provided for @cameraHintManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the shutter to take the photo'**
+  String get cameraHintManual;
+
   /// No description provided for @previousYear.
   ///
   /// In en, this message translates to:

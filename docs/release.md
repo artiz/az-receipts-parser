@@ -67,6 +67,12 @@ All under **Set up your app** on the dashboard:
   collected, not shared (the user starts the transfer), processed
   ephemerally, optional, for app functionality. Nothing else: the budget
   file goes to the user's own folder, no analytics, no identifiers.
+- **Permissions** in the bundle: internet, notifications, camera (the in-app
+  receipt camera). The camera plugin also declares the microphone and legacy
+  storage; `AndroidManifest.xml` removes both and marks the camera as not
+  required (the phone's camera app is the fallback), and the release
+  workflow fails if they come back in the merged manifest. Camera frames
+  are analysed on the device only, so Data safety does not change.
 - **Government apps / Financial features**: the financial features
   declaration applies to loans, banking, crypto and the like; a personal
   budgeting tool declares "none of the above".

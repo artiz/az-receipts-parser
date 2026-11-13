@@ -1,6 +1,6 @@
 # AZ Budget – Privacy Policy / Datenschutzerklärung
 
-_Last updated: 6 November 2026_
+_Last updated: 13 November 2026_
 
 ## English
 
@@ -36,7 +36,11 @@ when the month's expenses reach a limit you set. Notifications are generated
 on the device.
 
 **Permissions.** Internet (only for the optional OpenAI import), notifications
-(the limit alerts), camera through the system camera app (receipt photos).
+(the limit alerts), camera (receipt photos). The app's own receipt camera
+analyses the live picture on the device to see whether a receipt lies between
+its guide lines; those frames are not stored or sent anywhere, only the photo
+you take is used. In Settings you can switch to the phone's camera app
+instead.
 
 **Deleting your data.** Uninstalling the app removes everything it stored on
 the device. Your spreadsheet stays where you keep it; delete it yourself if
@@ -80,8 +84,11 @@ Benachrichtigung, wenn die Monatsausgaben ein von dir gesetztes Limit
 erreichen. Sie wird auf dem Gerät erzeugt.
 
 **Berechtigungen.** Internet (nur für den optionalen OpenAI-Import),
-Benachrichtigungen (Limit-Hinweise), Kamera über die System-Kamera-App
-(Belegfotos).
+Benachrichtigungen (Limit-Hinweise), Kamera (Belegfotos). Die eigene
+Belegkamera der App wertet das Livebild auf dem Gerät aus, um zu erkennen, ob
+ein Beleg zwischen den Hilfslinien liegt; diese Bilder werden weder
+gespeichert noch gesendet, verwendet wird nur das aufgenommene Foto. In den
+Einstellungen kann stattdessen die Kamera-App des Telefons gewählt werden.
 
 **Daten löschen.** Das Deinstallieren der App entfernt alles, was sie auf dem
 Gerät gespeichert hat. Deine Tabelle bleibt, wo du sie aufbewahrst.
