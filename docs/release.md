@@ -69,9 +69,12 @@ All under **Set up your app** on the dashboard:
   file goes to the user's own folder, no analytics, no identifiers.
 - **Permissions** in the bundle: internet, notifications, camera (the in-app
   receipt camera). The camera plugin also declares the microphone and legacy
-  storage; `AndroidManifest.xml` removes both and marks the camera as not
-  required (the phone's camera app is the fallback), and the release
-  workflow fails if they come back in the merged manifest. Camera frames
+  storage, and the manifest merger adds READ_EXTERNAL_STORAGE as implied by
+  the latter. `app/build.gradle.kts` strips all three from the merged
+  manifest (a `tools:node="remove"` alone does not catch the implied one),
+  `AndroidManifest.xml` marks the camera as not required (the phone's camera
+  app is the fallback), and the release workflow fails if any of them shows
+  up in the bundle's manifest (bundletool). Camera frames
   are analysed on the device only, so Data safety does not change.
 - **Government apps / Financial features**: the financial features
   declaration applies to loans, banking, crypto and the like; a personal

@@ -1,3 +1,4 @@
+import com.android.build.api.artifact.SingleArtifact
 import java.io.FileInputStream
 import java.util.Properties
 
@@ -75,6 +76,50 @@ android {
             isMinifyEnabled = false
             isShrinkResources = false
         }
+    }
+}
+
+// Permissions the app never uses but plugins bring in: the camera plugin
+// declares the microphone (video) and legacy storage, and the manifest merger
+// adds READ_EXTERNAL_STORAGE as implied by the latter even when the app
+// manifest removes it with tools:node="remove". They are cut from the final
+// merged manifest here; the release workflow checks the bundle's manifest.
+val unusedPermissions = listOf(
+    "android.permission.RECORD_AUDIO",
+    "android.permission.WRITE_EXTERNAL_STORAGE",
+    "android.permission.READ_EXTERNAL_STORAGE",
+)
+
+abstract class StripPermissionsTask : DefaultTask() {
+    @get:InputFile
+    abstract val mergedManifest: RegularFileProperty
+
+    @get:OutputFile
+    abstract val updatedManifest: RegularFileProperty
+
+    @get:Input
+    abstract val permissions: ListProperty<String>
+
+    @TaskAction
+    fun strip() {
+        var text = mergedManifest.get().asFile.readText()
+        for (name in permissions.get()) {
+            // One <uses-permission .../> element, on one line or several.
+            val element = Regex("\\s*<uses-permission[^>]*android:name=\"" + Regex.escape(name) + "\"[^>]*/>")
+            text = element.replace(text, "")
+        }
+        updatedManifest.get().asFile.writeText(text)
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        val strip = tasks.register<StripPermissionsTask>("strip${variant.name.replaceFirstChar { it.uppercase() }}Permissions") {
+            permissions.set(unusedPermissions)
+        }
+        variant.artifacts.use(strip)
+            .wiredWithFiles(StripPermissionsTask::mergedManifest, StripPermissionsTask::updatedManifest)
+            .toTransform(SingleArtifact.MERGED_MANIFEST)
     }
 }
 
