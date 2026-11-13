@@ -759,6 +759,55 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get settingsCamera => 'Камера для чеков';
+
+  @override
+  String get inAppCameraTitle => 'Своя камера с направляющими';
+
+  @override
+  String get inAppCameraHint =>
+      'Выкл.: приложение камеры телефона, без направляющих';
+
+  @override
+  String get autoCaptureTitle => 'Автоматический снимок';
+
+  @override
+  String get autoCaptureHint =>
+      'Снимает, когда чек лежит между линиями и телефон неподвижен';
+
+  @override
+  String get cameraUnavailable =>
+      'Своя камера недоступна, открывается приложение камеры';
+
+  @override
+  String get cameraAutoCapture => 'Автоснимок вкл./выкл.';
+
+  @override
+  String get cameraTorch => 'Фонарик';
+
+  @override
+  String get cameraHintSearching => 'Положите чек между линиями';
+
+  @override
+  String get cameraHintLowContrast =>
+      'Мало контраста: помогает тёмный фон, или нажмите кнопку';
+
+  @override
+  String get cameraHintCloser => 'Ближе';
+
+  @override
+  String get cameraHintFurther => 'Чуть дальше';
+
+  @override
+  String get cameraHintCenter => 'Поставьте чек по центру между линиями';
+
+  @override
+  String get cameraHintHold => 'Держите неподвижно…';
+
+  @override
+  String get cameraHintManual => 'Нажмите кнопку, чтобы сделать снимок';
+
+  @override
   String get previousYear => 'Прошлый год';
 
   @override

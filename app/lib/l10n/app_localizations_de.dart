@@ -763,6 +763,55 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get settingsCamera => 'Belegkamera';
+
+  @override
+  String get inAppCameraTitle => 'Eigene Kamera mit Hilfslinien';
+
+  @override
+  String get inAppCameraHint =>
+      'Aus: die Kamera-App des Telefons, ohne Hilfslinien';
+
+  @override
+  String get autoCaptureTitle => 'Automatisch auslösen';
+
+  @override
+  String get autoCaptureHint =>
+      'Löst aus, sobald der Beleg zwischen den Linien liegt und das Telefon ruhig ist';
+
+  @override
+  String get cameraUnavailable =>
+      'Eigene Kamera nicht verfügbar, die Kamera-App wird geöffnet';
+
+  @override
+  String get cameraAutoCapture => 'Automatisch auslösen ein/aus';
+
+  @override
+  String get cameraTorch => 'Taschenlampe';
+
+  @override
+  String get cameraHintSearching => 'Beleg zwischen die Linien legen';
+
+  @override
+  String get cameraHintLowContrast =>
+      'Zu wenig Kontrast: dunkler Untergrund hilft, oder Auslöser tippen';
+
+  @override
+  String get cameraHintCloser => 'Näher heran';
+
+  @override
+  String get cameraHintFurther => 'Etwas weiter weg';
+
+  @override
+  String get cameraHintCenter => 'Beleg mittig zwischen die Linien';
+
+  @override
+  String get cameraHintHold => 'Ruhig halten…';
+
+  @override
+  String get cameraHintManual => 'Auslöser tippen für das Foto';
+
+  @override
   String get previousYear => 'Vorjahr';
 
   @override

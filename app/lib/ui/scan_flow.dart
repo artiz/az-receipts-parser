@@ -28,12 +28,32 @@ import '../parser/receipt_parser.dart';
 import 'entry_actions.dart';
 import 'entry_sheet.dart';
 import 'import_review_page.dart';
+import 'receipt_camera_page.dart';
 
 Future<void> scanReceipt(BuildContext context) async {
-  unawaited(AppScope.of(context).budget.sync());
-  final shot = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 92);
-  if (shot == null || !context.mounted) return;
-  await _receiptFromPhoto(context, shot.path);
+  final scope = AppScope.of(context);
+  unawaited(scope.budget.sync());
+  String? path;
+  if (scope.settings.inAppCamera) {
+    final outcome = await openReceiptCamera(context);
+    if (!context.mounted) return;
+    switch (outcome) {
+      case null:
+        return; // closed without a photo
+      case CameraShot(path: final p):
+        path = p;
+      case CameraUnavailable():
+        // No camera permission, no camera, or it failed to start: the
+        // phone's camera app needs no permission of ours.
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).cameraUnavailable)));
+    }
+  }
+  if (path == null) {
+    final shot = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 92);
+    if (shot == null || !context.mounted) return;
+    path = shot.path;
+  }
+  await _receiptFromPhoto(context, path);
 }
 
 Future<void> importScreenshot(BuildContext context) async {

@@ -5,8 +5,9 @@ name: release
 # - Push a tag v1.2.3: version name 1.2.3, uploaded to the internal track.
 # - Run it by hand (Actions -> release -> Run workflow): pick the track and,
 #   optionally, release notes; "upload" off only builds the bundle.
-# - A pull request that changes this file builds the bundle unsigned by the
-#   upload key (debug key) and uploads nothing: a check of the pipeline.
+# - A pull request that changes this file, the build scripts, the Android
+#   project or the plugins (pubspec) builds the bundle with the debug key and
+#   uploads nothing: a check of the pipeline and of the merged manifest.
 #
 # The version code is the commit count of the built commit, the same number
 # scripts/build_android.bat uses locally, so CI and local builds never clash.
@@ -16,7 +17,7 @@ on:
   push:
     tags: ['v*']
   pull_request:
-    paths: ['.github/workflows/release.yml', 'scripts/build_android_rust.sh', 'scripts/download_models.sh']
+    paths: ['.github/workflows/release.yml', 'scripts/build_android_rust.sh', 'scripts/download_models.sh', 'app/android/**', 'app/pubspec.yaml', 'app/pubspec.lock']
   workflow_dispatch:
     inputs:
       track:
@@ -131,6 +132,22 @@ jobs:
       - name: App Bundle
         working-directory: app
         run: flutter build appbundle --release --build-number=${{ steps.version.outputs.code }} --build-name=${{ steps.version.outputs.name }}
+
+      - name: Permissions in the bundle
+        run: |
+          # Plugins add permissions on their own; the app removes the ones it
+          # does not use (AndroidManifest.xml). Check the manifest that ships,
+          # in the bundle, and fail when one comes back.
+          curl -sSL -o "$RUNNER_TEMP/bundletool.jar" https://github.com/google/bundletool/releases/download/1.18.3/bundletool-all-1.18.3.jar
+          java -jar "$RUNNER_TEMP/bundletool.jar" dump manifest --bundle "$AAB" > "$RUNNER_TEMP/manifest.xml"
+          grep -E 'uses-permission|uses-feature' -A2 "$RUNNER_TEMP/manifest.xml" | sed 's/^ *//'
+          # Where the merger took them from, for the record.
+          report=app/build/app/outputs/logs/manifest-merger-release-report.txt
+          if [ -f "$report" ]; then grep -n -A3 'EXTERNAL_STORAGE\|RECORD_AUDIO' "$report" || true; fi
+          for p in RECORD_AUDIO WRITE_EXTERNAL_STORAGE READ_EXTERNAL_STORAGE; do
+            if grep -q "android.permission.$p\"" "$RUNNER_TEMP/manifest.xml"; then echo "::error::$p is in the bundle's manifest"; exit 1; fi
+          done
+          if grep -A2 'android.hardware.camera.any' "$RUNNER_TEMP/manifest.xml" | grep -q 'required="true"'; then echo "::error::the camera must not be a required feature"; exit 1; fi
 
       - name: Check the signature is the upload key
         if: github.event_name != 'pull_request'

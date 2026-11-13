@@ -8,3 +8,4 @@
 *.onnx binary
 *.xlsx binary
 *.pdf  binary
+*.pgm binary

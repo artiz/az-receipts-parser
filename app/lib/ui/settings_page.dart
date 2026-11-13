@@ -139,6 +139,21 @@ class SettingsPage extends StatelessWidget {
                     }
                   },
                 ),
+              SectionTitle(l.settingsCamera),
+              SwitchListTile(
+                secondary: const Icon(Icons.document_scanner_outlined),
+                title: Text(l.inAppCameraTitle),
+                subtitle: Text(l.inAppCameraHint),
+                value: settings.inAppCamera,
+                onChanged: settings.setInAppCamera,
+              ),
+              SwitchListTile(
+                secondary: const Icon(Icons.motion_photos_auto_outlined),
+                title: Text(l.autoCaptureTitle),
+                subtitle: Text(l.autoCaptureHint),
+                value: settings.autoCapture,
+                onChanged: settings.inAppCamera ? settings.setAutoCapture : null,
+              ),
               SectionTitle(l.settingsNotifications),
               SwitchListTile(
                 secondary: const Icon(Icons.notifications_active_outlined),

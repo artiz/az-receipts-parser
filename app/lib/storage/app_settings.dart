@@ -27,6 +27,8 @@ class AppSettings extends ChangeNotifier {
   static const _kOnboarding = 'onboarding_seen';
   static const _kBackups = 'backups';
   static const _kBackupsKept = 'backups_kept';
+  static const _kInAppCamera = 'in_app_camera';
+  static const _kAutoCapture = 'auto_capture';
   static const _kSavePhotos = 'save_photos';
   static const _kCurrency = 'currency';
   static const _kApproachEnabled = 'approach_enabled';
@@ -113,6 +115,22 @@ class AppSettings extends ChangeNotifier {
   int get backupsKept => (_prefs.getInt(_kBackupsKept) ?? defaultBackupsKept).clamp(1, 100);
   Future<void> setBackupsKept(int n) async {
     await _prefs.setInt(_kBackupsKept, n.clamp(1, 100));
+    notifyListeners();
+  }
+
+  /// Receipt photos with the app's own camera (guides, auto-capture);
+  /// off: the phone's camera app, as before.
+  bool get inAppCamera => _prefs.getBool(_kInAppCamera) ?? true;
+  Future<void> setInAppCamera(bool on) async {
+    await _prefs.setBool(_kInAppCamera, on);
+    notifyListeners();
+  }
+
+  /// The app's camera shoots by itself once the receipt sits between the
+  /// guide lines and the phone holds still.
+  bool get autoCapture => _prefs.getBool(_kAutoCapture) ?? true;
+  Future<void> setAutoCapture(bool on) async {
+    await _prefs.setBool(_kAutoCapture, on);
     notifyListeners();
   }
 
