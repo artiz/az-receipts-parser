@@ -70,10 +70,13 @@ android {
             // The upload key when android/key.properties exists (Google Play);
             // the debug key otherwise, so `flutter run --release` keeps working.
             signingConfig = if (hasUploadKey) signingConfigs.getByName("upload") else signingConfigs.getByName("debug")
-            // R8 spends most of the release build time shrinking the onnxruntime
-            // AAR and the tiny app classes; the APK gets a little bigger without it.
-            isMinifyEnabled = false
+            // R8: Google Play flags DEX code below 25 % obfuscation. The mapping
+            // file (build/app/outputs/mapping/release/mapping.txt) goes to Play
+            // with the bundle, so crash reports stay readable. Resources are not
+            // shrunk: little to gain, and plugins may look some up by name.
+            isMinifyEnabled = true
             isShrinkResources = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 }

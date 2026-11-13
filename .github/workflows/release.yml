@@ -17,7 +17,7 @@ on:
   push:
     tags: ['v*']
   pull_request:
-    paths: ['.github/workflows/release.yml', 'scripts/build_android_rust.sh', 'scripts/download_models.sh', 'app/android/**', 'app/pubspec.yaml', 'app/pubspec.lock']
+    paths: ['.github/workflows/release.yml', 'scripts/build_android_rust.sh', 'scripts/download_models.sh', 'app/android/**', 'app/pubspec.yaml', 'app/pubspec.lock', 'app/distribution/**']
   workflow_dispatch:
     inputs:
       track:
@@ -133,6 +133,14 @@ jobs:
         working-directory: app
         run: flutter build appbundle --release --build-number=${{ steps.version.outputs.code }} --build-name=${{ steps.version.outputs.name }}
 
+      - name: Obfuscation
+        run: |
+          # Play flags DEX code below 25 % obfuscation; R8 writes this mapping
+          # only when it ran. It is uploaded with the bundle (deobfuscation file).
+          mapping=app/build/app/outputs/mapping/release/mapping.txt
+          if [ ! -s "$mapping" ]; then echo "::error::no R8 mapping: minify is off (app/android/app/build.gradle.kts)"; exit 1; fi
+          echo "R8 mapping: $(grep -c ' -> ' "$mapping") entries"
+
       - name: Permissions in the bundle
         run: |
           # Plugins add permissions on their own; the app removes the ones it
@@ -187,6 +195,7 @@ jobs:
           track: ${{ inputs.track || 'internal' }}
           status: ${{ inputs.status || 'completed' }}
           whatsNewDirectory: app/distribution/whatsnew
+          mappingFile: app/build/app/outputs/mapping/release/mapping.txt
 
       - name: Remove the key
         if: always()
