@@ -142,10 +142,11 @@ the bookings in the file.
    those accept a small formula (`=500+232,23`) that is kept in the cell.
    Tapping the expenses card edits the two month limits (written to
    `Einstellungen`). The app posts a system notification once the calendar
-   month's expenses reach limit 1, and again at limit 2; before that an
-   optional early warning ("reaching limit 1") when they come within a margin
-   of limit 1, by default 5 % of the limit, set in Settings → Notifications
-   as a percentage or a fixed amount, or switched off.
+   month's expenses reach limit 1, and again at limit 2; before each of them
+   an optional early warning ("reaching limit 1/2") when they come within a
+   margin of that limit, by default 5 % of it, set separately for each limit
+   in Settings → Notifications as a percentage or a fixed amount, or switched
+   off. The limit 2 warning only comes once limit 1 is passed.
 7. **Settings → OpenAI**: API key (stored in Android's encrypted storage) and
    model (default `gpt-4.1-mini`). Only the statement/screenshot import uses it.
    **Settings → Language** overrides the system language (German, English,

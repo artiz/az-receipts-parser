@@ -155,20 +155,22 @@ class SettingsPage extends StatelessWidget {
                 onChanged: settings.inAppCamera ? settings.setAutoCapture : null,
               ),
               SectionTitle(l.settingsNotifications),
-              SwitchListTile(
-                secondary: const Icon(Icons.notifications_active_outlined),
-                title: Text(l.approachTitle),
-                subtitle: Text(l.approachHint),
-                value: settings.approachEnabled,
-                onChanged: settings.setApproachEnabled,
-              ),
-              ListTile(
-                enabled: settings.approachEnabled,
-                leading: const Icon(Icons.speed_outlined),
-                title: Text(l.approachMarginTitle),
-                subtitle: Text(_marginText(l, settings.approachMargin)),
-                onTap: () => _editApproachMargin(context, settings),
-              ),
+              for (final n in const [1, 2]) ...[
+                SwitchListTile(
+                  secondary: const Icon(Icons.notifications_active_outlined),
+                  title: Text(n == 1 ? l.approachTitle : l.approach2Title),
+                  subtitle: Text(n == 1 ? l.approachHint : l.approach2Hint),
+                  value: settings.approachEnabled(n),
+                  onChanged: (on) => settings.setApproachEnabled(n, on),
+                ),
+                ListTile(
+                  enabled: settings.approachEnabled(n),
+                  leading: const Icon(Icons.speed_outlined),
+                  title: Text(n == 1 ? l.approachMarginTitle : l.approach2MarginTitle),
+                  subtitle: Text(_marginText(l, settings.approachMargin(n))),
+                  onTap: () => _editApproachMargin(context, settings, n),
+                ),
+              ],
               SectionTitle(l.language),
               ListTile(
                 leading: const Icon(Icons.translate_outlined),
@@ -260,17 +262,17 @@ class SettingsPage extends StatelessWidget {
   String _marginText(AppLocalizations l, ApproachMargin m) =>
       m.byAmount ? l.approachMarginAmount(euroShort(m.amount)) : l.approachMarginPercent(euroShortPlain(m.percent));
 
-  /// Margin dialog: percent of limit 1 or a fixed amount below it, one field.
-  Future<void> _editApproachMargin(BuildContext context, AppSettings settings) async {
+  /// Margin dialog: percent of limit [limitNo] or a fixed amount below it, one field.
+  Future<void> _editApproachMargin(BuildContext context, AppSettings settings, int limitNo) async {
     final l = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    var margin = settings.approachMargin;
+    var margin = settings.approachMargin(limitNo);
     final controller = TextEditingController(text: euroShortPlain(margin.byAmount ? margin.amount : margin.percent));
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          title: DialogTitle(child: Text(l.approachMarginTitle)),
+          title: DialogTitle(child: Text(limitNo == 1 ? l.approachMarginTitle : l.approach2MarginTitle)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -312,7 +314,7 @@ class SettingsPage extends StatelessWidget {
       messenger.showSnackBar(SnackBar(content: Text(l.approachMarginInvalid)));
       return;
     }
-    await settings.setApproachMargin(margin.byAmount ? margin.copyWith(amount: v) : margin.copyWith(percent: v));
+    await settings.setApproachMargin(limitNo, margin.byAmount ? margin.copyWith(amount: v) : margin.copyWith(percent: v));
   }
 
   Future<void> _editText(BuildContext context, {required String title, required String initial, bool obscure = false, required Future<void> Function(String) onSave}) async {

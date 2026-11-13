@@ -22,17 +22,18 @@ import '../theme.dart';
   }
 }
 
-/// Texts of the early warning: within the margin of limit 1, the limit not reached.
-(String, String) approachNotificationTexts(String localeCode, double expenses, double limit, {String symbol = '€'}) {
+/// Texts of the early warning: within the margin of limit [limitNo] (1 or 2),
+/// the limit not reached.
+(String, String) approachNotificationTexts(String localeCode, int limitNo, double expenses, double limit, {String symbol = '€'}) {
   final f = NumberFormat('#,##0', 'de_AT');
   final e = '${f.format(expenses)} $symbol';
   final l = '${f.format(limit)} $symbol';
   switch (localeCode) {
     case 'en':
-      return ('Reaching limit 1', 'Expenses this month: $e of $l.');
+      return ('Reaching limit $limitNo', 'Expenses this month: $e of $l.');
     case 'ru':
-      return ('Приближается лимит 1', 'Расходы за месяц: $e из $l.');
+      return ('Приближается лимит $limitNo', 'Расходы за месяц: $e из $l.');
     default:
-      return ('Limit 1 fast erreicht', 'Ausgaben diesen Monat: $e von $l.');
+      return ('Limit $limitNo fast erreicht', 'Ausgaben diesen Monat: $e von $l.');
   }
 }

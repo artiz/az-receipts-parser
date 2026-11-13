@@ -424,6 +424,24 @@ abstract class AppLocalizations {
   /// **'How close to limit 1'**
   String get approachMarginTitle;
 
+  /// No description provided for @approach2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Warn before limit 2'**
+  String get approach2Title;
+
+  /// No description provided for @approach2Hint.
+  ///
+  /// In en, this message translates to:
+  /// **'A notification shortly before limit 2 is reached, once limit 1 is passed'**
+  String get approach2Hint;
+
+  /// No description provided for @approach2MarginTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How close to limit 2'**
+  String get approach2MarginTitle;
+
   /// No description provided for @approachMarginPercent.
   ///
   /// In en, this message translates to:

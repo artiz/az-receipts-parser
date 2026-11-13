@@ -120,6 +120,9 @@
   "approachTitle": "Warn before limit 1",
   "approachHint": "A notification shortly before limit 1 is reached; limit 1 and 2 always notify",
   "approachMarginTitle": "How close to limit 1",
+  "approach2Title": "Warn before limit 2",
+  "approach2Hint": "A notification shortly before limit 2 is reached, once limit 1 is passed",
+  "approach2MarginTitle": "How close to limit 2",
   "approachMarginPercent": "{value} % of the limit before it is reached",
   "@approachMarginPercent": {
     "placeholders": {

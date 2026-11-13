@@ -31,10 +31,9 @@ class AppSettings extends ChangeNotifier {
   static const _kAutoCapture = 'auto_capture';
   static const _kSavePhotos = 'save_photos';
   static const _kCurrency = 'currency';
-  static const _kApproachEnabled = 'approach_enabled';
-  static const _kApproachByAmount = 'approach_by_amount';
-  static const _kApproachPercent = 'approach_percent';
-  static const _kApproachAmount = 'approach_amount';
+  // Early warnings before Monatslimit 1 and 2; limit 1 keeps the keys it
+  // had before limit 2 got its own warning.
+  static String _approachKey(int limit, String name) => limit == 1 ? 'approach_$name' : 'approach${limit}_$name';
 
   String? _apiKey;
 
@@ -173,29 +172,29 @@ class AppSettings extends ChangeNotifier {
     return pinnedTiles.any((k) => QuickTile.lookupKey(k) == lk);
   }
 
-  /// The "reaching limit 1" notification was shown for the month.
-  bool approachNotified(int year, int month) => _prefs.getBool('approach_notified_$year-$month') ?? false;
-  Future<void> setApproachNotified(int year, int month, bool on) => _prefs.setBool('approach_notified_$year-$month', on);
+  /// The "reaching limit [limit]" notification (1 or 2) was shown for the month.
+  bool approachNotified(int limit, int year, int month) => _prefs.getBool(_approachKey(limit, 'notified_$year-$month')) ?? false;
+  Future<void> setApproachNotified(int limit, int year, int month, bool on) => _prefs.setBool(_approachKey(limit, 'notified_$year-$month'), on);
 
-  /// Send the "reaching limit 1" notification at all.
-  bool get approachEnabled => _prefs.getBool(_kApproachEnabled) ?? true;
-  Future<void> setApproachEnabled(bool on) async {
-    await _prefs.setBool(_kApproachEnabled, on);
+  /// Send the "reaching limit [limit]" notification at all (on by default).
+  bool approachEnabled(int limit) => _prefs.getBool(_approachKey(limit, 'enabled')) ?? true;
+  Future<void> setApproachEnabled(int limit, bool on) async {
+    await _prefs.setBool(_approachKey(limit, 'enabled'), on);
     notifyListeners();
   }
 
-  /// How far below limit 1 the warning comes: a share of the limit (5 % by
-  /// default) or a fixed amount below it. Both values are kept so switching
-  /// the mode back restores the other one.
-  ApproachMargin get approachMargin => ApproachMargin(
-        byAmount: _prefs.getBool(_kApproachByAmount) ?? false,
-        percent: _prefs.getDouble(_kApproachPercent) ?? ApproachMargin.defaultPercent,
-        amount: _prefs.getDouble(_kApproachAmount) ?? ApproachMargin.defaultAmount,
+  /// How far below limit [limit] the warning comes: a share of the limit
+  /// (5 % by default) or a fixed amount below it. Both values are kept so
+  /// switching the mode back restores the other one.
+  ApproachMargin approachMargin(int limit) => ApproachMargin(
+        byAmount: _prefs.getBool(_approachKey(limit, 'by_amount')) ?? false,
+        percent: _prefs.getDouble(_approachKey(limit, 'percent')) ?? ApproachMargin.defaultPercent,
+        amount: _prefs.getDouble(_approachKey(limit, 'amount')) ?? ApproachMargin.defaultAmount,
       );
-  Future<void> setApproachMargin(ApproachMargin m) async {
-    await _prefs.setBool(_kApproachByAmount, m.byAmount);
-    await _prefs.setDouble(_kApproachPercent, m.percent);
-    await _prefs.setDouble(_kApproachAmount, m.amount);
+  Future<void> setApproachMargin(int limit, ApproachMargin m) async {
+    await _prefs.setBool(_approachKey(limit, 'by_amount'), m.byAmount);
+    await _prefs.setDouble(_approachKey(limit, 'percent'), m.percent);
+    await _prefs.setDouble(_approachKey(limit, 'amount'), m.amount);
     notifyListeners();
   }
 
@@ -223,23 +222,23 @@ class AppSettings extends ChangeNotifier {
   }
 }
 
-/// Distance below limit 1 at which the early warning is sent.
+/// Distance below a month limit at which the early warning is sent.
 class ApproachMargin {
   const ApproachMargin({required this.byAmount, required this.percent, required this.amount});
 
   static const double defaultPercent = 5;
   static const double defaultAmount = 100;
 
-  /// False: [percent] of limit 1; true: [amount] in money below limit 1.
+  /// False: [percent] of the limit; true: [amount] in money below it.
   final bool byAmount;
   final double percent;
   final double amount;
 
   /// The expenses from which on the warning is due, or null when the margin
   /// makes no sense for this limit (margin covers the whole limit or more).
-  double? threshold(double limit1) {
-    final t = byAmount ? limit1 - amount : limit1 * (1 - percent / 100);
-    return t > 0 && t < limit1 ? t : null;
+  double? threshold(double limit) {
+    final t = byAmount ? limit - amount : limit * (1 - percent / 100);
+    return t > 0 && t < limit ? t : null;
   }
 
   ApproachMargin copyWith({bool? byAmount, double? percent, double? amount}) =>
